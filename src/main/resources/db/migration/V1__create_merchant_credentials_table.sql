@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS user_credentials (
+CREATE TABLE IF NOT EXISTS user_payment_credentials (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     gateway INT NOT NULL COMMENT '0=STRIPE, 1=AUTHORIZE_NET',

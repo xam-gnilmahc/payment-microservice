@@ -16,20 +16,16 @@ public class JwtUtil {
     @Value("${jwt.secret:myDefaultSecretKeyForTesting12345678901234567890}")
     private String secret;
 
-    @Value("${jwt.expiration:86400000}")
-    private long expiration;
-
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    // Generate token with email and userId
+    // Generate token with email and userId (no expiration - never expires)
     public String generateToken(String email, Long userId) {
         return Jwts.builder()
                 .subject(email)
                 .claim("userId", userId)
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -44,9 +40,14 @@ public class JwtUtil {
         return extractClaims(token).get("userId", Long.class);
     }
 
-    // Validate token (check expiry)
+    // Validate token (always valid - no expiration)
     public boolean validateToken(String token) {
-        return !extractClaims(token).getExpiration().before(new Date());
+        try {
+            extractClaims(token);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private Claims extractClaims(String token) {
