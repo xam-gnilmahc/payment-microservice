@@ -20,6 +20,10 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
+    // This endpoint receives payment requests from the frontend.
+    // It validates the request data, then calls PaymentService to process the payment.
+    // If payment succeeds, it returns the transaction details.
+    // If payment fails, it returns the error message.
     @PostMapping
     public ResponseEntity<ApiResponse<Map<String, String>>> createPayment(
             @Valid @RequestBody PaymentRequest request) {
