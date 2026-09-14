@@ -4,13 +4,13 @@ services:
     runtime: docker
     plan: free
     envVars:
-      - key: JAVA_VERSION
-        value: 17
       - key: SPRING_DATASOURCE_URL
         sync: false
       - key: SPRING_DATASOURCE_USERNAME
         sync: false
       - key: SPRING_DATASOURCE_PASSWORD
         sync: false
+      - key: SPRING_DATASOURCE_DRIVER
+        value: org.postgresql.Driver
       - key: JWT_SECRET
         sync: false
