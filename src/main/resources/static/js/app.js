@@ -19,7 +19,7 @@ function getUser() { return token ? decodeToken(token) : null; }
 function authHeaders() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }; }
 
 // ===== STRIPE =====
-const stripe = Stripe('pk_test_51Tbaep9TqKKXsHJPLgXdpxDYWBZiqOUx8MDEVj3Un1s2sx0Xr0hj8ARbttuztRc5KPl1ITneavqQBt4SRnagPSyJ00tP8VTxQh');
+const stripe = Stripe('');
 const elements = stripe.elements();
 const cardElement = elements.create('card');
 cardElement.on('change', (e) => { document.getElementById('card-errors').textContent = e.error ? e.error.message : ''; });
