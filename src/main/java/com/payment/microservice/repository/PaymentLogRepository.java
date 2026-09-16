@@ -1,6 +1,7 @@
 package com.payment.microservice.repository;
 
 import com.payment.microservice.model.PaymentLog;
+import com.payment.microservice.model.PaymentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,5 +12,7 @@ public interface PaymentLogRepository extends JpaRepository<PaymentLog, Long> {
 
     List<PaymentLog> findByCustomerId(Long customerId);
 
-    List<PaymentLog> findByStatus(String status);
+    List<PaymentLog> findByStatus(PaymentStatus status);
+
+    List<PaymentLog> findAllByOrderByCreatedAtDesc();
 }

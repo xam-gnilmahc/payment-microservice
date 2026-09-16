@@ -69,7 +69,7 @@ public class JwtAuth extends OncePerRequestFilter {
                 User user = userRepository.findByEmail(email).orElse(null);
 
                 // STEP 7: If user exists and is active, mark as "logged in"
-                if (user != null && user.getIsActive()) {
+                if (user != null && Boolean.TRUE.equals(user.getIsActive())) {
 
                     // Create authentication token (marks user as authenticated)
                     UsernamePasswordAuthenticationToken auth =

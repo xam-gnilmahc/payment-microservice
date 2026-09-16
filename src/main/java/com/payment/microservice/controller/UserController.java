@@ -4,6 +4,7 @@ import com.payment.microservice.traits.ApiResponse;
 import com.payment.microservice.dto.CreateUserCredentialsRequest;
 import com.payment.microservice.model.UserCredentials;
 import com.payment.microservice.repository.UserCredentialsRepository;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/user-credentials")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "BearerAuth")
 public class UserController {
 
     // Injected by Spring - handles database operations for UserCredentials table

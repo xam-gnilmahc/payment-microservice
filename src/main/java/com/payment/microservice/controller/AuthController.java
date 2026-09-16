@@ -49,12 +49,12 @@ public class AuthController {
         userRepository.save(user);
 
         // Generate JWT token with email and userId
-        String token = jwtUtil.generateToken(user.getEmail(), user.getId());
+        String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getName());
 
         // Return 201 Created with token
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("User registered successfully", 201,
-                        new TokenResponse(token, user.getEmail(), user.getId())));
+                        new TokenResponse(token, user.getEmail(), user.getId(), user.getName())));
     }
 
     // @PostMapping("/login") = POST request to /api/v1/auth/login
@@ -71,14 +71,14 @@ public class AuthController {
         }
 
         // Generate JWT token
-        String token = jwtUtil.generateToken(user.getEmail(), user.getId());
+        String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getName());
 
         // Return 200 OK with token
         return ResponseEntity.ok(ApiResponse.success("Login successful", 200,
-                new TokenResponse(token, user.getEmail(), user.getId())));
+                new TokenResponse(token, user.getEmail(), user.getId(), user.getName())));
     }
 
     // record = shortcut for creating a class with fields, getters, equals, hashCode, toString
     // This defines the structure of the response data
-    public record TokenResponse(String token, String email, Long userId) {}
+    public record TokenResponse(String token, String email, Long userId, String name) {}
 }

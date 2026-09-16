@@ -1,17 +1,12 @@
 package com.payment.microservice.service;
 
 import com.payment.microservice.dto.PaymentRequest;
-import com.payment.microservice.model.PaymentLog;
-import com.payment.microservice.model.User;
-import com.payment.microservice.model.UserCredentials;
-import com.payment.microservice.repository.PaymentLogRepository;
-import com.payment.microservice.repository.UserCredentialsRepository;
-import com.payment.microservice.repository.UserRepository;
+import com.payment.microservice.model.*;
+import com.payment.microservice.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 @Service
@@ -19,73 +14,77 @@ import java.util.Map;
 public class PaymentService {
 
     private final UserRepository userRepository;
-    private final UserCredentialsRepository userCredentialsRepository;
+    private final PaymentGatewayRepository paymentGatewayRepository;
+    private final UserPaymentGatewayRepository userPaymentGatewayRepository;
+    private final UserPaymentCredentialsRepository userPaymentCredentialsRepository;
     private final StripeService stripeService;
-    private final PaymentLogRepository paymentLogRepository;
+    
+    /**
+     * Fetches the title of the payment gateway based on its ID.
+     * If the gateway is not found, it returns "UNKNOWN".
+     */
+    private String getGatewayTitle(Long gatewayId) {
+        return paymentGatewayRepository.findById(gatewayId)
+                .map(PaymentGateway::getTitle)
+                .orElse("UNKNOWN");
+    }
+    
+    /**
+     * Fetches the secret key for a given customer and gateway.
+     * It first retrieves the user, then checks if the gateway is assigned to the user,
+     * and finally fetches the secret key from the user's payment credentials.
+     * If any of these steps fail, it throws a RuntimeException with an appropriate message.
+     */
+    private String getSecretKey(Long customerId, Long gatewayId) {
+        User user = userRepository.findById(customerId)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
 
-    // This method handles the complete payment flow.
-    // When a customer makes a payment, this method finds the merchant's payment credentials
-    // from the database based on the gateway (currently supports Stripe, more coming soon).
-    // It then calls the appropriate payment gateway API to process the payment.
-    // Before calling the gateway, it creates a log entry with INITIATED status.
-    // After the gateway responds, it updates the log with SUCCESS or FAILED status
-    // along with the transaction details. The log also tracks how long the payment took.
-    public Map<String, String> processPayment(PaymentRequest request) {
-        LocalDateTime startTime = LocalDateTime.now();
+        UserPaymentGateway upg = userPaymentGatewayRepository.findByUserIdAndEnabled(user.getId(), true)
+                .stream()
+                .filter(u -> u.getPaymentGatewayId().equals(gatewayId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Gateway not assigned to customer"));
 
-        User user = userRepository.findById(request.getCustomerId())
-                .orElseThrow(() -> new RuntimeException("Customer not found with ID: " + request.getCustomerId()));
+        return userPaymentCredentialsRepository.findByUserPaymentGatewaysId(upg.getId())
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No credentials found"))
+                .getSecretKey();
+    }
+    
+    /**
+     * Initiates a payment by creating a payment intent using the Stripe service.
+     * It first checks if the specified gateway is "stripe". If not, it throws a
+     *  RuntimeException indicating that the gateway is not configured. If the gateway is valid,
+     *  it retrieves the secret key for the customer and gateway, and then calls the Stripe service to create the payment intent.
+     *  The method returns a map containing the payment intent ID, client secret, status, and a message.
+     */
+    public Map<String, String> initiatePayment(PaymentRequest request) {
+        String gatewayTitle = getGatewayTitle(request.getGatewayId());
 
-        List<UserCredentials> allCredentials = userCredentialsRepository.findByUserId(user.getId().intValue());
-
-        UserCredentials credentials = null;
-        String gatewayName = null;
-
-        for (UserCredentials cred : allCredentials) {
-            if (cred.getGateway() == 0) {
-                credentials = cred;
-                gatewayName = "STRIPE";
-                break;
-            }
+        if (!gatewayTitle.equalsIgnoreCase("stripe")) {
+            throw new RuntimeException("This gateway is not configured yet.");
         }
 
-        if (credentials == null) {
-            throw new RuntimeException("No payment credentials found for customer: " + request.getCustomerId());
+        String secretKey = getSecretKey(request.getCustomerId(), request.getGatewayId());
+        return stripeService.createPaymentIntent(request, secretKey);
+    }
+    
+    /**
+     * Confirms a payment by checking the status of a payment intent using the Stripe service.
+     * It first checks if the specified gateway is "stripe". If not, it throws a
+     *  RuntimeException indicating that the gateway is not configured. If the gateway is valid,
+     *  it retrieves the secret key for the customer and gateway, and then calls the Stripe service to get the payment intent status.
+     *  The method returns a map containing the payment intent ID, client secret, status, and a message.
+     */
+    public Map<String, String> confirmPayment(String paymentIntentId, Long customerId, Long gatewayId, String paymentMethod) {
+        String gatewayTitle = gatewayId != null ? getGatewayTitle(gatewayId) : "UNKNOWN";
+
+        if (!gatewayTitle.equalsIgnoreCase("stripe")) {
+            throw new RuntimeException("This gateway is not configured yet.");
         }
 
-        PaymentLog paymentLog = PaymentLog.builder()
-                .customerId(request.getCustomerId())
-                .amount(request.getAmount())
-                .currency("usd")
-                .gateway(gatewayName)
-                .status("INITIATED")
-                .startTime(startTime)
-                .build();
-
-        paymentLogRepository.save(paymentLog);
-
-        try {
-            Map<String, String> result = stripeService.processPayment(request, credentials.getSecretKey());
-
-            LocalDateTime endTime = LocalDateTime.now();
-            paymentLog.setEndTime(endTime);
-            paymentLog.setDurationMs(java.time.Duration.between(startTime, endTime).toMillis());
-            paymentLog.setStatus("SUCCESS");
-            paymentLog.setTransactionId(result.get("transactionId"));
-            paymentLog.setChargeId(result.get("chargeId"));
-            paymentLogRepository.save(paymentLog);
-
-            return result;
-
-        } catch (Exception e) {
-            LocalDateTime endTime = LocalDateTime.now();
-            paymentLog.setEndTime(endTime);
-            paymentLog.setDurationMs(java.time.Duration.between(startTime, endTime).toMillis());
-            paymentLog.setStatus("FAILED");
-            paymentLog.setErrorMessage(e.getMessage());
-            paymentLogRepository.save(paymentLog);
-
-            throw e;
-        }
+        String secretKey = getSecretKey(customerId, gatewayId);
+        return stripeService.getPaymentIntentStatus(paymentIntentId, secretKey, customerId, paymentMethod);
     }
 }

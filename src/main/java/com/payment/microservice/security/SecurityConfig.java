@@ -67,7 +67,7 @@ public class SecurityConfig {
             // SECURITY RULES (Spring Security checks these AUTOMATICALLY on every request):
             .authorizeHttpRequests(auth -> auth
                 // These endpoints are PUBLIC (no token needed):
-                .requestMatchers("/api/v1/auth/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+                .requestMatchers("/api/v1/auth/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/payment.html", "/pay", "/css/**", "/js/**").permitAll()
                 // All other endpoints NEED VALID JWT TOKEN:
                 .anyRequest().authenticated()
             )

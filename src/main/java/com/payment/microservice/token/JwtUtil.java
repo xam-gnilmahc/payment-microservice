@@ -21,13 +21,18 @@ public class JwtUtil {
     }
 
     // Generate token with email and userId (no expiration - never expires)
-    public String generateToken(String email, Long userId) {
+    public String generateToken(String email, Long userId, String name) {
         return Jwts.builder()
                 .subject(email)
                 .claim("userId", userId)
+                .claim("name", name)
                 .issuedAt(new Date())
                 .signWith(getSigningKey())
                 .compact();
+    }
+
+    public String extractName(String token) {
+        return extractClaims(token).get("name", String.class);
     }
 
     // Extract email from token

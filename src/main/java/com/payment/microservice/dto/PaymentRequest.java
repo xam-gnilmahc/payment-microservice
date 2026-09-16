@@ -19,6 +19,9 @@ public class PaymentRequest {
     @NotNull(message = "Customer ID is required")
     private Long customerId;
 
+    @NotNull(message = "Gateway ID is required")
+    private Long gatewayId;
+
     @NotNull(message = "Amount is required")
     @Positive(message = "Amount must be positive")
     private BigDecimal amount;
@@ -40,4 +43,6 @@ public class PaymentRequest {
     private String zipCode;
 
     private String country;
+
+    private String paymentMethod;
 }
