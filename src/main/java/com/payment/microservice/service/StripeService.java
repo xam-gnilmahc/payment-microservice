@@ -3,7 +3,9 @@ package com.payment.microservice.service;
 import com.payment.microservice.dto.PaymentRequest;
 import com.stripe.Stripe;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.Refund;
 import com.stripe.param.PaymentIntentCreateParams;
+import com.stripe.param.RefundCreateParams;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -117,6 +119,37 @@ public class StripeService implements PaymentGatewayService {
     } catch (Exception e) {
       // PaymentIntent not found or Stripe API error
       throw new RuntimeException("Failed to retrieve payment: " + e.getMessage());
+    }
+  }
+
+  /**
+   * Refunds a payment on Stripe by charge ID. Full refund only.
+   *
+   * @param chargeId Stripe Charge ID
+   * @param reason refund reason
+   * @return map with refundId, status, amount, and message
+   */
+  public Map<String, String> refundPayment(String chargeId, Long customerId, String reason) {
+    try {
+      RefundCreateParams.Builder paramsBuilder =
+          RefundCreateParams.builder()
+              .setCharge(chargeId)
+              .putMetadata("customerId", String.valueOf(customerId));
+      if (reason != null && !reason.isEmpty()) {
+        paramsBuilder.setReason(RefundCreateParams.Reason.valueOf(reason.toUpperCase()));
+      }
+
+      Refund refund = Refund.create(paramsBuilder.build());
+
+      Map<String, String> response = new HashMap<>();
+      response.put("refundId", refund.getId());
+      response.put("status", refund.getStatus());
+      response.put("amount", String.valueOf(refund.getAmount()));
+      response.put("message", "Refund " + refund.getStatus() + " - " + refund.getId());
+      return response;
+
+    } catch (Exception e) {
+      throw new RuntimeException("Refund failed: " + e.getMessage());
     }
   }
 }

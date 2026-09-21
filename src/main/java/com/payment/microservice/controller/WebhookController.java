@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.payment.microservice.model.*;
 import com.payment.microservice.repository.PaymentLogRepository;
+import com.payment.microservice.repository.RefundLogRepository;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentMethod;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 public class WebhookController {
 
   private final PaymentLogRepository paymentLogRepository;
+  private final RefundLogRepository refundLogRepository;
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Value("${stripe.webhook-secret:}")
@@ -57,15 +59,22 @@ public class WebhookController {
     try {
       String type = event.getType();
 
-      // Only handle payment_intent events — ignore charge.refunded, charge.dispute.created, etc.
-      if (!type.startsWith("payment_intent.")) {
+      // Only handle payment_intent and refund events
+      if (!type.startsWith("payment_intent.") && !type.startsWith("refund.")) {
         log.info("Ignoring: {}", type);
         return ResponseEntity.ok("Received");
       }
 
-      // Parse raw JSON — can't use Stripe SDK deserializer (API version mismatch)
+      // Parse raw JSON
       JsonNode root = objectMapper.readTree(payload);
       JsonNode data = root.path("data").path("object");
+
+      // Handle refund events — save to refund_logs table
+      if (type.startsWith("refund.")) {
+        handleRefundEvent(type, data);
+        return ResponseEntity.ok("Received");
+      }
+
       String piId = data.path("id").asText(null);
       if (piId == null) return ResponseEntity.ok("Received");
 
@@ -96,21 +105,21 @@ public class WebhookController {
 
       // Route by event type and save log
       switch (type) {
-        // case "payment_intent.created" ->
-        //     savePaymentLog(
-        //         email,
-        //         customerId,
-        //         piId,
-        //         null,
-        //         amount,
-        //         currency,
-        //         gwStatus,
-        //         PaymentEvent.WEBHOOK_SUCCEEDED,
-        //         PaymentStatus.INITIATED,
-        //         "PaymentIntent created",
-        //         null,
-        //         paymentEnv,
-        //         paymentMethodType);
+          // case "payment_intent.created" ->
+          //     savePaymentLog(
+          //         email,
+          //         customerId,
+          //         piId,
+          //         null,
+          //         amount,
+          //         currency,
+          //         gwStatus,
+          //         PaymentEvent.WEBHOOK_SUCCEEDED,
+          //         PaymentStatus.INITIATED,
+          //         "PaymentIntent created",
+          //         null,
+          //         paymentEnv,
+          //         paymentMethodType);
         case "payment_intent.processing" ->
             savePaymentLog(
                 email,
@@ -233,5 +242,80 @@ public class WebhookController {
   private BigDecimal toDollars(Long cents) {
     if (cents == null) return BigDecimal.ZERO;
     return BigDecimal.valueOf(cents).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+  }
+
+  /** Handles refund.created, refund.updated, refund.failed events. */
+  private void handleRefundEvent(String type, JsonNode data) {
+    String refundId = data.path("id").asText(null);
+    String chargeId = data.path("charge").asText(null);
+    String piId = data.path("payment_intent").asText(null);
+    long amount = data.path("amount").asLong();
+    String currency = data.path("currency").asText();
+    String reason = data.path("reason").asText(null);
+    String cid = data.path("metadata").path("customerId").asText(null);
+    Long customerId = cid != null ? Long.parseLong(cid) : null;
+    String status = data.path("status").asText();
+
+    // Extract card_reference from destination_details
+    String cardReference = null;
+    JsonNode destDetails = data.path("destination_details");
+    if (!destDetails.isMissingNode()) {
+      JsonNode card = destDetails.path("card");
+      if (!card.isMissingNode()) {
+        cardReference = card.path("reference").asText(null);
+      }
+    }
+
+    // Determine status code by event type
+    String statusCode;
+    String message;
+    switch (type) {
+      case "refund.created":
+        statusCode = "0";
+        message = "Refund pending";
+        break;
+      case "refund.updated":
+        if ("succeeded".equals(status)) {
+          statusCode = "1";
+          message =
+              "Refund issued - money is on its way, takes up to 10 business days to appear on statement";
+        } else if ("failed".equals(status)) {
+          statusCode = "2";
+          message = data.path("failure_reason").asText("Refund failed");
+        } else {
+          statusCode = "0";
+          message = "Refund " + status;
+        }
+        break;
+      case "refund.failed":
+        statusCode = "2";
+        message = data.path("failure_reason").asText("Refund failed");
+        break;
+      default:
+        statusCode = "0";
+        message = "Refund " + status;
+        break;
+    }
+
+    // Always insert new row
+    RefundLog refundLog =
+        RefundLog.builder()
+            .transactionId(piId)
+            .chargeId(chargeId)
+            .refundId(refundId)
+            .amount(toDollars(amount))
+            .currency(currency)
+            .customerId(customerId)
+            .cardReference(cardReference)
+            .status(statusCode)
+            .message(message)
+            .build();
+
+    refundLogRepository.save(refundLog);
+    log.info(
+        "Refund log saved: refundId={}, status={}, cardReference={}",
+        refundId,
+        statusCode,
+        cardReference);
   }
 }

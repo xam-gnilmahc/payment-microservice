@@ -23,4 +23,7 @@ public interface PaymentGatewayService {
    */
   Map<String, String> getPaymentIntentStatus(
       String paymentIntentId, Long customerId, String paymentMethod);
+
+  /** Refunds a payment by charge ID. Full refund only. */
+  Map<String, String> refundPayment(String chargeId, Long customerId, String reason);
 }

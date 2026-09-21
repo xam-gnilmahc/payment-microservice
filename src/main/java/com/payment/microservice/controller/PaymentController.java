@@ -1,8 +1,11 @@
 package com.payment.microservice.controller;
 
 import com.payment.microservice.dto.PaymentRequest;
+import com.payment.microservice.dto.RefundRequest;
 import com.payment.microservice.model.PaymentLog;
+import com.payment.microservice.model.RefundLog;
 import com.payment.microservice.repository.PaymentLogRepository;
+import com.payment.microservice.repository.RefundLogRepository;
 import com.payment.microservice.service.PaymentGatewayService;
 import com.payment.microservice.service.PaymentService;
 import com.payment.microservice.traits.ApiResponse;
@@ -23,6 +26,7 @@ public class PaymentController {
 
   private final PaymentService paymentService;
   private final PaymentLogRepository paymentLogRepository;
+  private final RefundLogRepository refundLogRepository;
 
   @PostMapping
   public ResponseEntity<ApiResponse<Map<String, String>>> createPayment(
@@ -56,6 +60,31 @@ public class PaymentController {
     }
   }
 
+  @PostMapping("/refund")
+  public ResponseEntity<ApiResponse<Map<String, String>>> refundPayment(
+      @Valid @RequestBody RefundRequest request) {
+    try {
+      PaymentGatewayService gateway = paymentService.getService(request.getCustomerId());
+      Map<String, String> result =
+          gateway.refundPayment(
+              request.getChargeId(), request.getCustomerId(), request.getReason());
+
+      // Save refund ID to payment log
+      paymentLogRepository
+          .findByChargeId(request.getChargeId())
+          .ifPresent(
+              log -> {
+                log.setRefundId(result.get("refundId"));
+                paymentLogRepository.save(log);
+              });
+
+      return ResponseEntity.ok(ApiResponse.success("Refund initiated", 200, result));
+    } catch (Exception e) {
+      return ResponseEntity.badRequest()
+          .body(ApiResponse.error("Refund failed: " + e.getMessage(), 400));
+    }
+  }
+
   @GetMapping
   public ResponseEntity<ApiResponse<Map<String, Object>>> getPaymentLogs(
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "50") int size) {
@@ -74,6 +103,18 @@ public class PaymentController {
     } catch (Exception e) {
       return ResponseEntity.badRequest()
           .body(ApiResponse.error("Failed to fetch payment logs: " + e.getMessage(), 400));
+    }
+  }
+
+  @GetMapping("/refund-logs")
+  public ResponseEntity<ApiResponse<java.util.List<RefundLog>>> getRefundLogs(
+      @RequestParam String chargeId) {
+    try {
+      java.util.List<RefundLog> logs = refundLogRepository.findByChargeId(chargeId);
+      return ResponseEntity.ok(ApiResponse.success("Refund logs fetched", 200, logs));
+    } catch (Exception e) {
+      return ResponseEntity.badRequest()
+          .body(ApiResponse.error("Failed to fetch refund logs: " + e.getMessage(), 400));
     }
   }
 }

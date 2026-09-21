@@ -74,4 +74,7 @@ public class PaymentLog {
 
   @Column(name = "payment_method")
   private String paymentMethod;
+
+  @Column(name = "refund_id")
+  private String refundId;
 }
