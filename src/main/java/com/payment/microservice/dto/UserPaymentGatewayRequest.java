@@ -13,13 +13,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UserPaymentGatewayRequest {
 
-    @NotNull(message = "User ID is required")
-    @Positive(message = "User ID must be positive")
-    private Long userId;
+  @NotNull(message = "User ID is required")
+  @Positive(message = "User ID must be positive")
+  private Long userId;
 
-    @NotNull(message = "Payment Gateway ID is required")
-    @Positive(message = "Payment Gateway ID must be positive")
-    private Long paymentGatewayId;
+  @NotNull(message = "Payment Gateway ID is required")
+  @Positive(message = "Payment Gateway ID must be positive")
+  private Long paymentGatewayId;
 
-    private Boolean enabled;
+  private Boolean enabled;
 }

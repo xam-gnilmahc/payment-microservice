@@ -14,11 +14,13 @@ body { font-family: 'Inter', -apple-system, Arial, sans-serif; background: #f5f6
 .card-title { font-size: 16px; font-weight: 700; color: #1a1a2e; }
 .card-subtitle { font-size: 12px; color: #8b8fa3; }
 
-.form-group { margin-bottom: 18px; }
-.form-group label { display: block; margin-bottom: 7px; font-size: 12px; font-weight: 600; color: #6b7084; text-transform: uppercase; letter-spacing: 0.4px; }
-.form-group input { width: 100%; padding: 12px 14px; border: 1.5px solid #d1d4de; font-size: 14px; font-family: inherit; outline: none; background: #fafbfc; }
-.form-group input:focus { border-color: #1a1a2e; background: #fff; }
+.form-group { margin-bottom: 16px; }
+.form-group:last-child { margin-bottom: 0; }
+.form-group label { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 600; color: #6b7084; text-transform: uppercase; letter-spacing: 0.4px; }
+.form-group input, .form-group select { width: 100%; padding: 12px 14px; border: 1.5px solid #d1d4de; font-size: 14px; font-family: inherit; outline: none; background: #fafbfc; appearance: none; -webkit-appearance: none; }
+.form-group input:focus, .form-group select:focus { border-color: #1a1a2e; background: #fff; }
 .form-group input::placeholder { color: #aaa; }
+.form-group select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7084' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
 
 #card-element { padding: 14px; border: 1.5px solid #d1d4de; background: #fafbfc; }
 #card-element:focus-within { border-color: #1a1a2e; background: #fff; }
@@ -96,17 +98,35 @@ body { font-family: 'Inter', -apple-system, Arial, sans-serif; background: #f5f6
 .address-card-tag { font-size: 10px; background: #1a1a2e; color: #fff; padding: 2px 6px; font-weight: 600; margin-left: 5px; vertical-align: middle; }
 .address-expand { text-align: center; margin-top: 10px; }
 
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+.form-row:last-child { margin-bottom: 0; }
 .form-row .form-group { margin-bottom: 0; }
 
-.logs-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.logs-table th { text-align: left; padding: 12px 12px; font-size: 11px; font-weight: 600; color: #8b8fa3; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1.5px solid #e2e4e9; }
-.logs-table td { padding: 12px; border-bottom: 1px solid #f0f1f5; color: #1a1a2e; vertical-align: middle; }
+.logs-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid #e2e4e9; border-radius: 8px; }
+.logs-table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
+.logs-table th { text-align: left; padding: 12px 14px; font-size: 11px; font-weight: 600; color: #8b8fa3; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1.5px solid #e2e4e9; background: #f9fafb; position: sticky; top: 0; }
+.logs-table td { padding: 12px 14px; border-bottom: 1px solid #f0f1f5; color: #1a1a2e; vertical-align: middle; }
 .logs-table tr:last-child td { border-bottom: none; }
 .logs-table tr:hover td { background: #fafbfc; }
 .logs-table .mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; color: #6b7084; }
 .logs-table .amt { font-weight: 600; font-size: 14px; }
-.logs-table .msg { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: #8b8fa3; }
+.logs-table .msg { max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: #8b8fa3; }
+
+.logs-pagination { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 16px; }
+.logs-pagination-info { font-size: 13px; color: #8b8fa3; }
+.logs-pagination-btn { padding: 6px 16px; border: 1px solid #e2e4e9; border-radius: 6px; background: #fff; color: #1a1a2e; font-size: 13px; cursor: pointer; transition: all 0.15s; }
+.logs-pagination-btn:hover:not(:disabled) { background: #f0f1f5; }
+.logs-pagination-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 #pr-button-container .PaymentRequestButton { min-height: 48px; }
-#pr-button-container { display: none; }
+#pr-button-container { display: none; max-width: 600px; }
+
+.success-animation { display: flex; flex-direction: column; align-items: center; padding: 40px 0 20px; }
+.success-checkmark { width: 80px; height: 80px; border-radius: 50%; background: #15803d; display: flex; align-items: center; justify-content: center; animation: scaleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.success-checkmark svg { width: 40px; height: 40px; stroke: #fff; stroke-width: 3; fill: none; stroke-dasharray: 50; stroke-dashoffset: 50; animation: drawCheck 0.5s 0.3s forwards; }
+.success-text { margin-top: 16px; font-size: 20px; font-weight: 700; color: #15803d; animation: fadeInUp 0.4s 0.2s both; }
+.success-subtext { font-size: 13px; color: #8b8fa3; margin-top: 6px; animation: fadeInUp 0.4s 0.35s both; }
+
+@keyframes scaleIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+@keyframes drawCheck { 0% { stroke-dashoffset: 50; } 100% { stroke-dashoffset: 0; } }
+@keyframes fadeInUp { 0% { opacity: 0; transform: translateY(10px); } 100% { opacity: 1; transform: translateY(0); } }

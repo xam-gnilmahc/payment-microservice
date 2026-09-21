@@ -1,182 +1,122 @@
 package com.payment.microservice.service;
 
 import com.payment.microservice.dto.PaymentRequest;
-import com.payment.microservice.model.PaymentEvent;
-import com.payment.microservice.model.PaymentLog;
-import com.payment.microservice.model.PaymentStatus;
-import com.payment.microservice.repository.PaymentLogRepository;
 import com.stripe.Stripe;
 import com.stripe.model.PaymentIntent;
 import com.stripe.param.PaymentIntentCreateParams;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * StripeService - Handles all Stripe payment operations and logging.
+ * StripeService handles all Stripe-specific payment operations.
  *
- * This service is responsible for:
- * 1. Creating PaymentIntents on Stripe
- * 2. Checking PaymentIntent status after frontend confirmation
- * 3. Logging all payment events to payment_logs table
- *
- * Logging is done here (not in PaymentService) because Stripe is the only
- * gateway that actually processes payments. Other gateways just return pending.
+ * <p>NOT a Spring bean — created manually by PaymentService.getService() with the merchant's secret
+ * key. Payment logging is handled by WebhookController, not here.
  */
-@Service
-@RequiredArgsConstructor
-public class StripeService {
+public class StripeService implements PaymentGatewayService {
 
-    private final PaymentLogRepository paymentLogRepository;
+  private final String secretKey;
 
-    /**
-     * Finds a payment log by transaction ID.
-     *
-     * @param transactionId The Stripe PaymentIntent ID (e.g., "pi_xxx")
-     * @return PaymentLog if found, null otherwise
-     */
-    public PaymentLog findLogByTransactionId(String transactionId) {
-        return paymentLogRepository.findAllByOrderByCreatedAtDesc()
-                .stream()
-                .filter(l -> transactionId.equals(l.getTransactionId()))
-                .findFirst()
-                .orElse(null);
+  public StripeService(String secretKey) {
+    this.secretKey = secretKey;
+    // Set the Stripe API key so all Stripe calls use this merchant's account
+    Stripe.apiKey = secretKey;
+  }
+
+  /**
+   * Creates a PaymentIntent on Stripe.
+   *
+   * <p>Stores customerId, email, and name in PaymentIntent metadata so webhooks can retrieve them
+   * later for logging. Returns clientSecret for frontend to confirm the payment.
+   *
+   * @param request contains customerId, amount, email, name, and billing info
+   * @return map with paymentIntentId, clientSecret, status, and message
+   */
+  public Map<String, String> createPaymentIntent(PaymentRequest request) {
+    try {
+      // Step 1: Store user info in metadata so webhooks can retrieve it for logging
+      // Webhooks don't have access to our database, so we pass data via Stripe metadata
+      Map<String, String> metadata = new HashMap<>();
+      metadata.put("customerId", String.valueOf(request.getCustomerId()));
+      if (request.getEmail() != null) {
+        metadata.put("email", request.getEmail());
+      }
+      if (request.getName() != null) {
+        metadata.put("name", request.getName());
+      }
+
+      // Step 2: Build PaymentIntent params — Stripe charges in cents, so multiply by 100
+      PaymentIntentCreateParams params =
+          PaymentIntentCreateParams.builder()
+              .setAmount(request.getAmount().longValue() * 100) // convert to cents
+              .setCurrency("usd")
+              .setCaptureMethod(
+                  PaymentIntentCreateParams.CaptureMethod.AUTOMATIC) // Fixes automatic_async issue
+              .setAutomaticPaymentMethods(
+                  PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
+                      .setEnabled(true)
+                      .setAllowRedirects(
+                          PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.ALWAYS)
+                      .build())
+              .putAllMetadata(metadata)
+              .build();
+
+      // Step 3: Call Stripe API to create the PaymentIntent
+      PaymentIntent paymentIntent = PaymentIntent.create(params);
+
+      // Step 4: Return clientSecret so frontend can confirm the payment with Stripe.js
+      Map<String, String> response = new HashMap<>();
+      response.put("paymentIntentId", paymentIntent.getId());
+      response.put("clientSecret", paymentIntent.getClientSecret());
+      response.put("status", paymentIntent.getStatus());
+      response.put("message", "PaymentIntent created - status: " + paymentIntent.getStatus());
+      return response;
+
+    } catch (Exception e) {
+      // Stripe API error (card declined, invalid amount, etc.)
+      throw new RuntimeException("Payment failed: " + e.getMessage());
     }
+  }
 
-    /**
-     * Creates a PaymentIntent on Stripe and logs it to payment_logs.
-     *
-     * Flow:
-     * 1. Logs PAYMENT_INTENT event with status INITIATED
-     * 2. Calls Stripe API to create PaymentIntent
-     * 3. On success: updates log with PaymentIntent ID
-     * 4. On failure: updates log with status FAILED and error message
-     *
-     * @param request   Payment request containing amount, customer info
-     * @param secretKey Stripe secret key for this merchant
-     * @return Map with paymentIntentId, clientSecret, status, message
-     */
-    public Map<String, String> createPaymentIntent(PaymentRequest request, String secretKey) {
-        Stripe.apiKey = secretKey;
+  /**
+   * Retrieves the current status of a PaymentIntent from Stripe.
+   *
+   * <p>Called by the frontend after confirming payment to check if it succeeded, requires 3DS
+   * authentication, or failed. No logging here — webhooks handle that.
+   *
+   * @param paymentIntentId Stripe PaymentIntent ID (e.g., pi_xxx)
+   * @param customerId internal user ID (used by PaymentService to resolve gateway)
+   * @param paymentMethod "card", "apple_pay", or "google_pay"
+   * @return map with paymentIntentId, status, clientSecret, amount, and message
+   */
+  public Map<String, String> getPaymentIntentStatus(
+      String paymentIntentId, Long customerId, String paymentMethod) {
+    try {
+      // Step 1: Retrieve the PaymentIntent from Stripe to get current status
+      PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentIntentId);
 
-        // Log the payment intent creation attempt
-        PaymentLog paymentLog = PaymentLog.builder()
-                .customerId(request.getCustomerId())
-                .amount(request.getAmount())
-                .currency("usd")
-                .gateway("STRIPE")
-                .event(PaymentEvent.PAYMENT_INTENT)
-                .status(PaymentStatus.INITIATED)
-                .build();
-        paymentLogRepository.save(paymentLog);
+      // Step 2: Build response with status info for the frontend
+      Map<String, String> response = new HashMap<>();
+      response.put("paymentIntentId", paymentIntent.getId());
+      response.put("status", paymentIntent.getStatus());
+      response.put("clientSecret", paymentIntent.getClientSecret());
+      response.put("amount", String.valueOf(paymentIntent.getAmount()));
+      response.put("message", "PaymentIntent status: " + paymentIntent.getStatus());
 
-        try {
-            // Create PaymentIntent on Stripe with amount and currency
-            PaymentIntentCreateParams.Builder builder = PaymentIntentCreateParams.builder()
-                    .setAmount(request.getAmount().longValue())
-                    .setCurrency("usd");
+      // Step 3: If succeeded, update message — frontend uses this to show success UI
+      if ("succeeded".equals(paymentIntent.getStatus())) {
+        response.put("transactionId", paymentIntent.getId());
+        response.put(
+            "chargeId",
+            paymentIntent.getLatestCharge() != null ? paymentIntent.getLatestCharge() : "");
+        response.put("message", "Payment successful - charge ID: " + response.get("chargeId"));
+      }
 
-            PaymentIntent paymentIntent = PaymentIntent.create(builder.build());
+      return response;
 
-            // Update log with successful creation
-            paymentLog.setTransactionId(paymentIntent.getId());
-            paymentLog.setMessage("PaymentIntent created - status: " + paymentIntent.getStatus());
-            paymentLogRepository.save(paymentLog);
-
-            // Return clientSecret for frontend to confirm payment
-            Map<String, String> response = new HashMap<>();
-            response.put("paymentIntentId", paymentIntent.getId());
-            response.put("clientSecret", paymentIntent.getClientSecret());
-            response.put("status", paymentIntent.getStatus());
-            response.put("message", "PaymentIntent created - status: " + paymentIntent.getStatus());
-            return response;
-
-        } catch (Exception e) {
-            // Log failure and rethrow
-            paymentLog.setStatus(PaymentStatus.FAILED);
-            paymentLog.setMessage(e.getMessage());
-            paymentLogRepository.save(paymentLog);
-            throw new RuntimeException("Payment failed: " + e.getMessage());
-        }
+    } catch (Exception e) {
+      // PaymentIntent not found or Stripe API error
+      throw new RuntimeException("Failed to retrieve payment: " + e.getMessage());
     }
-
-    /**
-     * Checks PaymentIntent status after frontend confirmation and logs it.
-     *
-     * Flow:
-     * 1. Logs CONFIRM event with status PROCESSING
-     * 2. Retrieves PaymentIntent from Stripe
-     * 3. If succeeded: fetches charge ID, card details (last4, brand)
-     * 4. Updates log with final status and details
-     *
-     * @param paymentIntentId Stripe PaymentIntent ID (e.g., "pi_xxx")
-     * @param secretKey       Stripe secret key for this merchant
-     * @return Map with status, chargeId, cardLast4, cardBrand, amount, message
-     */
-    public Map<String, String> getPaymentIntentStatus(String paymentIntentId, String secretKey, Long customerId, String paymentMethod) {
-        Stripe.apiKey = secretKey;
-
-        // Log the confirm attempt
-        PaymentLog paymentLog = PaymentLog.builder()
-                .customerId(customerId)
-                .currency("usd")
-                .gateway("STRIPE")
-                .transactionId(paymentIntentId)
-                .event(PaymentEvent.CONFIRM)
-                .status(PaymentStatus.PROCESSING)
-                .paymentMethod(paymentMethod)
-                .build();
-        paymentLogRepository.save(paymentLog);
-
-        try {
-            // Retrieve PaymentIntent from Stripe to get current status
-            PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentIntentId);
-
-            Map<String, String> response = new HashMap<>();
-            response.put("paymentIntentId", paymentIntent.getId());
-            response.put("status", paymentIntent.getStatus());
-            response.put("clientSecret", paymentIntent.getClientSecret());
-            response.put("amount", String.valueOf(paymentIntent.getAmount()));
-            response.put("message", "PaymentIntent status: " + paymentIntent.getStatus());
-
-            // If payment succeeded, fetch charge and card details
-            if ("succeeded".equals(paymentIntent.getStatus())) {
-                response.put("transactionId", paymentIntent.getId());
-                response.put("chargeId", paymentIntent.getLatestCharge() != null ? paymentIntent.getLatestCharge() : "");
-                response.put("message", "Payment successful - charge ID: " + response.get("chargeId"));
-
-                // Fetch card details from PaymentMethod
-                if (paymentIntent.getPaymentMethod() != null) {
-                    com.stripe.model.PaymentMethod pm = com.stripe.model.PaymentMethod.retrieve(paymentIntent.getPaymentMethod());
-                    if (pm.getCard() != null) {
-                        response.put("cardLast4", pm.getCard().getLast4() != null ? pm.getCard().getLast4() : "");
-                        response.put("cardBrand", pm.getCard().getBrand() != null ? pm.getCard().getBrand() : "");
-                    }
-                }
-
-                // Update log with charge and card details
-                paymentLog.setChargeId(response.get("chargeId"));
-                paymentLog.setCardLast4(response.get("cardLast4"));
-                paymentLog.setCardBrand(response.get("cardBrand"));
-            }
-
-            // Update log with amount and message
-            if (response.get("amount") != null) {
-                paymentLog.setAmount(new java.math.BigDecimal(response.get("amount")));
-            }
-            paymentLog.setMessage(response.get("message"));
-            paymentLogRepository.save(paymentLog);
-
-            return response;
-
-        } catch (Exception e) {
-            // Log failure and rethrow
-            paymentLog.setStatus(PaymentStatus.FAILED);
-            paymentLog.setMessage(e.getMessage());
-            paymentLogRepository.save(paymentLog);
-            throw new RuntimeException("Failed to retrieve payment: " + e.getMessage());
-        }
-    }
+  }
 }

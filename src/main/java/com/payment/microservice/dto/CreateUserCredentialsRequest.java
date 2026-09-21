@@ -13,22 +13,22 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CreateUserCredentialsRequest {
 
-    @NotNull(message = "User ID is required")
-    private Integer userId;
+  @NotNull(message = "User ID is required")
+  private Integer userId;
 
-    @NotNull(message = "Gateway is required")
-    private Integer gateway;
+  @NotNull(message = "Gateway is required")
+  private Integer gateway;
 
-    @NotBlank(message = "Gateway name is required")
-    private String gatewayName;
+  @NotBlank(message = "Gateway name is required")
+  private String gatewayName;
 
-    @NotBlank(message = "Public key is required")
-    private String publicKey;
+  @NotBlank(message = "Public key is required")
+  private String publicKey;
 
-    @NotBlank(message = "Secret key is required")
-    private String secretKey;
+  @NotBlank(message = "Secret key is required")
+  private String secretKey;
 
-    private String webhookSecret;
+  private String webhookSecret;
 
-    private String metadata;
+  private String metadata;
 }

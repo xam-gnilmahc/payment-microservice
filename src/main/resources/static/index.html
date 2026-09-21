@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Gateway</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="header">
+    <div class="header-inner">
+        <h1>Payment Gateway</h1>
+        <span class="header-badge">Select Gateway</span>
+    </div>
+</div>
+
+<div class="container" id="step-login">
+    <!-- LOGIN -->
+    <div class="card" id="loginForm">
+        <div class="card-header">
+            <div class="card-title">Welcome back</div>
+            <div class="card-subtitle">Sign in to continue</div>
+        </div>
+        <div class="banner banner-error" id="login-error"></div>
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="loginEmail" placeholder="you@example.com" />
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="loginPassword" placeholder="Enter password" />
+        </div>
+        <button class="btn btn-primary" id="loginBtn">Sign In</button>
+        <div class="separator"><span class="separator-line"></span><span class="separator-text">or</span><span class="separator-line"></span></div>
+        <div class="text-center">
+            <button class="btn-link" id="showRegister">Create an account</button>
+        </div>
+    </div>
+
+    <!-- REGISTER -->
+    <div class="card hidden" id="registerForm">
+        <div class="card-header">
+            <div class="card-title">Create account</div>
+            <div class="card-subtitle">Get started in seconds</div>
+        </div>
+        <div class="banner banner-error" id="reg-error"></div>
+        <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="regName" placeholder="John Doe" />
+        </div>
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="regEmail" placeholder="you@example.com" />
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="regPassword" placeholder="Min 6 characters" />
+        </div>
+        <button class="btn btn-primary" id="registerBtn">Create Account</button>
+        <div class="separator"><span class="separator-line"></span><span class="separator-text">or</span><span class="separator-line"></span></div>
+        <div class="text-center">
+            <button class="btn-link" id="showLogin">Already have an account? Sign in</button>
+        </div>
+    </div>
+
+    <!-- NO GATEWAY -->
+    <div class="card hidden" id="noGatewayMsg">
+        <div class="card-header">
+            <div class="card-title">No Payment Gateway</div>
+            <button class="btn-link" onclick="logout()" style="font-size:12px;">Logout</button>
+        </div>
+        <div class="text-center" style="padding: 20px 0;">
+            <div style="font-size:48px;margin-bottom:16px;">&#9888;</div>
+            <div style="font-size:16px;font-weight:600;color:#1a1a2e;margin-bottom:8px;">No payment gateway enabled</div>
+            <div style="font-size:13px;color:#8b8fa3;">Contact admin to enable a payment gateway for your account.</div>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <div class="info-title">How it works</div>
+        <div class="info-steps">
+            <div class="info-step">
+                <div class="info-step-num">1</div>
+                <div class="info-step-text"><strong>Sign in</strong> or create a new account to get started.</div>
+            </div>
+            <div class="info-step">
+                <div class="info-step-num">2</div>
+                <div class="info-step-text"><strong>Select payment gateway</strong> based on your account configuration.</div>
+            </div>
+            <div class="info-step">
+                <div class="info-step-num">3</div>
+                <div class="info-step-text"><strong>Complete payment</strong> securely through your configured gateway.</div>
+            </div>
+            <div class="info-step">
+                <div class="info-step-num">4</div>
+                <div class="info-step-text"><strong>Get confirmation</strong> with transaction ID and status.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/common/js/common.js"></script>
+<script src="/common/js/auth.js"></script>
+</body>
+</html>

@@ -13,29 +13,29 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CreateBillingAddressRequest {
 
-    @NotBlank(message = "Name is required")
-    private String name;
+  @NotBlank(message = "Name is required")
+  private String name;
 
-    @NotBlank(message = "Email is required")
-    @Email(message = "Invalid email")
-    private String email;
+  @NotBlank(message = "Email is required")
+  @Email(message = "Invalid email")
+  private String email;
 
-    @NotBlank(message = "Address line 1 is required")
-    private String addressLine1;
+  @NotBlank(message = "Address line 1 is required")
+  private String addressLine1;
 
-    private String addressLine2;
+  private String addressLine2;
 
-    @NotBlank(message = "City is required")
-    private String city;
+  @NotBlank(message = "City is required")
+  private String city;
 
-    @NotBlank(message = "State is required")
-    private String state;
+  @NotBlank(message = "State is required")
+  private String state;
 
-    @NotBlank(message = "Zip code is required")
-    private String zipCode;
+  @NotBlank(message = "Zip code is required")
+  private String zipCode;
 
-    @NotBlank(message = "Country is required")
-    private String country;
+  @NotBlank(message = "Country is required")
+  private String country;
 
-    private Boolean isDefault;
+  private Boolean isDefault;
 }

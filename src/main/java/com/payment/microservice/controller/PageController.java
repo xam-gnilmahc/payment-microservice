@@ -6,8 +6,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class PageController {
 
-    @GetMapping("/pay")
-    public String paymentPage() {
-        return "forward:/payment.html";
-    }
+  @GetMapping("/pay")
+  public String paymentPage() {
+    return "forward:/payment.html";
+  }
 }

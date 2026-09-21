@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stripe Payment</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="header">
+    <div class="header-inner">
+        <h1>Payment Gateway</h1>
+        <span class="header-badge" id="headerGatewayBadge">Stripe</span>
+    </div>
+</div>
+
+<!-- ===== NO GATEWAY ===== -->
+<div class="container hidden" id="step-no-gateway">
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">No Payment Gateway</div>
+            <button class="btn-link" onclick="goToLogin()" style="font-size:12px;">Logout</button>
+        </div>
+        <div class="text-center" style="padding: 40px 0;">
+            <div style="font-size:48px;margin-bottom:16px;">&#9888;</div>
+            <div style="font-size:16px;font-weight:600;color:#1a1a2e;margin-bottom:8px;">No payment gateway enabled</div>
+            <div style="font-size:13px;color:#8b8fa3;">Contact admin to enable a payment gateway for your account.</div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== STEP 2: CHECKOUT ===== -->
+<div class="container hidden" id="step-checkout">
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">New Payment — <span id="selectedGatewayTitle">-</span></div>
+            <div>
+                <button class="btn-link" onclick="goToLogin()" style="font-size:12px;">Logout</button>
+            </div>
+        </div>
+        <div class="banner banner-error" id="checkout-error"></div>
+
+        <div class="user-badge">
+            <div class="user-avatar" id="userAvatar">-</div>
+            <div class="user-info">
+                <div class="user-name" id="userName">-</div>
+                <div class="user-email" id="userEmailDisplay">-</div>
+            </div>
+            <div class="user-label">Customer</div>
+        </div>
+
+        <div class="form-group">
+            <label>Amount</label>
+            <div class="amount-wrapper">
+                <span class="currency">$</span>
+                <input type="number" id="amountInput" step="0.01" min="0.50" value="99.99" placeholder="0.00" />
+            </div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="section-label">
+            <span class="section-label-text">Billing Address</span>
+            <button class="btn-link" onclick="showBillingForm()" style="font-size:12px;">+ Add New</button>
+        </div>
+
+        <div id="addressList"></div>
+        <div id="addressEmpty" style="text-align:center;padding:20px 0;color:#b0b3c1;font-size:13px;">No billing address. <button class="btn-link" onclick="showBillingForm()" style="font-size:12px;">Add one</button></div>
+
+        <div class="divider"></div>
+        <button class="btn btn-primary" id="checkoutBtn">Continue to Pay</button>
+        <div style="text-align:center;margin-top:12px;">
+            <button class="btn-link" onclick="goToLogs()" style="font-size:12px;">Payment Logs</button>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <div class="info-title">How it works</div>
+        <div class="info-steps">
+            <div class="info-step">
+                <div class="info-step-num">1</div>
+                <div class="info-step-text"><strong>PaymentIntent</strong> is created on Stripe. No money is charged yet.</div>
+            </div>
+            <div class="info-step">
+                <div class="info-step-num">2</div>
+                <div class="info-step-text"><strong>Card details</strong> are entered on the next step. Stripe handles all security.</div>
+            </div>
+            <div class="info-step">
+                <div class="info-step-num">3</div>
+                <div class="info-step-text"><strong>3D Secure</strong> authentication is handled automatically if required.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== STEP 2B: NEW ADDRESS ===== -->
+<div class="container hidden" id="step-address">
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">New Billing Address</div>
+            <button class="btn-link" onclick="hideBillingForm()" style="font-size:12px;">Cancel</button>
+        </div>
+        <div class="banner banner-error" id="addr-error"></div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" id="addrName" placeholder="John Doe" />
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="addrEmail" placeholder="john@example.com" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Address Line 1</label>
+            <input type="text" id="addrLine1" placeholder="123 Main St" />
+        </div>
+        <div class="form-group">
+            <label>Address Line 2</label>
+            <input type="text" id="addrLine2" placeholder="Apt, Suite (optional)" />
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>City</label>
+                <input type="text" id="addrCity" placeholder="New York" />
+            </div>
+            <div class="form-group">
+                <label>State</label>
+                <input type="text" id="addrState" placeholder="NY" />
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Zip Code</label>
+                <input type="text" id="addrZip" placeholder="10001" />
+            </div>
+            <div class="form-group">
+                <label>Country</label>
+                <select id="addrCountry">
+                    <option value="">Select country</option>
+                    <option value="US">United States</option>
+                    <option value="GB">United Kingdom</option>
+                    <option value="CA">Canada</option>
+                    <option value="AU">Australia</option>
+                    <option value="DE">Germany</option>
+                    <option value="FR">France</option>
+                    <option value="IN">India</option>
+                    <option value="NP">Nepal</option>
+                    <option value="JP">Japan</option>
+                    <option value="BR">Brazil</option>
+                    <option value="SG">Singapore</option>
+                    <option value="AE">United Arab Emirates</option>
+                    <option value="SA">Saudi Arabia</option>
+                    <option value="PH">Philippines</option>
+                    <option value="MY">Malaysia</option>
+                    <option value="TH">Thailand</option>
+                    <option value="ID">Indonesia</option>
+                    <option value="VN">Vietnam</option>
+                    <option value="KR">South Korea</option>
+                    <option value="MX">Mexico</option>
+                    <option value="IT">Italy</option>
+                    <option value="ES">Spain</option>
+                    <option value="NL">Netherlands</option>
+                    <option value="SE">Sweden</option>
+                    <option value="CH">Switzerland</option>
+                    <option value="PK">Pakistan</option>
+                    <option value="BD">Bangladesh</option>
+                    <option value="LK">Sri Lanka</option>
+                    <option value="CN">China</option>
+                    <option value="NZ">New Zealand</option>
+                    <option value="IE">Ireland</option>
+                    <option value="PL">Poland</option>
+                    <option value="TR">Turkey</option>
+                    <option value="EG">Egypt</option>
+                    <option value="ZA">South Africa</option>
+                    <option value="NG">Nigeria</option>
+                    <option value="KE">Kenya</option>
+                    <option value="GH">Ghana</option>
+                    <option value="AR">Argentina</option>
+                    <option value="CL">Chile</option>
+                    <option value="CO">Colombia</option>
+                    <option value="PE">Peru</option>
+                    <option value="PT">Portugal</option>
+                    <option value="AT">Austria</option>
+                    <option value="BE">Belgium</option>
+                    <option value="DK">Denmark</option>
+                    <option value="FI">Finland</option>
+                    <option value="NO">Norway</option>
+                </select>
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="saveBillingAddress()">Save Address</button>
+    </div>
+</div>
+
+<!-- ===== STEP 3: CARD ===== -->
+<div class="container hidden" id="step-card">
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Pay with Card</div>
+            <button class="btn-link" onclick="goToCheckout()" style="font-size:12px;">Back</button>
+        </div>
+        <div class="banner banner-error" id="card-error"></div>
+        <div class="banner banner-success" id="card-success"></div>
+
+        <div class="amount-display">
+            <div class="label">Amount to Pay</div>
+            <div class="amount" id="payAmount">$0.00</div>
+        </div>
+
+        <div class="detail-row">
+            <span class="detail-label">PaymentIntent ID</span>
+            <span class="detail-value" id="detailPiId">-</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Customer</span>
+            <span class="detail-value" id="detailCustomer">-</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <div id="pr-button-container" style="margin-bottom:16px;"></div>
+
+        <div class="separator" id="payOrSeparator"><span class="separator-line"></span><span class="separator-text">or pay with card</span><span class="separator-line"></span></div>
+
+        <div class="form-group">
+            <label>Card Details</label>
+        </div>
+        <div id="card-element"></div>
+        <div id="card-errors"></div>
+
+        <button class="btn btn-primary" id="payBtn" style="margin-top:20px;">Pay Now</button>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Transaction Result</div>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">PaymentIntent ID</span>
+            <span class="detail-value" id="resultPiId">-</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Charge ID</span>
+            <span class="detail-value" id="detailChargeId">Waiting...</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Status</span>
+            <span class="detail-value" id="detailStatus"><span class="status-badge pending">Pending</span></span>
+        </div>
+    </div>
+
+    <div class="text-center" style="margin-top:8px;">
+        <button class="btn-link" onclick="goToCheckout()">Make another payment</button>
+    </div>
+</div>
+
+<!-- ===== STEP 4: PAYMENT LOGS ===== -->
+<div class="container container-wide hidden" id="step-logs">
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Payment Logs</div>
+            <button class="btn-link" onclick="goToCheckout()" style="font-size:12px;">Back</button>
+        </div>
+        <div class="banner banner-error" id="logs-error"></div>
+        <div id="logsTable"></div>
+        <div id="logsPagination"></div>
+        <div id="logsEmpty" style="text-align:center;padding:24px 0;color:#b0b3c1;font-size:13px;">No payment logs yet.</div>
+    </div>
+</div>
+<script src="https://pay.google.com/gp/p/js/pay.js"></script>
+<script src="/common/js/common.js"></script>
+<script src="/stripe/js/app.js"></script>
+<script src="/common/js/billing.js"></script>
+<script src="/stripe/js/checkout.js"></script>
+<script src="/stripe/js/card.js"></script>
+<script src="/common/js/logs.js"></script>
+
+</body>
+</html>

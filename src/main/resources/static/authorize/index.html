@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authorize.net Payment</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div class="header">
+    <div class="header-inner">
+        <h1>Payment Gateway</h1>
+        <span class="header-badge">Authorize.net</span>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Authorize.net</div>
+            <button class="btn-link" onclick="goHome()" style="font-size:12px;">Logout</button>
+        </div>
+        <div class="text-center" style="padding: 40px 0;">
+            <div style="font-size:48px;margin-bottom:16px;">&#128679;</div>
+            <div style="font-size:16px;font-weight:600;color:#1a1a2e;margin-bottom:8px;">Not Configured</div>
+            <div style="font-size:13px;color:#8b8fa3;max-width:300px;margin:0 auto;">Authorize.net payment gateway is not configured yet. Please contact admin or use Stripe for now.</div>
+        </div>
+    </div>
+</div>
+
+<script>
+function goHome() { localStorage.clear(); window.location.href = '/index.html'; }
+</script>
+</body>
+</html>

@@ -1,3 +1,33 @@
+// ===== LOGOUT =====
+function logout() { localStorage.clear(); token = null; window.location.href = '/index.html'; }
+
+// ===== ROUTE AFTER LOGIN =====
+async function routeToGateway() {
+    const user = getUser();
+    if (!user) return;
+    try {
+        const res = await fetch('/api/v1/payment-gateways/user/' + user.userId + '/enabled', { headers: authHeaders() });
+        if (res.status === 401 || res.status === 403) { localStorage.clear(); token = null; return; }
+        const data = await res.json();
+        console.log('[Route] gateway data:', data);
+        if (!data.success || !data.data) {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('noGatewayMsg').classList.remove('hidden');
+            return;
+        }
+        const title = (data.data.title || '').toLowerCase();
+        console.log('[Route] gateway title:', title);
+        if (title.includes('authorize')) {
+            window.location.href = '/authorize/index.html';
+        } else {
+            window.location.href = '/stripe/payment.html';
+        }
+    } catch (e) {
+        console.error('Route error:', e);
+    }
+}
+
 // ===== LOGIN =====
 document.getElementById('loginBtn').addEventListener('click', async () => {
     const email = document.getElementById('loginEmail').value.trim();
@@ -10,7 +40,9 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
         if (!data.success) { showMsg(err, data.message || 'Login failed.'); return; }
         token = data.data.token;
         localStorage.setItem('jwtToken', token);
-        goToGateway();
+        console.log('[Login] token set, calling routeToGateway');
+        console.log('[Login] getUser result:', getUser());
+        await routeToGateway();
     } catch (e) { showMsg(err, 'Server error: ' + e.message); }
 });
 
@@ -42,6 +74,11 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
         if (!data.success) { showMsg(err, data.message || 'Registration failed.'); return; }
         token = data.data.token;
         localStorage.setItem('jwtToken', token);
-        goToGateway();
+        await routeToGateway();
     } catch (e) { showMsg(err, 'Server error: ' + e.message); }
 });
+
+// ===== INIT =====
+if (token) {
+    routeToGateway();
+}

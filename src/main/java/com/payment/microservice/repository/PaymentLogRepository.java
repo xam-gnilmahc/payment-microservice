@@ -2,17 +2,22 @@ package com.payment.microservice.repository;
 
 import com.payment.microservice.model.PaymentLog;
 import com.payment.microservice.model.PaymentStatus;
+import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
 
 @Repository
 public interface PaymentLogRepository extends JpaRepository<PaymentLog, Long> {
 
-    List<PaymentLog> findByCustomerId(Long customerId);
+  List<PaymentLog> findByCustomerId(Long customerId);
 
-    List<PaymentLog> findByStatus(PaymentStatus status);
+  List<PaymentLog> findByEmail(String email);
 
-    List<PaymentLog> findAllByOrderByCreatedAtDesc();
+  List<PaymentLog> findByStatus(PaymentStatus status);
+
+  List<PaymentLog> findAllByOrderByCreatedAtDesc();
+
+  Page<PaymentLog> findAllByOrderByCreatedAtDesc(Pageable pageable);
 }
