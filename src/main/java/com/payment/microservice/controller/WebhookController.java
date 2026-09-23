@@ -331,6 +331,11 @@ public class WebhookController {
     }
 
     // Always insert a new row per event
+    String email = null;
+    if (chargeId != null && !chargeId.isBlank()) {
+      email = paymentLogRepository.findByChargeId(chargeId).map(PaymentLog::getEmail).orElse(null);
+    }
+
     RefundLog refundLog =
         RefundLog.builder()
             .transactionId(piId)
@@ -339,6 +344,7 @@ public class WebhookController {
             .amount(toDollars(amount))
             .currency(currency)
             .customerId(customerId)
+            .email(email)
             .cardReference(cardReference)
             .status(statusCode)
             .message(message)

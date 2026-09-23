@@ -29,11 +29,11 @@ function showSection(section, el) {
 }
 
 function paymentBadge(s) {
-    if (s === 'INITIATED' || s === '0') return '<span class="status-badge" style="background:#fef3c7;color:#92400e;">Initiated</span>';
-    if (s === 'PROCESSING' || s === '1') return '<span class="status-badge" style="background:#dbeafe;color:#1e40af;">Processing</span>';
-    if (s === 'SUCCEEDED' || s === '2') return '<span class="status-badge" style="background:#d1fae5;color:#065f46;">Succeeded</span>';
-    if (s === 'FAILED' || s === '3') return '<span class="status-badge" style="background:#fee2e2;color:#991b1b;">Failed</span>';
-    return '<span class="status-badge">' + s + '</span>';
+    if (s === 'INITIATED' || s === '0') return '<span class="status-badge initiated">Initiated</span>';
+    if (s === 'PROCESSING' || s === '1') return '<span class="status-badge processing">Processing</span>';
+    if (s === 'SUCCEEDED' || s === '2') return '<span class="status-badge success">Succeeded</span>';
+    if (s === 'FAILED' || s === '3') return '<span class="status-badge error">Failed</span>';
+    return '<span class="status-badge pending">' + s + '</span>';
 }
 
 function refundBadge(s) {
@@ -54,9 +54,9 @@ function esc(s) {
 }
 
 // ===== DASHBOARD =====
-const METHOD_COLORS = { CARD:'#6366f1', card:'#6366f1', google_pay:'#22c55e', GOOGLE_PAY:'#22c55e', apple_pay:'#f59e0b', APPLE_PAY:'#f59e0b', link:'#06b6d4', LINK:'#06b6d4', amazon_pay:'#ef4444', Unknown:'#94a3b8' };
-const FALLBACK_COLORS = ['#6366f1','#22c55e','#f59e0b','#ef4444','#06b6d4','#8b5cf6','#ec4899','#14b8a6'];
-const STATUS_COLORS = { Succeeded:'#22c55e', Failed:'#ef4444', Processing:'#f59e0b', Initiated:'#94a3b8' };
+const METHOD_COLORS = { CARD:'#18181b', card:'#18181b', google_pay:'#52525b', GOOGLE_PAY:'#52525b', apple_pay:'#71717a', APPLE_PAY:'#71717a', link:'#a1a1aa', LINK:'#a1a1aa', amazon_pay:'#3f3f46', Unknown:'#d4d4d8' };
+const FALLBACK_COLORS = ['#18181b','#52525b','#71717a','#a1a1aa','#d4d4d8','#3f3f46','#e4e4e7','#27272a'];
+const STATUS_COLORS = { Succeeded:'#16a34a', Failed:'#dc2626', Processing:'#d97706', Initiated:'#71717a' };
 
 let dashboardCharts = { methods: null, status: null, transactions: null, revenue: null };
 let dashboardLoading = false;
@@ -76,6 +76,16 @@ async function loadDashboard() {
         document.getElementById('statFailed').textContent = d.failed ?? '-';
         document.getElementById('statRefunds').textContent = d.totalRefunds ?? '-';
 
+        const total = d.totalPayments || 0;
+        const succRate = total > 0 ? ((d.succeeded / total) * 100).toFixed(1) : null;
+        const failRate = total > 0 ? ((d.failed / total) * 100).toFixed(1) : null;
+        document.getElementById('statSuccessRate').textContent = succRate !== null ? succRate + '% success rate' : 'No payments in range';
+        document.getElementById('statFailRate').textContent = failRate !== null ? failRate + '% failure rate' : 'No payments in range';
+
+        let revenue = 0;
+        Object.values(d.dailyRevenue || {}).forEach(v => { revenue += Number(v) || 0; });
+        document.getElementById('statRevenue').textContent = '$' + revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
         renderDashboardCharts(d);
     } catch (e) { console.error(e); }
     finally { dashboardLoading = false; }
@@ -84,6 +94,18 @@ async function loadDashboard() {
 function destroyChart(key) {
     if (dashboardCharts[key]) { dashboardCharts[key].destroy(); dashboardCharts[key] = null; }
 }
+
+const CHART_FONT = { family: "'Inter', sans-serif", size: 11 };
+const CHART_GRID = { color: '#f4f4f5', drawBorder: false };
+const doughnutOpts = (legendPos = 'bottom') => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '68%',
+    plugins: {
+        legend: { position: legendPos, labels: { padding: 14, usePointStyle: true, pointStyleWidth: 8, font: CHART_FONT, color: '#64748b' } },
+        tooltip: { backgroundColor: '#09090b', padding: 10, cornerRadius: 8, titleFont: { ...CHART_FONT, weight: '600' }, bodyFont: CHART_FONT, displayColors: true, boxPadding: 4 }
+    }
+});
 
 function renderDashboardCharts(d) {
     destroyChart('methods'); destroyChart('status'); destroyChart('transactions'); destroyChart('revenue');
@@ -96,9 +118,9 @@ function renderDashboardCharts(d) {
         type: 'doughnut',
         data: {
             labels: methodLabels.length ? methodLabels : ['No Data'],
-            datasets: [{ data: methodValues.length ? methodValues : [1], backgroundColor: methodLabels.length ? methodColors : ['#e2e4e9'], borderWidth: 0 }]
+            datasets: [{ data: methodValues.length ? methodValues : [1], backgroundColor: methodLabels.length ? methodColors : ['#e2e8f0'], borderWidth: 0, hoverOffset: 6 }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 12, font: { size: 11 } } } } }
+        options: doughnutOpts()
     });
 
     const statusLabels = Object.keys(d.statusCounts || {});
@@ -108,9 +130,9 @@ function renderDashboardCharts(d) {
         type: 'doughnut',
         data: {
             labels: statusLabels.length ? statusLabels : ['No Data'],
-            datasets: [{ data: statusValues.length ? statusValues : [1], backgroundColor: statusLabels.length ? statusLabels.map(s => STATUS_COLORS[s] || '#94a3b8') : ['#e2e4e9'], borderWidth: 0 }]
+            datasets: [{ data: statusValues.length ? statusValues : [1], backgroundColor: statusLabels.length ? statusLabels.map(s => STATUS_COLORS[s] || '#94a3b8') : ['#e2e8f0'], borderWidth: 0, hoverOffset: 6 }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 12, font: { size: 11 } } } } }
+        options: doughnutOpts()
     });
 
     const days = Object.keys(d.dailyCounts || {}).sort();
@@ -120,18 +142,48 @@ function renderDashboardCharts(d) {
         type: 'bar',
         data: {
             labels: dayLabels.length ? dayLabels : ['No Data'],
-            datasets: [{ label: 'Transactions', data: days.length ? days.map(day => d.dailyCounts[day] || 0) : [0], backgroundColor: '#6366f1', borderRadius: 4 }]
+            datasets: [{ label: 'Transactions', data: days.length ? days.map(day => d.dailyCounts[day] || 0) : [0], backgroundColor: '#18181b', hoverBackgroundColor: '#3f3f46', borderRadius: 6, borderSkipped: false, maxBarThickness: 28 }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { grid: { display: false } } } }
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { backgroundColor: '#09090b', padding: 10, cornerRadius: 8, bodyFont: CHART_FONT, titleFont: CHART_FONT } },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1, font: CHART_FONT, color: '#94a3b8' }, grid: CHART_GRID, border: { display: false } },
+                x: { grid: { display: false }, ticks: { font: CHART_FONT, color: '#94a3b8', maxRotation: 0, autoSkipPadding: 12 }, border: { display: false } }
+            }
+        }
     });
 
     dashboardCharts.revenue = new Chart(document.getElementById('chartRevenue'), {
         type: 'line',
         data: {
             labels: dayLabels.length ? dayLabels : ['No Data'],
-            datasets: [{ label: 'Revenue ($)', data: days.length ? days.map(day => (d.dailyRevenue || {})[day] || 0) : [0], borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: '#22c55e' }]
+            datasets: [{
+                label: 'Revenue ($)',
+                data: days.length ? days.map(day => (d.dailyRevenue || {})[day] || 0) : [0],
+                borderColor: '#16a34a',
+                backgroundColor: 'rgba(22, 163, 74, 0.06)',
+                fill: true,
+                tension: 0.35,
+                borderWidth: 2.5,
+                pointRadius: 3,
+                pointHoverRadius: 5,
+                pointBackgroundColor: '#16a34a',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
+            }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { backgroundColor: '#09090b', padding: 10, cornerRadius: 8, bodyFont: CHART_FONT, titleFont: CHART_FONT, callbacks: { label: c => ' $' + Number(c.parsed.y).toFixed(2) } }
+            },
+            scales: {
+                y: { beginAtZero: true, ticks: { font: CHART_FONT, color: '#94a3b8', callback: v => '$' + v }, grid: CHART_GRID, border: { display: false } },
+                x: { grid: { display: false }, ticks: { font: CHART_FONT, color: '#94a3b8', maxRotation: 0, autoSkipPadding: 12 }, border: { display: false } }
+            }
+        }
     });
 }
 
@@ -175,7 +227,7 @@ async function loadAllLogs(page) {
         body.innerHTML = items.map(l => `
             <tr>
                 <td>${l.id}</td>
-                <td>${l.customerId || '-'}</td>
+                <td>${esc(l.email) || (l.customerId ? 'User #' + l.customerId : '-')}</td>
                 <td>${esc(l.paymentMethod) || '-'}</td>
                 <td style="font-weight:600;white-space:nowrap;">${l.currency ? l.currency.toUpperCase() : 'USD'} $${parseFloat(l.amount).toFixed(2)}</td>
                 <td>${paymentBadge(l.status)}</td>
@@ -220,7 +272,7 @@ async function loadAdminRefundLogs(page = 0) {
     const body = document.getElementById('adminRefundLogsBody');
     const errEl = document.getElementById('adminRefundLogsError');
     errEl.classList.remove('show');
-    body.innerHTML = '<tr><td colspan="8" class="admin-loading">Loading...</td></tr>';
+    body.innerHTML = '<tr><td colspan="7" class="admin-loading">Loading...</td></tr>';
     try {
         let url;
         if (adminRefundUserId) {
@@ -234,15 +286,14 @@ async function loadAdminRefundLogs(page = 0) {
 
         const items = Array.isArray(data.data) ? data.data : (data.data?.logs || data.data?.content || []);
         if (items.length === 0) {
-            body.innerHTML = '<tr><td colspan="8" class="admin-empty">No refund logs found.</td></tr>';
+            body.innerHTML = '<tr><td colspan="7" class="admin-empty">No refund logs found.</td></tr>';
             document.getElementById('adminRefundLogsPagination').innerHTML = '';
             return;
         }
         body.innerHTML = items.map(r => `
             <tr>
                 <td style="font-family:monospace;font-size:12px;white-space:nowrap;">${esc(r.refundId) || '-'}</td>
-                <td>${r.paymentLogId || '-'}</td>
-                <td>${r.customerId || '-'}</td>
+                <td>${esc(r.email) || (r.customerId ? 'User #' + r.customerId : '-')}</td>
                 <td style="font-family:monospace;font-size:12px;white-space:nowrap;">${esc(r.cardReference) || '-'}</td>
                 <td style="font-weight:600;white-space:nowrap;">${r.currency ? r.currency.toUpperCase() : 'USD'} $${parseFloat(r.amount).toFixed(2)}</td>
                 <td>${refundBadge(r.status)}</td>

@@ -5,6 +5,10 @@ function logout() { localStorage.clear(); token = null; window.location.href = '
 async function routeToGateway() {
     const user = getUser();
     if (!user) return;
+    if (String(user.isSuperAdmin) === '1') {
+        window.location.href = '/admin/index.html';
+        return;
+    }
     try {
         const res = await fetch('/api/v1/payment-gateways/user/' + user.userId + '/enabled', { headers: authHeaders() });
         if (res.status === 401 || res.status === 403) { localStorage.clear(); token = null; return; }

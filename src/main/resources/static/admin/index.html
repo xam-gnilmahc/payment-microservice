@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel</title>
+    <title>Admin · Analytics</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/admin.css">
@@ -14,13 +14,39 @@
 <div class="admin-layout">
     <!-- SIDEBAR -->
     <aside class="admin-sidebar">
-        <div class="admin-sidebar-header">Admin Panel</div>
+        <div class="admin-sidebar-header">
+            <div class="admin-logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div class="admin-brand">
+                <div class="admin-brand-name">PayAdmin</div>
+                <div class="admin-brand-tag">Analytics</div>
+            </div>
+        </div>
         <nav class="admin-nav">
-            <button class="admin-nav-item active" data-section="dashboard" onclick="showSection('dashboard', this)">Dashboard</button>
-            <button class="admin-nav-item" data-section="gateways" onclick="showSection('gateways', this)">Payment Gateways</button>
-            <button class="admin-nav-item" data-section="users" onclick="showSection('users', this)">Users</button>
-            <button class="admin-nav-item" data-section="all-logs" onclick="showSection('all-logs', this)">All Payment Logs</button>
-            <button class="admin-nav-item" data-section="refund-logs" onclick="showSection('refund-logs', this)">Refund Logs</button>
+            <div class="admin-nav-label">Overview</div>
+            <button class="admin-nav-item active" data-section="dashboard" onclick="showSection('dashboard', this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+                Dashboard
+            </button>
+            <div class="admin-nav-label">Manage</div>
+            <button class="admin-nav-item" data-section="gateways" onclick="showSection('gateways', this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+                Payment Gateways
+            </button>
+            <button class="admin-nav-item" data-section="users" onclick="showSection('users', this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Users
+            </button>
+            <div class="admin-nav-label">Activity</div>
+            <button class="admin-nav-item" data-section="all-logs" onclick="showSection('all-logs', this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+                All Payment Logs
+            </button>
+            <button class="admin-nav-item" data-section="refund-logs" onclick="showSection('refund-logs', this)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                Refund Logs
+            </button>
         </nav>
         <div class="admin-sidebar-footer">
             <div class="user-email-mini" id="adminEmail">-</div>
@@ -33,10 +59,13 @@
 
         <!-- DASHBOARD -->
         <div class="admin-section active" id="section-dashboard">
-            <div class="filter-bar">
-                <div class="admin-title" style="margin-bottom:0;">Dashboard</div>
-                <div class="range-bar" style="margin-bottom:0;">
-                    <label>Date Range:</label>
+            <div class="page-header">
+                <div>
+                    <div class="page-title">Dashboard</div>
+                    <div class="page-subtitle">Live payment performance and revenue overview</div>
+                </div>
+                <div class="range-bar">
+                    <label>Date Range</label>
                     <select id="dashRange" onchange="loadDashboard()">
                         <option value="today">Today</option>
                         <option value="week" selected>This Week</option>
@@ -48,27 +77,98 @@
             </div>
 
             <div class="stats-grid">
-                <div class="stat-card"><div class="stat-label">Total Payments</div><div class="stat-value" id="statTotal">-</div></div>
-                <div class="stat-card"><div class="stat-label">Succeeded</div><div class="stat-value green" id="statSucceeded">-</div></div>
-                <div class="stat-card"><div class="stat-label">Failed</div><div class="stat-value red" id="statFailed">-</div></div>
-                <div class="stat-card"><div class="stat-label">Total Refunds</div><div class="stat-value" id="statRefunds">-</div></div>
+                <div class="stat-card accent-black">
+                    <div class="stat-card-top">
+                        <div class="stat-icon black">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+                        </div>
+                        <span class="stat-chip live">Live</span>
+                    </div>
+                    <div class="stat-label">Total Payments</div>
+                    <div class="stat-value" id="statTotal">-</div>
+                    <div class="stat-hint">All transactions in range</div>
+                </div>
+
+                <div class="stat-card accent-green">
+                    <div class="stat-card-top">
+                        <div class="stat-icon green">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                        </div>
+                    </div>
+                    <div class="stat-label">Succeeded</div>
+                    <div class="stat-value green" id="statSucceeded">-</div>
+                    <div class="stat-hint" id="statSuccessRate">—</div>
+                </div>
+
+                <div class="stat-card accent-red">
+                    <div class="stat-card-top">
+                        <div class="stat-icon red">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
+                        </div>
+                    </div>
+                    <div class="stat-label">Failed</div>
+                    <div class="stat-value red" id="statFailed">-</div>
+                    <div class="stat-hint" id="statFailRate">—</div>
+                </div>
+
+                <div class="stat-card accent-amber">
+                    <div class="stat-card-top">
+                        <div class="stat-icon amber">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                        </div>
+                    </div>
+                    <div class="stat-label">Total Refunds</div>
+                    <div class="stat-value" id="statRefunds">-</div>
+                    <div class="stat-hint">Succeeded refunds</div>
+                </div>
+
+                <div class="stat-card accent-zinc">
+                    <div class="stat-card-top">
+                        <div class="stat-icon zinc">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        </div>
+                    </div>
+                    <div class="stat-label">Revenue</div>
+                    <div class="stat-value" id="statRevenue">-</div>
+                    <div class="stat-hint">Succeeded volume in range</div>
+                </div>
             </div>
 
             <div class="charts-grid">
                 <div class="chart-card">
-                    <div class="chart-title">Payment Methods</div>
+                    <div class="chart-header">
+                        <div>
+                            <div class="chart-title">Payment Methods</div>
+                            <div class="chart-sub">Distribution by gateway method</div>
+                        </div>
+                    </div>
                     <div class="chart-body"><canvas id="chartMethods"></canvas></div>
                 </div>
                 <div class="chart-card">
-                    <div class="chart-title">Payment Status</div>
+                    <div class="chart-header">
+                        <div>
+                            <div class="chart-title">Payment Status</div>
+                            <div class="chart-sub">Outcome breakdown</div>
+                        </div>
+                    </div>
                     <div class="chart-body"><canvas id="chartStatus"></canvas></div>
                 </div>
                 <div class="chart-card">
-                    <div class="chart-title">Transactions Over Time</div>
+                    <div class="chart-header">
+                        <div>
+                            <div class="chart-title">Transactions Over Time</div>
+                            <div class="chart-sub">Daily payment volume</div>
+                        </div>
+                    </div>
                     <div class="chart-body"><canvas id="chartTransactions"></canvas></div>
                 </div>
                 <div class="chart-card">
-                    <div class="chart-title">Revenue Over Time</div>
+                    <div class="chart-header">
+                        <div>
+                            <div class="chart-title">Revenue Over Time</div>
+                            <div class="chart-sub">Daily succeeded revenue</div>
+                        </div>
+                    </div>
                     <div class="chart-body"><canvas id="chartRevenue"></canvas></div>
                 </div>
             </div>
@@ -76,7 +176,12 @@
 
         <!-- GATEWAYS -->
         <div class="admin-section" id="section-gateways">
-            <div class="admin-title">Payment Gateways</div>
+            <div class="page-header">
+                <div>
+                    <div class="page-title">Payment Gateways</div>
+                    <div class="page-subtitle">Configure and monitor gateway providers</div>
+                </div>
+            </div>
             <div class="admin-table-wrap">
                 <table class="admin-table" id="gatewaysTable">
                     <thead>
@@ -91,7 +196,12 @@
 
         <!-- USERS -->
         <div class="admin-section" id="section-users">
-            <div class="admin-title">Users</div>
+            <div class="page-header">
+                <div>
+                    <div class="page-title">Users</div>
+                    <div class="page-subtitle">Manage accounts, gateway access and credentials</div>
+                </div>
+            </div>
             <div class="banner banner-error" id="users-error"></div>
             <div class="banner banner-success" id="users-success"></div>
             <div class="admin-table-wrap">
@@ -149,7 +259,10 @@
         <!-- ALL PAYMENT LOGS -->
         <div class="admin-section" id="section-all-logs">
             <div class="filter-bar">
-                <div class="admin-title" style="margin-bottom:0;">All Payment Logs <span class="filter-subtitle" id="allLogsUserFilter"></span></div>
+                <div>
+                    <div class="page-title" style="font-size:20px;margin-bottom:2px;">All Payment Logs <span class="filter-subtitle" id="allLogsUserFilter"></span></div>
+                    <div class="page-subtitle">Newest first · filter by status</div>
+                </div>
                 <select id="allLogsStatusFilter" onchange="loadAllLogs(0)">
                     <option value="">All Statuses</option>
                     <option value="SUCCEEDED">Succeeded</option>
@@ -175,16 +288,19 @@
         <!-- REFUND LOGS -->
         <div class="admin-section" id="section-refund-logs">
             <div class="filter-bar">
-                <div class="admin-title" style="margin-bottom:0;">Refund Logs <span class="filter-subtitle" id="refundLogsUserFilter"></span></div>
+                <div>
+                    <div class="page-title" style="font-size:20px;margin-bottom:2px;">Refund Logs <span class="filter-subtitle" id="refundLogsUserFilter"></span></div>
+                    <div class="page-subtitle">Refund events · newest first</div>
+                </div>
             </div>
             <div class="banner banner-error" id="adminRefundLogsError"></div>
             <div class="admin-table-wrap">
                 <table class="admin-table">
                     <thead>
-                        <tr><th>Refund ID</th><th>Payment Log</th><th>Customer</th><th>Card Reference</th><th>Amount</th><th>Status</th><th>Message</th><th>Created At</th></tr>
+                        <tr><th>Refund ID</th><th>Customer</th><th>Card Reference</th><th>Amount</th><th>Status</th><th>Message</th><th>Created At</th></tr>
                     </thead>
                     <tbody id="adminRefundLogsBody">
-                        <tr><td colspan="8" class="admin-loading">Loading...</td></tr>
+                        <tr><td colspan="7" class="admin-loading">Loading...</td></tr>
                     </tbody>
                 </table>
             </div>

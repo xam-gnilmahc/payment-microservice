@@ -78,25 +78,91 @@ public class AdminController {
     }
   }
 
+  @GetMapping("/payment-logs")
+  public ResponseEntity<ApiResponse<Map<String, Object>>> getPaymentLogs(
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "50") int size,
+      @RequestParam(required = false) String status) {
+    org.springframework.data.domain.PageRequest pageable =
+        org.springframework.data.domain.PageRequest.of(page, size);
+    org.springframework.data.domain.Page<PaymentLog> logPage;
+    if (status != null && !status.isBlank()) {
+      PaymentStatus st;
+      try {
+        st = PaymentStatus.valueOf(status.trim().toUpperCase());
+      } catch (IllegalArgumentException e) {
+        return ResponseEntity.badRequest()
+            .body(ApiResponse.error("Invalid status: " + status, 400));
+      }
+      logPage = paymentLogRepository.findByStatusOrderByIdDesc(st, pageable);
+    } else {
+      logPage = paymentLogRepository.findAllByIdDesc(pageable);
+    }
+    Map<String, Object> response = new HashMap<>();
+    response.put("logs", logPage.getContent());
+    response.put("currentPage", logPage.getNumber());
+    response.put("totalPages", logPage.getTotalPages());
+    response.put("totalElements", logPage.getTotalElements());
+    return ResponseEntity.ok(ApiResponse.success("Payment logs fetched", 200, response));
+  }
+
   @GetMapping("/refund-logs")
-  public ResponseEntity<ApiResponse<Iterable<RefundLog>>> getRefundLogs() {
-    return ResponseEntity.ok(
-        ApiResponse.success("Refund logs fetched", 200, refundLogRepository.findAll()));
+  public ResponseEntity<ApiResponse<Map<String, Object>>> getRefundLogs(
+      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "50") int size) {
+    org.springframework.data.domain.Page<RefundLog> logPage =
+        refundLogRepository.findAllByIdDesc(
+            org.springframework.data.domain.PageRequest.of(page, size));
+    Map<String, Object> response = new HashMap<>();
+    response.put("logs", logPage.getContent());
+    response.put("currentPage", logPage.getNumber());
+    response.put("totalPages", logPage.getTotalPages());
+    response.put("totalElements", logPage.getTotalElements());
+    return ResponseEntity.ok(ApiResponse.success("Refund logs fetched", 200, response));
   }
 
   @GetMapping("/user/{userId}/payment-logs")
-  public ResponseEntity<ApiResponse<List<PaymentLog>>> getUserPaymentLogs(
-      @PathVariable Long userId) {
-    return ResponseEntity.ok(
-        ApiResponse.success(
-            "User payment logs fetched", 200, paymentLogRepository.findByCustomerId(userId)));
+  public ResponseEntity<ApiResponse<Map<String, Object>>> getUserPaymentLogs(
+      @PathVariable Long userId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "50") int size,
+      @RequestParam(required = false) String status) {
+    org.springframework.data.domain.PageRequest pageable =
+        org.springframework.data.domain.PageRequest.of(page, size);
+    org.springframework.data.domain.Page<PaymentLog> logPage;
+    if (status != null && !status.isBlank()) {
+      PaymentStatus st;
+      try {
+        st = PaymentStatus.valueOf(status.trim().toUpperCase());
+      } catch (IllegalArgumentException e) {
+        return ResponseEntity.badRequest()
+            .body(ApiResponse.error("Invalid status: " + status, 400));
+      }
+      logPage = paymentLogRepository.findByCustomerIdAndStatusOrderByIdDesc(userId, st, pageable);
+    } else {
+      logPage = paymentLogRepository.findByCustomerIdOrderByIdDesc(userId, pageable);
+    }
+    Map<String, Object> response = new HashMap<>();
+    response.put("logs", logPage.getContent());
+    response.put("currentPage", logPage.getNumber());
+    response.put("totalPages", logPage.getTotalPages());
+    response.put("totalElements", logPage.getTotalElements());
+    return ResponseEntity.ok(ApiResponse.success("User payment logs fetched", 200, response));
   }
 
   @GetMapping("/user/{userId}/refund-logs")
-  public ResponseEntity<ApiResponse<List<RefundLog>>> getUserRefundLogs(@PathVariable Long userId) {
-    return ResponseEntity.ok(
-        ApiResponse.success(
-            "User refund logs fetched", 200, refundLogRepository.findByCustomerId(userId)));
+  public ResponseEntity<ApiResponse<Map<String, Object>>> getUserRefundLogs(
+      @PathVariable Long userId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "50") int size) {
+    org.springframework.data.domain.Page<RefundLog> logPage =
+        refundLogRepository.findByCustomerIdOrderByIdDesc(
+            userId, org.springframework.data.domain.PageRequest.of(page, size));
+    Map<String, Object> response = new HashMap<>();
+    response.put("logs", logPage.getContent());
+    response.put("currentPage", logPage.getNumber());
+    response.put("totalPages", logPage.getTotalPages());
+    response.put("totalElements", logPage.getTotalElements());
+    return ResponseEntity.ok(ApiResponse.success("User refund logs fetched", 200, response));
   }
 
   @GetMapping("/user-gateways")
@@ -209,53 +275,38 @@ public class AdminController {
         break;
     }
 
-    List<PaymentLog> logs = paymentLogRepository.findAllByOrderByCreatedAtDesc();
-    List<RefundLog> refunds = refundLogRepository.findAll();
-
-    // Filter by date range
-    List<PaymentLog> filtered =
-        logs.stream()
-            .filter(l -> l.getCreatedAt() != null && l.getCreatedAt().isAfter(startDate))
-            .toList();
-    List<RefundLog> filteredRefunds =
-        refunds.stream()
-            .filter(r -> r.getCreatedAt() != null && r.getCreatedAt().isAfter(startDate))
-            .filter(r -> "1".equals(r.getStatus()))
-            .toList();
-
-    // Counts
+    // DB-level aggregation — no full table load
+    long totalPayments = paymentLogRepository.countByCreatedAtAfter(startDate);
     long succeeded =
-        filtered.stream().filter(l -> l.getStatus() == PaymentStatus.SUCCEEDED).count();
-    long failed = filtered.stream().filter(l -> l.getStatus() == PaymentStatus.FAILED).count();
+        paymentLogRepository.countByCreatedAtAfterAndStatus(startDate, PaymentStatus.SUCCEEDED);
+    long failed =
+        paymentLogRepository.countByCreatedAtAfterAndStatus(startDate, PaymentStatus.FAILED);
+    long totalRefunds = refundLogRepository.countSucceededByCreatedAtAfter(startDate);
 
-    // Payment method breakdown
     Map<String, Long> methodCounts = new HashMap<>();
-    for (PaymentLog l : filtered) {
-      String method = l.getPaymentMethod() != null ? l.getPaymentMethod() : "Unknown";
-      methodCounts.merge(method, 1L, Long::sum);
+    for (Object[] row : paymentLogRepository.countGroupByPaymentMethod(startDate)) {
+      methodCounts.put((String) row[0], (Long) row[1]);
     }
 
-    // Status breakdown
     Map<String, Long> statusCounts = new HashMap<>();
-    for (PaymentLog l : filtered) {
-      String status = l.getStatus() != null ? l.getStatus().getLabel() : "Unknown";
-      statusCounts.merge(status, 1L, Long::sum);
+    for (Object[] row : paymentLogRepository.countGroupByStatus(startDate)) {
+      PaymentStatus st = (PaymentStatus) row[0];
+      statusCounts.put(st != null ? st.getLabel() : "Unknown", (Long) row[1]);
     }
 
-    // Timeline (daily)
     Map<String, Long> dailyCounts = new HashMap<>();
     Map<String, Double> dailyRevenue = new HashMap<>();
-    for (PaymentLog l : filtered) {
-      String day = l.getCreatedAt().toLocalDate().toString();
-      dailyCounts.merge(day, 1L, Long::sum);
-      dailyRevenue.merge(day, l.getAmount() != null ? l.getAmount().doubleValue() : 0, Double::sum);
+    for (Object[] row : paymentLogRepository.dailyCountsAndRevenue(startDate)) {
+      String day = row[0] != null ? row[0].toString() : "unknown";
+      dailyCounts.put(day, (Long) row[1]);
+      dailyRevenue.put(day, ((Number) row[2]).doubleValue());
     }
 
     Map<String, Object> result = new HashMap<>();
-    result.put("totalPayments", filtered.size());
+    result.put("totalPayments", totalPayments);
     result.put("succeeded", succeeded);
     result.put("failed", failed);
-    result.put("totalRefunds", filteredRefunds.size());
+    result.put("totalRefunds", totalRefunds);
     result.put("methodCounts", methodCounts);
     result.put("statusCounts", statusCounts);
     result.put("dailyCounts", dailyCounts);

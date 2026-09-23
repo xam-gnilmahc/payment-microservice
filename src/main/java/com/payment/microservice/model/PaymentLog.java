@@ -10,7 +10,17 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
-@Table(name = "payment_logs")
+@Table(
+    name = "payment_logs",
+    indexes = {
+      @Index(name = "idx_pl_created_at", columnList = "created_at"),
+      @Index(name = "idx_pl_customer_created", columnList = "customer_id, created_at"),
+      @Index(name = "idx_pl_charge_id", columnList = "charge_id"),
+      @Index(name = "idx_pl_transaction_id", columnList = "transaction_id"),
+      @Index(name = "idx_pl_email", columnList = "email"),
+      @Index(name = "idx_pl_status_created", columnList = "status, created_at"),
+      @Index(name = "idx_pl_created_status", columnList = "created_at, status")
+    })
 @Data
 @Builder
 @NoArgsConstructor
