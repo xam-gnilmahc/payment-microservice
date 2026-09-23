@@ -23,4 +23,6 @@ public interface PaymentLogRepository extends JpaRepository<PaymentLog, Long> {
   Page<PaymentLog> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
   Optional<PaymentLog> findByChargeId(String chargeId);
+
+  Optional<PaymentLog> findByTransactionId(String transactionId);
 }

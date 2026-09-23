@@ -34,7 +34,8 @@ public class JwtAuth extends OncePerRequestFilter {
         || path.startsWith("/stripe/")
         || path.startsWith("/authorize/")
         || path.startsWith("/css/")
-        || path.startsWith("/common/");
+        || path.startsWith("/common/")
+        || path.startsWith("/admin/");
   }
 
   @Override

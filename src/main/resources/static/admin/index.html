@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="admin-layout">
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar">
+        <div class="admin-sidebar-header">Admin Panel</div>
+        <nav class="admin-nav">
+            <button class="admin-nav-item active" data-section="dashboard" onclick="showSection('dashboard', this)">Dashboard</button>
+            <button class="admin-nav-item" data-section="gateways" onclick="showSection('gateways', this)">Payment Gateways</button>
+            <button class="admin-nav-item" data-section="users" onclick="showSection('users', this)">Users</button>
+            <button class="admin-nav-item" data-section="all-logs" onclick="showSection('all-logs', this)">All Payment Logs</button>
+            <button class="admin-nav-item" data-section="refund-logs" onclick="showSection('refund-logs', this)">Refund Logs</button>
+        </nav>
+        <div class="admin-sidebar-footer">
+            <div class="user-email-mini" id="adminEmail">-</div>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="admin-main">
+
+        <!-- DASHBOARD -->
+        <div class="admin-section active" id="section-dashboard">
+            <div class="filter-bar">
+                <div class="admin-title" style="margin-bottom:0;">Dashboard</div>
+                <div class="range-bar" style="margin-bottom:0;">
+                    <label>Date Range:</label>
+                    <select id="dashRange" onchange="loadDashboard()">
+                        <option value="today">Today</option>
+                        <option value="week" selected>This Week</option>
+                        <option value="month">This Month</option>
+                        <option value="year">This Year</option>
+                        <option value="all">All Time</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-label">Total Payments</div><div class="stat-value" id="statTotal">-</div></div>
+                <div class="stat-card"><div class="stat-label">Succeeded</div><div class="stat-value green" id="statSucceeded">-</div></div>
+                <div class="stat-card"><div class="stat-label">Failed</div><div class="stat-value red" id="statFailed">-</div></div>
+                <div class="stat-card"><div class="stat-label">Total Refunds</div><div class="stat-value" id="statRefunds">-</div></div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-title">Payment Methods</div>
+                    <div class="chart-body"><canvas id="chartMethods"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">Payment Status</div>
+                    <div class="chart-body"><canvas id="chartStatus"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">Transactions Over Time</div>
+                    <div class="chart-body"><canvas id="chartTransactions"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">Revenue Over Time</div>
+                    <div class="chart-body"><canvas id="chartRevenue"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GATEWAYS -->
+        <div class="admin-section" id="section-gateways">
+            <div class="admin-title">Payment Gateways</div>
+            <div class="admin-table-wrap">
+                <table class="admin-table" id="gatewaysTable">
+                    <thead>
+                        <tr><th>ID</th><th>Title</th><th>Status</th><th>Assigned Users</th><th>Created At</th></tr>
+                    </thead>
+                    <tbody id="gatewaysBody">
+                        <tr><td colspan="5" class="admin-loading">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- USERS -->
+        <div class="admin-section" id="section-users">
+            <div class="admin-title">Users</div>
+            <div class="banner banner-error" id="users-error"></div>
+            <div class="banner banner-success" id="users-success"></div>
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr><th>ID</th><th>Name</th><th>Email</th><th>Gateways</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody id="usersBody">
+                        <tr><td colspan="5" class="admin-loading">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ASSIGN MODAL -->
+            <div class="admin-modal-overlay" id="assignModal">
+                <div class="admin-modal">
+                    <div class="card-header" style="margin-bottom:16px;">
+                        <div class="card-title">Assign Gateway</div>
+                        <button class="btn-link" onclick="closeAssignModal()" style="font-size:12px;">Cancel</button>
+                    </div>
+                    <div class="form-group">
+                        <label>Gateway</label>
+                        <select id="assignGatewaySelect">
+                            <option value="">Select gateway</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="submitAssign()">Assign</button>
+                </div>
+            </div>
+
+            <!-- CREDENTIALS MODAL -->
+            <div class="admin-modal-overlay" id="credentialModal">
+                <div class="admin-modal">
+                    <div class="card-header" style="margin-bottom:16px;">
+                        <div class="card-title">Gateway Credentials</div>
+                        <button class="btn-link" onclick="closeCredentialModal()" style="font-size:12px;">Cancel</button>
+                    </div>
+                    <div class="form-group">
+                        <label>Public Key</label>
+                        <input type="text" id="credPublicKey" placeholder="pk_..." />
+                    </div>
+                    <div class="form-group">
+                        <label>Secret Key</label>
+                        <input type="password" id="credSecretKey" placeholder="sk_..." />
+                    </div>
+                    <div class="form-group">
+                        <label>Webhook Secret</label>
+                        <input type="password" id="credWebhookSecret" placeholder="whsec_..." />
+                    </div>
+                    <button class="btn btn-primary" onclick="saveCredentials()">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ALL PAYMENT LOGS -->
+        <div class="admin-section" id="section-all-logs">
+            <div class="filter-bar">
+                <div class="admin-title" style="margin-bottom:0;">All Payment Logs <span class="filter-subtitle" id="allLogsUserFilter"></span></div>
+                <select id="allLogsStatusFilter" onchange="loadAllLogs(0)">
+                    <option value="">All Statuses</option>
+                    <option value="SUCCEEDED">Succeeded</option>
+                    <option value="FAILED">Failed</option>
+                    <option value="PROCESSING">Processing</option>
+                    <option value="INITIATED">Initiated</option>
+                </select>
+            </div>
+            <div class="banner banner-error" id="allLogsError"></div>
+            <div class="admin-table-wrap" id="allLogsWrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr><th>ID</th><th>Customer</th><th>Method</th><th>Amount</th><th>Status</th><th>Message</th><th>Failure</th><th>Created At</th></tr>
+                    </thead>
+                    <tbody id="allLogsBody">
+                        <tr><td colspan="8" class="admin-loading">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="allLogsPagination"></div>
+        </div>
+
+        <!-- REFUND LOGS -->
+        <div class="admin-section" id="section-refund-logs">
+            <div class="filter-bar">
+                <div class="admin-title" style="margin-bottom:0;">Refund Logs <span class="filter-subtitle" id="refundLogsUserFilter"></span></div>
+            </div>
+            <div class="banner banner-error" id="adminRefundLogsError"></div>
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr><th>Refund ID</th><th>Payment Log</th><th>Customer</th><th>Card Reference</th><th>Amount</th><th>Status</th><th>Message</th><th>Created At</th></tr>
+                    </thead>
+                    <tbody id="adminRefundLogsBody">
+                        <tr><td colspan="8" class="admin-loading">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="adminRefundLogsPagination"></div>
+        </div>
+
+    </main>
+</div>
+
+<script src="/common/js/common.js"></script>
+<script src="/admin/js/admin.js"></script>
+<script src="/admin/js/gateways.js"></script>
+<script src="/admin/js/users.js"></script>
+</body>
+</html>

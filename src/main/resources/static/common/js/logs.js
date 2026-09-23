@@ -86,7 +86,6 @@ function renderLogs(logs) {
 function openRefundModal(log) {
     selectedLog = log;
     document.getElementById('refundTransactionId').value = log.transactionId;
-    document.getElementById('refundChargeId').textContent = log.chargeId;
     document.getElementById('refundAmount').textContent = '$' + parseFloat(log.amount).toFixed(2);
     document.getElementById('refundReason').value = 'requested_by_customer';
     document.getElementById('refund-error').classList.remove('show');

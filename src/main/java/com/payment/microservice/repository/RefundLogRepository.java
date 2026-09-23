@@ -12,4 +12,6 @@ public interface RefundLogRepository extends JpaRepository<RefundLog, Long> {
   Optional<RefundLog> findByRefundId(String refundId);
 
   List<RefundLog> findByChargeId(String chargeId);
+
+  List<RefundLog> findByCustomerId(Long customerId);
 }
