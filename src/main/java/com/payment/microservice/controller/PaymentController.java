@@ -89,8 +89,7 @@ public class PaymentController {
   public ResponseEntity<ApiResponse<Map<String, Object>>> getPaymentLogs(
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "50") int size) {
     try {
-      Page<PaymentLog> logPage =
-          paymentLogRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(page, size));
+      Page<PaymentLog> logPage = paymentLogRepository.findAllByIdDesc(PageRequest.of(page, size));
 
       Map<String, Object> response =
           Map.of(

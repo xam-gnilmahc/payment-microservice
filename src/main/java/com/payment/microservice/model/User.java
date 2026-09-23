@@ -33,6 +33,9 @@ public class User {
   @Column(name = "is_active")
   private Boolean isActive;
 
+  @Column(name = "is_superadmin", columnDefinition = "ENUM('0','1') DEFAULT '0'")
+  private String isSuperAdmin;
+
   @CreationTimestamp
   @Column(name = "created_at", updatable = false)
   private LocalDateTime createdAt;

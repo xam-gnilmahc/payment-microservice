@@ -5,7 +5,7 @@ let token = localStorage.getItem('jwtToken');
 function decodeToken(t) {
     try {
         const payload = JSON.parse(atob(t.split('.')[1]));
-        return { userId: payload.userId, email: payload.sub, name: payload.name };
+        return { userId: payload.userId, email: payload.sub, name: payload.name, isSuperAdmin: payload.isSuperAdmin };
     } catch (e) { return null; }
 }
 

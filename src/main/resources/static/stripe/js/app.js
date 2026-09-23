@@ -17,7 +17,7 @@ function goToNoGateway() { hideAll(); document.getElementById('step-no-gateway')
 function initStripe(publicKey) {
     stripe = Stripe(publicKey);
     elements = stripe.elements();
-    cardElement = elements.create('card');
+    cardElement = elements.create('card', { hidePostalCode: true });
     cardElement.on('change', (e) => { document.getElementById('card-errors').textContent = e.error ? e.error.message : ''; });
 }
 

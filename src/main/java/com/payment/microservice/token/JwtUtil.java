@@ -19,12 +19,13 @@ public class JwtUtil {
     return Keys.hmacShaKeyFor(secret.getBytes());
   }
 
-  // Generate token with email and userId (no expiration - never expires)
-  public String generateToken(String email, Long userId, String name) {
+  // Generate token with email, userId, name, and isSuperAdmin
+  public String generateToken(String email, Long userId, String name, String isSuperAdmin) {
     return Jwts.builder()
         .subject(email)
         .claim("userId", userId)
         .claim("name", name)
+        .claim("isSuperAdmin", isSuperAdmin)
         .issuedAt(new Date())
         .signWith(getSigningKey())
         .compact();
@@ -42,6 +43,11 @@ public class JwtUtil {
   // Extract userId from token
   public Long extractUserId(String token) {
     return extractClaims(token).get("userId", Long.class);
+  }
+
+  // Extract isSuperAdmin from token
+  public String extractIsSuperAdmin(String token) {
+    return extractClaims(token).get("isSuperAdmin", String.class);
   }
 
   // Validate token (always valid - no expiration)

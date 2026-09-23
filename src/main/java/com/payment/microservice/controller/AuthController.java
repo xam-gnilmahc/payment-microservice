@@ -48,8 +48,10 @@ public class AuthController {
     // Save user to database
     userRepository.save(user);
 
-    // Generate JWT token with email and userId
-    String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getName());
+    // Generate JWT token with email, userId, name, and isSuperAdmin
+    String isSuperAdmin = user.getIsSuperAdmin() != null ? user.getIsSuperAdmin() : "0";
+    String token =
+        jwtUtil.generateToken(user.getEmail(), user.getId(), user.getName(), isSuperAdmin);
 
     // Return 201 Created with token
     return ResponseEntity.status(HttpStatus.CREATED)
@@ -57,7 +59,8 @@ public class AuthController {
             ApiResponse.success(
                 "User registered successfully",
                 201,
-                new TokenResponse(token, user.getEmail(), user.getId(), user.getName())));
+                new TokenResponse(
+                    token, user.getEmail(), user.getId(), user.getName(), isSuperAdmin)));
   }
 
   // @PostMapping("/login") = POST request to /api/v1/auth/login
@@ -71,18 +74,21 @@ public class AuthController {
       return ResponseEntity.badRequest().body(ApiResponse.error("Invalid email or password", 400));
     }
 
-    // Generate JWT token
-    String token = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getName());
+    // Generate JWT token with email, userId, name, and isSuperAdmin
+    String isSuperAdmin = user.getIsSuperAdmin() != null ? user.getIsSuperAdmin() : "0";
+    String token =
+        jwtUtil.generateToken(user.getEmail(), user.getId(), user.getName(), isSuperAdmin);
 
     // Return 200 OK with token
     return ResponseEntity.ok(
         ApiResponse.success(
             "Login successful",
             200,
-            new TokenResponse(token, user.getEmail(), user.getId(), user.getName())));
+            new TokenResponse(token, user.getEmail(), user.getId(), user.getName(), isSuperAdmin)));
   }
 
   // record = shortcut for creating a class with fields, getters, equals, hashCode, toString
   // This defines the structure of the response data
-  public record TokenResponse(String token, String email, Long userId, String name) {}
+  public record TokenResponse(
+      String token, String email, Long userId, String name, String isSuperAdmin) {}
 }

@@ -6,7 +6,15 @@ import java.time.LocalDateTime;
 import lombok.*;
 
 @Entity
-@Table(name = "refund_logs")
+@Table(
+    name = "refund_logs",
+    indexes = {
+      @Index(name = "idx_rl_charge_id", columnList = "charge_id"),
+      @Index(name = "idx_rl_customer_created", columnList = "customer_id, created_at"),
+      @Index(name = "idx_rl_refund_id", columnList = "refund_id"),
+      @Index(name = "idx_rl_transaction_id", columnList = "transaction_id"),
+      @Index(name = "idx_rl_created_status", columnList = "created_at, status")
+    })
 @Data
 @Builder
 @NoArgsConstructor
@@ -42,6 +50,9 @@ public class RefundLog {
 
   @Column(name = "customer_id")
   private Long customerId;
+
+  @Column(name = "email")
+  private String email;
 
   @Column(name = "created_at")
   private LocalDateTime createdAt;

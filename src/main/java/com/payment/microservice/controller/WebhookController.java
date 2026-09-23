@@ -59,11 +59,9 @@ public class WebhookController {
     try {
       String type = event.getType();
 
-      // Only handle payment_intent and refund events
-      if (!type.startsWith("payment_intent.") && !type.startsWith("refund.")) {
-        log.info("Ignoring: {}", type);
+      // Handle payment_intent and refund events only
+      if (!type.startsWith("payment_intent.") && !type.startsWith("refund."))
         return ResponseEntity.ok("Received");
-      }
 
       // Parse raw JSON
       JsonNode root = objectMapper.readTree(payload);
@@ -183,7 +181,7 @@ public class WebhookController {
     return ResponseEntity.ok("Received");
   }
 
-  /** Builds a PaymentLog from webhook data and saves to database. */
+  /** Inserts a new PaymentLog row for every webhook event. */
   private void savePaymentLog(
       String email,
       Long customerId,
@@ -244,17 +242,34 @@ public class WebhookController {
     return BigDecimal.valueOf(cents).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
   }
 
-  /** Handles refund.created, refund.updated, refund.failed events. */
+  /**
+   * Handles refund events from Stripe:
+   *
+   * <ul>
+   *   <li>refund.created + status=succeeded → code "1" — Refund processed immediately (cards).
+   *   <li>refund.created + status=pending → code "0" — ACH/async refund, balance not deducted yet.
+   *   <li>refund.updated + status=succeeded → code "1" — Confirmed, funds returning to customer.
+   *   <li>refund.updated / refund.failed + status=failed → code "2" — Failed, balance restored.
+   * </ul>
+   */
   private void handleRefundEvent(String type, JsonNode data) {
     String refundId = data.path("id").asText(null);
     String chargeId = data.path("charge").asText(null);
     String piId = data.path("payment_intent").asText(null);
     long amount = data.path("amount").asLong();
     String currency = data.path("currency").asText();
-    String reason = data.path("reason").asText(null);
-    String cid = data.path("metadata").path("customerId").asText(null);
-    Long customerId = cid != null ? Long.parseLong(cid) : null;
     String status = data.path("status").asText();
+
+    // Safe parsing for customerId
+    String cid = data.path("metadata").path("customerId").asText(null);
+    Long customerId = null;
+    if (cid != null && !cid.isBlank()) {
+      try {
+        customerId = Long.parseLong(cid);
+      } catch (NumberFormatException e) {
+        log.warn("Non-numeric customerId metadata: {}", cid);
+      }
+    }
 
     // Extract card_reference from destination_details
     String cardReference = null;
@@ -266,38 +281,61 @@ public class WebhookController {
       }
     }
 
-    // Determine status code by event type
+    String failureReason = data.path("failure_reason").asText("unknown");
+
+    // Determine status code and precise messaging
     String statusCode;
     String message;
-    switch (type) {
-      case "refund.created":
-        statusCode = "0";
-        message = "Refund pending";
-        break;
-      case "refund.updated":
-        if ("succeeded".equals(status)) {
-          statusCode = "1";
-          message =
-              "Refund issued - money is on its way, takes up to 10 business days to appear on statement";
-        } else if ("failed".equals(status)) {
-          statusCode = "2";
-          message = data.path("failure_reason").asText("Refund failed");
+    String refStr =
+        (cardReference != null && !cardReference.isEmpty())
+            ? " (Bank Tracking Ref: " + cardReference + ")"
+            : "";
+
+    switch (status) {
+      case "succeeded" -> {
+        statusCode = "1";
+        if ("refund.created".equals(type)) {
+          message = "Refund succeeded. Funds deducted from balance" + refStr + ".";
         } else {
-          statusCode = "0";
-          message = "Refund " + status;
+          // refund.updated - succeeded (e.g. ARN/tracking info attached after the fact)
+          message = "Refund confirmed succeeded" + refStr + ". Balance was already deducted.";
         }
-        break;
-      case "refund.failed":
-        statusCode = "2";
-        message = data.path("failure_reason").asText("Refund failed");
-        break;
-      default:
+      }
+      case "pending" -> {
         statusCode = "0";
-        message = "Refund " + status;
-        break;
+        message =
+            "Refund pending network processing"
+                + refStr
+                + ". Balance not yet deducted; awaiting settlement.";
+      }
+      case "requires_action" -> {
+        statusCode = "0";
+        message = "Refund requires additional action before it can proceed. Balance not deducted.";
+      }
+      case "canceled" -> {
+        statusCode = "2";
+        message =
+            "Refund was canceled before completion. Balance was not deducted (or was restored).";
+      }
+      case "failed" -> {
+        statusCode = "2";
+        message =
+            "Refund failed: "
+                + failureReason
+                + ". Customer was not refunded and balance was restored.";
+      }
+      default -> {
+        statusCode = "0";
+        message = "Refund status unrecognized (" + status + "). Review manually.";
+      }
     }
 
-    // Always insert new row
+    // Always insert a new row per event
+    String email = null;
+    if (chargeId != null && !chargeId.isBlank()) {
+      email = paymentLogRepository.findByChargeId(chargeId).map(PaymentLog::getEmail).orElse(null);
+    }
+
     RefundLog refundLog =
         RefundLog.builder()
             .transactionId(piId)
@@ -306,16 +344,13 @@ public class WebhookController {
             .amount(toDollars(amount))
             .currency(currency)
             .customerId(customerId)
+            .email(email)
             .cardReference(cardReference)
             .status(statusCode)
             .message(message)
             .build();
 
     refundLogRepository.save(refundLog);
-    log.info(
-        "Refund log saved: refundId={}, status={}, cardReference={}",
-        refundId,
-        statusCode,
-        cardReference);
+    log.info("Refund log saved: refundId={}, status={}, type={}", refundId, statusCode, type);
   }
 }
