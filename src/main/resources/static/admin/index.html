@@ -11,41 +11,41 @@
 </head>
 <body>
 
-<div class="admin-layout">
+<div class="admin-layout" id="adminLayout">
     <!-- SIDEBAR -->
-    <aside class="admin-sidebar">
+    <aside class="admin-sidebar" id="adminSidebar">
         <div class="admin-sidebar-header">
             <div class="admin-logo">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                <img src="https://static.vecteezy.com/system/resources/previews/008/997/967/non_2x/uom-logo-uom-letter-uom-letter-logo-design-initials-uom-logo-linked-with-circle-and-uppercase-monogram-logo-uom-typography-for-technology-business-and-real-estate-brand-vector.jpg" alt="UOM" width="36" height="36" style="display:block;border-radius:50%;object-fit:cover;" />
             </div>
             <div class="admin-brand">
-                <div class="admin-brand-name">PayAdmin</div>
+                <div class="admin-brand-name">UOM</div>
                 <div class="admin-brand-tag">Analytics</div>
             </div>
         </div>
         <nav class="admin-nav">
             <div class="admin-nav-label">Overview</div>
-            <button class="admin-nav-item active" data-section="dashboard" onclick="showSection('dashboard', this)">
+            <button class="admin-nav-item active" data-section="dashboard" onclick="showSection('dashboard', this)" title="Dashboard">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
-                Dashboard
+                <span class="nav-text">Dashboard</span>
             </button>
             <div class="admin-nav-label">Manage</div>
-            <button class="admin-nav-item" data-section="gateways" onclick="showSection('gateways', this)">
+            <button class="admin-nav-item" data-section="gateways" onclick="showSection('gateways', this)" title="Payment Gateways">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-                Payment Gateways
+                <span class="nav-text">Payment Gateways</span>
             </button>
-            <button class="admin-nav-item" data-section="users" onclick="showSection('users', this)">
+            <button class="admin-nav-item" data-section="users" onclick="showSection('users', this)" title="Users">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                Users
+                <span class="nav-text">Users</span>
             </button>
             <div class="admin-nav-label">Activity</div>
-            <button class="admin-nav-item" data-section="all-logs" onclick="showSection('all-logs', this)">
+            <button class="admin-nav-item" data-section="all-logs" onclick="showSection('all-logs', this)" title="All Payment Logs">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
-                All Payment Logs
+                <span class="nav-text">All Payment Logs</span>
             </button>
-            <button class="admin-nav-item" data-section="refund-logs" onclick="showSection('refund-logs', this)">
+            <button class="admin-nav-item" data-section="refund-logs" onclick="showSection('refund-logs', this)" title="Refund Logs">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                Refund Logs
+                <span class="nav-text">Refund Logs</span>
             </button>
         </nav>
         <div class="admin-sidebar-footer">
@@ -54,8 +54,19 @@
         </div>
     </aside>
 
+    <!-- edge toggle, sitting on the sidebar / main-content line -->
+    <button type="button" class="sidebar-edge-toggle" id="sidebarToggle" title="Collapse sidebar" aria-label="Collapse sidebar">
+        <svg class="icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H6"/><path d="M12 18l-6-6 6-6"/></svg>
+        <svg class="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M12 6l6 6-6 6"/></svg>
+    </button>
+
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+
     <!-- MAIN -->
     <main class="admin-main">
+        <button type="button" class="sidebar-toggle mobile-nav-btn" onclick="openSidebar()" title="Menu" aria-label="Open menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>
+        </button>
 
         <!-- DASHBOARD -->
         <div class="admin-section active" id="section-dashboard">
@@ -64,32 +75,86 @@
                     <div class="page-title">Dashboard</div>
                     <div class="page-subtitle">Live payment performance and revenue overview</div>
                 </div>
-                <div class="range-bar">
-                    <label>Date Range</label>
-                    <select id="dashRange" onchange="loadDashboard()">
+                <span class="page-header-range" id="dashRangeText">—</span>
+            </div>
+
+            <!-- FILTER PANEL -->
+            <div class="filter-panel">
+                <div class="filter-item">
+                    <span class="filter-label">Customer</span>
+                    <select id="dashCustomer" onchange="loadDashboard()">
+                        <option value="">All customers</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <span class="filter-label">Month</span>
+                    <select id="dashMonth" onchange="onDashMonthYearChange()">
+                        <option value="">All months</option>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <span class="filter-label">Year</span>
+                    <select id="dashYear" onchange="onDashMonthYearChange()">
+                        <option value="">All years</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <span class="filter-label">From</span>
+                    <input type="date" id="dashStart" onchange="onDashDateChange()" />
+                </div>
+                <div class="filter-item">
+                    <span class="filter-label">To</span>
+                    <input type="date" id="dashEnd" onchange="onDashDateChange()" />
+                </div>
+                <div class="filter-item">
+                    <span class="filter-label">Preset</span>
+                    <select id="dashRange" onchange="onDashPresetChange()">
+                        <option value="custom" selected>Custom</option>
                         <option value="today">Today</option>
-                        <option value="week" selected>This Week</option>
+                        <option value="week">Last 7 days</option>
                         <option value="month">This Month</option>
                         <option value="year">This Year</option>
                         <option value="all">All Time</option>
                     </select>
                 </div>
+                <div class="filter-item">
+                    <span class="filter-label">Grain</span>
+                    <select id="dashGrain" onchange="loadDashboard()">
+                        <option value="auto" selected>Auto</option>
+                        <option value="day">Day</option>
+                        <option value="week">Week</option>
+                        <option value="month">Month</option>
+                        <option value="year">Year</option>
+                    </select>
+                </div>
             </div>
 
             <div class="stats-grid">
-                <div class="stat-card accent-black">
+                <div class="stat-card">
                     <div class="stat-card-top">
-                        <div class="stat-icon black">
+                        <div class="stat-icon primary">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
                         </div>
                         <span class="stat-chip live">Live</span>
                     </div>
                     <div class="stat-label">Total Payments</div>
                     <div class="stat-value" id="statTotal">-</div>
-                    <div class="stat-hint">All transactions in range</div>
+                    <div class="stat-hint">all transactions in range</div>
                 </div>
 
-                <div class="stat-card accent-green">
+                <div class="stat-card">
                     <div class="stat-card-top">
                         <div class="stat-icon green">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
@@ -97,10 +162,10 @@
                     </div>
                     <div class="stat-label">Succeeded</div>
                     <div class="stat-value green" id="statSucceeded">-</div>
-                    <div class="stat-hint" id="statSuccessRate">—</div>
+                    <div class="stat-hint">successful payments</div>
                 </div>
 
-                <div class="stat-card accent-red">
+                <div class="stat-card">
                     <div class="stat-card-top">
                         <div class="stat-icon red">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
@@ -108,10 +173,10 @@
                     </div>
                     <div class="stat-label">Failed</div>
                     <div class="stat-value red" id="statFailed">-</div>
-                    <div class="stat-hint" id="statFailRate">—</div>
+                    <div class="stat-hint">failed payments</div>
                 </div>
 
-                <div class="stat-card accent-amber">
+                <div class="stat-card">
                     <div class="stat-card-top">
                         <div class="stat-icon amber">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
@@ -119,18 +184,18 @@
                     </div>
                     <div class="stat-label">Total Refunds</div>
                     <div class="stat-value" id="statRefunds">-</div>
-                    <div class="stat-hint">Succeeded refunds</div>
+                    <div class="stat-hint"><span id="statRefundAmount">$0.00</span> · succeeded refunds</div>
                 </div>
 
-                <div class="stat-card accent-zinc">
+                <div class="stat-card">
                     <div class="stat-card-top">
                         <div class="stat-icon zinc">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                         </div>
                     </div>
                     <div class="stat-label">Revenue</div>
-                    <div class="stat-value" id="statRevenue">-</div>
-                    <div class="stat-hint">Succeeded volume in range</div>
+                    <div class="stat-value accent" id="statRevenue">-</div>
+                    <div class="stat-hint">succeeded volume</div>
                 </div>
             </div>
 
@@ -139,8 +204,9 @@
                     <div class="chart-header">
                         <div>
                             <div class="chart-title">Payment Methods</div>
-                            <div class="chart-sub">Distribution by gateway method</div>
+                            <div class="chart-sub">Volume by method</div>
                         </div>
+                        <span class="chart-chip">Bar</span>
                     </div>
                     <div class="chart-body"><canvas id="chartMethods"></canvas></div>
                 </div>
@@ -150,6 +216,7 @@
                             <div class="chart-title">Payment Status</div>
                             <div class="chart-sub">Outcome breakdown</div>
                         </div>
+                        <span class="chart-chip">Split</span>
                     </div>
                     <div class="chart-body"><canvas id="chartStatus"></canvas></div>
                 </div>
@@ -157,8 +224,9 @@
                     <div class="chart-header">
                         <div>
                             <div class="chart-title">Transactions Over Time</div>
-                            <div class="chart-sub">Daily payment volume</div>
+                            <div class="chart-sub" id="txnChartSub">Volume by period</div>
                         </div>
+                        <span class="chart-chip">Bar</span>
                     </div>
                     <div class="chart-body"><canvas id="chartTransactions"></canvas></div>
                 </div>
@@ -166,10 +234,66 @@
                     <div class="chart-header">
                         <div>
                             <div class="chart-title">Revenue Over Time</div>
-                            <div class="chart-sub">Daily succeeded revenue</div>
+                            <div class="chart-sub" id="revChartSub">Succeeded revenue by period</div>
                         </div>
+                        <span class="chart-chip accent">Trend</span>
                     </div>
                     <div class="chart-body"><canvas id="chartRevenue"></canvas></div>
+                </div>
+            </div>
+
+            <div class="analytics-panel">
+                <div class="analytics-header">
+                    <div>
+                        <div class="chart-title">Period Breakdown</div>
+                        <div class="chart-sub" id="breakdownSub">Period performance</div>
+                    </div>
+                    <div class="compare-chip" id="compareChip">vs previous period</div>
+                </div>
+                <div class="admin-table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Period</th>
+                                <th>Payments</th>
+                                <th>Succeeded</th>
+                                <th>Failed</th>
+                                <th>Success %</th>
+                                <th>Revenue</th>
+                            </tr>
+                        </thead>
+                        <tbody id="breakdownBody">
+                            <tr><td colspan="6" class="admin-loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="analytics-panel">
+                <div class="analytics-header">
+                    <div>
+                        <div class="chart-title">Payment Logs</div>
+                        <div class="chart-sub" id="dashLogsSub">Filtered by current customer + date range</div>
+                    </div>
+                    <div class="compare-chip" id="dashLogsCount">0 logs</div>
+                </div>
+                <div class="admin-table-wrap">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Customer</th>
+                                <th>Method</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Failure</th>
+                                <th>Created At</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashLogsBody">
+                            <tr><td colspan="7" class="admin-loading">Loading...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

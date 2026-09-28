@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.payment.microservice.model.*;
 import com.payment.microservice.repository.PaymentLogRepository;
 import com.payment.microservice.repository.RefundLogRepository;
+import com.payment.microservice.service.ReceiptEmailService;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentMethod;
@@ -25,6 +26,7 @@ public class WebhookController {
 
   private final PaymentLogRepository paymentLogRepository;
   private final RefundLogRepository refundLogRepository;
+  private final ReceiptEmailService receiptEmailService;
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Value("${stripe.webhook-secret:}")
@@ -154,9 +156,12 @@ public class WebhookController {
               lastError.isMissingNode()
                   ? "Payment failed"
                   : lastError.path("message").asText("Payment failed");
-          String failCode = lastError.isMissingNode() ? null : lastError.path("code").asText(null);
-          String declineCode =
+          String failCode =
               lastError.isMissingNode() ? null : lastError.path("decline_code").asText(null);
+          if (failCode == null || failCode.isBlank() || "null".equals(failCode)) {
+            String code = lastError.path("code").asText(null);
+            failCode = code == null || code.isBlank() || "null".equals(code) ? null : code;
+          }
           savePaymentLog(
               email,
               customerId,
@@ -167,7 +172,7 @@ public class WebhookController {
               gwStatus,
               PaymentEvent.WEBHOOK_FAILED,
               PaymentStatus.FAILED,
-              declineCode != null ? declineCode : errMsg,
+              errMsg,
               failCode,
               paymentEnv,
               paymentMethodType);
@@ -217,6 +222,16 @@ public class WebhookController {
 
     paymentLogRepository.save(logEntry);
     log.info("Saved: id={}, pi={}, pm={}", logEntry.getId(), piId, paymentMethod);
+
+    // Customer receipt on success or failure
+    if (pStatus == PaymentStatus.SUCCEEDED || pStatus == PaymentStatus.FAILED) {
+      try {
+        boolean sent = receiptEmailService.sendPaymentReceipt(logEntry);
+        log.info("Payment receipt for log id={}: sent={}", logEntry.getId(), sent);
+      } catch (Exception e) {
+        log.warn("Payment receipt failed for log id={}: {}", logEntry.getId(), e.getMessage());
+      }
+    }
   }
 
   /** Calls Stripe API to resolve payment method ID to type (card, link, etc.) */
@@ -352,5 +367,17 @@ public class WebhookController {
 
     refundLogRepository.save(refundLog);
     log.info("Refund log saved: refundId={}, status={}, type={}", refundId, statusCode, type);
+
+    // Customer refund receipt — first terminal event (success or failure) to avoid dupes
+    boolean terminal = "1".equals(statusCode) || "2".equals(statusCode);
+    boolean firstEvent = "refund.created".equals(type) || "refund.failed".equals(type);
+    if (terminal && firstEvent) {
+      try {
+        boolean sent = receiptEmailService.sendRefundReceipt(refundLog);
+        log.info("Refund receipt for log id={}: sent={}", refundLog.getId(), sent);
+      } catch (Exception e) {
+        log.warn("Refund receipt failed for log id={}: {}", refundLog.getId(), e.getMessage());
+      }
+    }
   }
 }

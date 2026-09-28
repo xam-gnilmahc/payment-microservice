@@ -37,7 +37,7 @@ async function loadGateways() {
                     <td style="font-weight:600;">${esc(g.title) || '-'}</td>
                     <td><span class="status-badge ${g.status === 'ACTIVE' ? 'success' : 'error'}">${g.status === 'ACTIVE' ? 'Active' : 'Inactive'}</span></td>
                     <td>${esc(assigned)}</td>
-                    <td style="color:#8b8fa3;">${g.createdAt ? new Date(g.createdAt).toLocaleDateString() : '-'}</td>
+                    <td style="color:#71717a;">${g.createdAt ? new Date(g.createdAt).toLocaleDateString() : '-'}</td>
                 </tr>`;
         }).join('');
     } catch (e) {

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Payment Update</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f4f5;">
+    <tr>
+      <td align="center" style="padding:48px 16px 56px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;background:#ffffff;" align="center">
+
+          <!-- Soft header band -->
+          <tr>
+            <td align="left" style="padding:36px 36px 32px;background:#fafafa;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="width:48px;height:48px;vertical-align:middle;">
+                    <img src="https://static.vecteezy.com/system/resources/previews/008/997/967/non_2x/uom-logo-uom-letter-uom-letter-logo-design-initials-uom-logo-linked-with-circle-and-uppercase-monogram-logo-uom-typography-for-technology-business-and-real-estate-brand-vector.jpg" alt="Logo" width="48" height="48" style="display:block;border-radius:50%;object-fit:cover;">
+                  </td>
+                  <td style="padding-left:12px;font-size:16px;color:#3f3f46;font-weight:700;vertical-align:middle;letter-spacing:-0.01em;">UOM</td>
+                </tr>
+              </table>
+
+              <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:{{accent}};margin-top:28px;">
+                {{eyebrow}}
+              </div>
+              <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:28px;font-weight:800;color:#09090b;letter-spacing:-0.03em;line-height:1.25;margin-top:10px;">
+                {{headline}}
+              </div>
+              <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:48px;font-weight:800;color:#09090b;letter-spacing:-0.04em;margin-top:16px;line-height:1.1;">
+                {{amountDisplay}}
+              </div>
+            </td>
+          </tr>
+
+          <!-- Message -->
+          <tr>
+            <td align="left" style="padding:32px 36px 0;">
+              <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.7;color:#3f3f46;margin:0;">
+                {{message}}
+              </p>
+            </td>
+          </tr>
+
+          <!-- Detail table -->
+          <tr>
+            <td align="left" style="padding:28px 36px 0;">
+              <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;color:#71717a;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px;">
+                Payment details
+              </div>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fafafa;">
+                <tr>
+                  <td style="padding:14px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#71717a;">Date</td>
+                  <td style="padding:14px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#09090b;font-weight:600;text-align:right;">{{date}}</td>
+                </tr>
+                <tr style="background:#ffffff;">
+                  <td style="padding:14px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#71717a;">Paid with</td>
+                  <td style="padding:14px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#09090b;font-weight:600;text-align:right;text-transform:capitalize;">{{method}}</td>
+                </tr>
+                {{failureRow}}
+                <tr>
+                  <td style="padding:14px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#71717a;">Status</td>
+                  <td style="padding:14px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;color:{{accent}};text-align:right;">{{status}}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Help strip -->
+          <tr>
+            <td align="left" style="padding:28px 36px 0;">
+              <div style="background:#f4f4f5;padding:18px 20px;">
+                <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;color:#09090b;">
+                  Need help?
+                </div>
+                <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#52525b;line-height:1.6;margin-top:4px;">
+                  {{footer}} Reply to this email and our team will get back to you.
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="left" style="padding:32px 36px 40px;">
+              <p style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;color:#a1a1aa;line-height:1.7;margin:0;">
+                This is an automated receipt — please do not reply to this notice for account changes.<br/>
+                © {{year}} Payment Service · UOM
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

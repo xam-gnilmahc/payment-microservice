@@ -16,10 +16,12 @@ import com.payment.microservice.repository.UserRepository;
 import com.payment.microservice.traits.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -253,65 +255,245 @@ public class AdminController {
 
   @GetMapping("/dashboard")
   public ResponseEntity<ApiResponse<Map<String, Object>>> getDashboard(
-      @RequestParam(defaultValue = "week") String range) {
-    LocalDateTime startDate;
+      @RequestParam(defaultValue = "week") String range,
+      @RequestParam(required = false) String startDate,
+      @RequestParam(required = false) String endDate,
+      @RequestParam(required = false) Long customerId,
+      @RequestParam(defaultValue = "auto") String grain) {
     LocalDateTime now = LocalDateTime.now();
+    LocalDateTime startDt;
+    LocalDateTime endDt = now.toLocalDate().plusDays(1).atStartOfDay();
 
-    switch (range) {
-      case "today":
-        startDate = now.toLocalDate().atStartOfDay();
-        break;
-      case "month":
-        startDate = now.withDayOfMonth(1).toLocalDate().atStartOfDay();
-        break;
-      case "year":
-        startDate = now.withDayOfYear(1).toLocalDate().atStartOfDay();
-        break;
-      case "all":
-        startDate = LocalDateTime.of(2020, 1, 1, 0, 0);
-        break;
-      default: // week
-        startDate = now.minusDays(7).toLocalDate().atStartOfDay();
-        break;
+    if (("custom".equals(range) || (startDate != null && endDate != null))
+        && startDate != null
+        && endDate != null
+        && !startDate.isBlank()
+        && !endDate.isBlank()) {
+      try {
+        startDt = java.time.LocalDate.parse(startDate.trim()).atStartOfDay();
+        endDt = java.time.LocalDate.parse(endDate.trim()).plusDays(1).atStartOfDay();
+        if (endDt.isBefore(startDt)) {
+          LocalDateTime tmp = startDt;
+          startDt = endDt.minusDays(1);
+          endDt = tmp.plusDays(1);
+        }
+      } catch (DateTimeParseException e) {
+        return ResponseEntity.badRequest()
+            .body(ApiResponse.error("Invalid startDate/endDate", 400));
+      }
+    } else {
+      switch (range) {
+        case "today":
+          startDt = now.toLocalDate().atStartOfDay();
+          endDt = startDt.plusDays(1);
+          break;
+        case "month":
+          startDt = now.withDayOfMonth(1).toLocalDate().atStartOfDay();
+          break;
+        case "year":
+          startDt = now.withDayOfYear(1).toLocalDate().atStartOfDay();
+          break;
+        case "all":
+          startDt = LocalDateTime.of(2020, 1, 1, 0, 0);
+          break;
+        default: // week = last 7 days including today
+          startDt = now.minusDays(6).toLocalDate().atStartOfDay();
+          break;
+      }
     }
 
-    // DB-level aggregation — no full table load
-    long totalPayments = paymentLogRepository.countByCreatedAtAfter(startDate);
+    LocalDateTime startDateDt = startDt;
+    LocalDateTime endDateDt = endDt;
+
+    // Previous window of equal length for comparison
+    long rangeDays = java.time.Duration.between(startDateDt, endDateDt).toDays();
+    if (rangeDays < 1) rangeDays = 1;
+    LocalDateTime prevStart = startDateDt.minusDays(rangeDays);
+    LocalDateTime prevEnd = startDateDt;
+
+    boolean byCustomer = customerId != null;
+
+    long totalPayments =
+        byCustomer
+            ? paymentLogRepository.countBetweenAndCustomer(startDateDt, endDateDt, customerId)
+            : paymentLogRepository.countBetween(startDateDt, endDateDt);
     long succeeded =
-        paymentLogRepository.countByCreatedAtAfterAndStatus(startDate, PaymentStatus.SUCCEEDED);
+        byCustomer
+            ? paymentLogRepository.countBetweenAndStatusAndCustomer(
+                startDateDt, endDateDt, PaymentStatus.SUCCEEDED, customerId)
+            : paymentLogRepository.countBetweenAndStatus(
+                startDateDt, endDateDt, PaymentStatus.SUCCEEDED);
     long failed =
-        paymentLogRepository.countByCreatedAtAfterAndStatus(startDate, PaymentStatus.FAILED);
-    long totalRefunds = refundLogRepository.countSucceededByCreatedAtAfter(startDate);
+        byCustomer
+            ? paymentLogRepository.countBetweenAndStatusAndCustomer(
+                startDateDt, endDateDt, PaymentStatus.FAILED, customerId)
+            : paymentLogRepository.countBetweenAndStatus(
+                startDateDt, endDateDt, PaymentStatus.FAILED);
+    long totalRefunds =
+        byCustomer
+            ? refundLogRepository.countSucceededBetweenAndCustomer(
+                startDateDt, endDateDt, customerId)
+            : refundLogRepository.countSucceededBetween(startDateDt, endDateDt);
+    double refundedAmount =
+        byCustomer
+            ? refundLogRepository.sumSucceededAmountBetweenAndCustomer(
+                startDateDt, endDateDt, customerId)
+            : refundLogRepository.sumSucceededAmountBetween(startDateDt, endDateDt);
+
+    long prevTotal =
+        byCustomer
+            ? paymentLogRepository.countBetweenAndCustomer(prevStart, prevEnd, customerId)
+            : paymentLogRepository.countBetween(prevStart, prevEnd);
+    long prevSucceeded =
+        byCustomer
+            ? paymentLogRepository.countBetweenAndStatusAndCustomer(
+                prevStart, prevEnd, PaymentStatus.SUCCEEDED, customerId)
+            : paymentLogRepository.countBetweenAndStatus(
+                prevStart, prevEnd, PaymentStatus.SUCCEEDED);
+    long prevFailed =
+        byCustomer
+            ? paymentLogRepository.countBetweenAndStatusAndCustomer(
+                prevStart, prevEnd, PaymentStatus.FAILED, customerId)
+            : paymentLogRepository.countBetweenAndStatus(prevStart, prevEnd, PaymentStatus.FAILED);
+    long prevRefunds =
+        byCustomer
+            ? refundLogRepository.countSucceededBetweenAndCustomer(prevStart, prevEnd, customerId)
+            : refundLogRepository.countSucceededBetween(prevStart, prevEnd);
+    double prevRefunded =
+        byCustomer
+            ? refundLogRepository.sumSucceededAmountBetweenAndCustomer(
+                prevStart, prevEnd, customerId)
+            : refundLogRepository.sumSucceededAmountBetween(prevStart, prevEnd);
 
     Map<String, Long> methodCounts = new HashMap<>();
-    for (Object[] row : paymentLogRepository.countGroupByPaymentMethod(startDate)) {
+    List<Object[]> methodRows =
+        byCustomer
+            ? paymentLogRepository.countGroupByPaymentMethodAndCustomer(startDateDt, customerId)
+            : paymentLogRepository.countGroupByPaymentMethod(startDateDt);
+    for (Object[] row : methodRows) {
       methodCounts.put((String) row[0], (Long) row[1]);
     }
 
     Map<String, Long> statusCounts = new HashMap<>();
-    for (Object[] row : paymentLogRepository.countGroupByStatus(startDate)) {
+    List<Object[]> statusRows =
+        byCustomer
+            ? paymentLogRepository.countGroupByStatusAndCustomer(startDateDt, customerId)
+            : paymentLogRepository.countGroupByStatus(startDateDt);
+    for (Object[] row : statusRows) {
       PaymentStatus st = (PaymentStatus) row[0];
       statusCounts.put(st != null ? st.getLabel() : "Unknown", (Long) row[1]);
     }
 
+    String effectiveGrain = resolveGrain(grain, range, startDateDt, endDateDt);
+    List<Object[]> seriesRows;
+    switch (effectiveGrain) {
+      case "day" ->
+          seriesRows =
+              byCustomer
+                  ? paymentLogRepository.dailyBreakdownAndCustomer(
+                      startDateDt, endDateDt, customerId)
+                  : paymentLogRepository.dailyBreakdown(startDateDt, endDateDt);
+      case "week" ->
+          seriesRows =
+              byCustomer
+                  ? paymentLogRepository.weeklyBreakdownAndCustomer(
+                      startDateDt, endDateDt, customerId)
+                  : paymentLogRepository.weeklyBreakdown(startDateDt, endDateDt);
+      case "year" ->
+          seriesRows =
+              byCustomer
+                  ? paymentLogRepository.yearlyBreakdownAndCustomer(
+                      startDateDt, endDateDt, customerId)
+                  : paymentLogRepository.yearlyBreakdown(startDateDt, endDateDt);
+      default -> // month
+          seriesRows =
+              byCustomer
+                  ? paymentLogRepository.monthlyBreakdownAndCustomer(
+                      startDateDt, endDateDt, customerId)
+                  : paymentLogRepository.monthlyBreakdown(startDateDt, endDateDt);
+    }
+
+    List<Map<String, Object>> series = new ArrayList<>();
     Map<String, Long> dailyCounts = new HashMap<>();
     Map<String, Double> dailyRevenue = new HashMap<>();
-    for (Object[] row : paymentLogRepository.dailyCountsAndRevenue(startDate)) {
-      String day = row[0] != null ? row[0].toString() : "unknown";
-      dailyCounts.put(day, (Long) row[1]);
-      dailyRevenue.put(day, ((Number) row[2]).doubleValue());
+    double revenue = 0;
+    for (Object[] row : seriesRows) {
+      String key = row[0] != null ? row[0].toString() : "unknown";
+      long count = row[1] != null ? ((Number) row[1]).longValue() : 0L;
+      double rev = row[2] != null ? ((Number) row[2]).doubleValue() : 0.0;
+      long succ = row[3] != null ? ((Number) row[3]).longValue() : 0L;
+      long fail = row[4] != null ? ((Number) row[4]).longValue() : 0L;
+      revenue += rev;
+      dailyCounts.put(key, count);
+      dailyRevenue.put(key, rev);
+      Map<String, Object> point = new HashMap<>();
+      point.put("period", key);
+      point.put("payments", count);
+      point.put("revenue", rev);
+      point.put("succeeded", succ);
+      point.put("failed", fail);
+      point.put("successRate", count > 0 ? Math.round(succ * 1000.0 / count) / 10.0 : 0.0);
+      series.add(point);
     }
+
+    Map<String, Object> previous = new HashMap<>();
+    previous.put("totalPayments", prevTotal);
+    previous.put("succeeded", prevSucceeded);
+    previous.put("failed", prevFailed);
+    previous.put("totalRefunds", prevRefunds);
+    previous.put("refundedAmount", prevRefunded);
+    double prevRevenue = 0;
+    List<Object[]> prevSeries =
+        byCustomer
+            ? paymentLogRepository.dailyBreakdownAndCustomer(prevStart, prevEnd, customerId)
+            : paymentLogRepository.dailyBreakdown(prevStart, prevEnd);
+    for (Object[] row : prevSeries) {
+      if (row[2] != null) prevRevenue += ((Number) row[2]).doubleValue();
+    }
+    previous.put("revenue", prevRevenue);
+    previous.put("start", prevStart.toLocalDate().toString());
+    previous.put("end", prevEnd.toLocalDate().toString());
 
     Map<String, Object> result = new HashMap<>();
     result.put("totalPayments", totalPayments);
     result.put("succeeded", succeeded);
     result.put("failed", failed);
     result.put("totalRefunds", totalRefunds);
+    result.put("refundedAmount", refundedAmount);
+    result.put("revenue", revenue);
+    result.put("customerId", customerId);
     result.put("methodCounts", methodCounts);
     result.put("statusCounts", statusCounts);
     result.put("dailyCounts", dailyCounts);
     result.put("dailyRevenue", dailyRevenue);
+    result.put("series", series);
+    result.put("grain", effectiveGrain);
+    result.put("previous", previous);
+    result.put("rangeStart", startDateDt.toLocalDate().toString());
+    result.put("rangeEnd", endDateDt.minusDays(1).toLocalDate().toString());
+    result.put("range", range);
+
+    List<PaymentLog> logRows =
+        byCustomer
+            ? paymentLogRepository.findBetweenAndCustomer(startDateDt, endDateDt, customerId)
+            : paymentLogRepository.findBetween(startDateDt, endDateDt);
+    if (logRows.size() > 100) {
+      logRows = new ArrayList<>(logRows.subList(0, 100));
+    }
+    result.put("paymentLogs", logRows);
 
     return ResponseEntity.ok(ApiResponse.success("Dashboard fetched", 200, result));
+  }
+
+  private static String resolveGrain(
+      String grain, String range, LocalDateTime startDate, LocalDateTime endDate) {
+    if (grain != null && !grain.isBlank() && !"auto".equals(grain)) {
+      if (Set.of("day", "week", "month", "year").contains(grain)) return grain;
+    }
+    long days = java.time.Duration.between(startDate, endDate).toDays();
+    if (days <= 14) return "day";
+    if (days <= 90) return "week";
+    if (days <= 400) return "month";
+    return "month";
   }
 }

@@ -27,6 +27,67 @@ public interface RefundLogRepository extends JpaRepository<RefundLog, Long> {
 
   Page<RefundLog> findByCustomerIdOrderByIdDesc(Long customerId, Pageable pageable);
 
-  @Query("SELECT COUNT(r) FROM RefundLog r WHERE r.createdAt >= :startDate AND r.status = '1'")
+  /** Distinct succeeded refunds only — multi-event logs must not double-count. */
+  @Query(
+      "SELECT COUNT(DISTINCT r.refundId) FROM RefundLog r WHERE r.createdAt >= :startDate "
+          + "AND r.status = '1'")
+  long countByCreatedAtAfter(@Param("startDate") LocalDateTime startDate);
+
+  @Query(
+      "SELECT COUNT(DISTINCT r.refundId) FROM RefundLog r "
+          + "WHERE r.createdAt >= :startDate AND r.status = '1' AND r.customerId = :customerId")
+  long countByCreatedAtAfterAndCustomer(
+      @Param("startDate") LocalDateTime startDate, @Param("customerId") Long customerId);
+
+  /** Sum amount once per succeeded refund_id (earliest log row). */
+  @Query(
+      "SELECT COALESCE(SUM(r.amount), 0) FROM RefundLog r WHERE r.id IN ("
+          + "SELECT MIN(r2.id) FROM RefundLog r2 WHERE r2.createdAt >= :startDate "
+          + "AND r2.status = '1' GROUP BY r2.refundId)")
+  double sumAmountByCreatedAtAfter(@Param("startDate") LocalDateTime startDate);
+
+  @Query(
+      "SELECT COALESCE(SUM(r.amount), 0) FROM RefundLog r WHERE r.id IN ("
+          + "SELECT MIN(r2.id) FROM RefundLog r2 WHERE r2.createdAt >= :startDate "
+          + "AND r2.status = '1' AND r2.customerId = :customerId GROUP BY r2.refundId)")
+  double sumAmountByCreatedAtAfterAndCustomer(
+      @Param("startDate") LocalDateTime startDate, @Param("customerId") Long customerId);
+
+  @Query(
+      "SELECT COUNT(DISTINCT r.refundId) FROM RefundLog r WHERE r.createdAt >= :startDate "
+          + "AND r.status = '1'")
   long countSucceededByCreatedAtAfter(@Param("startDate") LocalDateTime startDate);
+
+  List<RefundLog> findByEmail(String email);
+
+  @Query(
+      "SELECT COUNT(DISTINCT r.refundId) FROM RefundLog r WHERE r.createdAt >= :startDate "
+          + "AND r.createdAt < :endDate AND r.status = '1'")
+  long countSucceededBetween(
+      @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+
+  @Query(
+      "SELECT COUNT(DISTINCT r.refundId) FROM RefundLog r WHERE r.createdAt >= :startDate "
+          + "AND r.createdAt < :endDate AND r.status = '1' AND r.customerId = :customerId")
+  long countSucceededBetweenAndCustomer(
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate,
+      @Param("customerId") Long customerId);
+
+  @Query(
+      "SELECT COALESCE(SUM(r.amount), 0) FROM RefundLog r WHERE r.id IN ("
+          + "SELECT MIN(r2.id) FROM RefundLog r2 WHERE r2.createdAt >= :startDate "
+          + "AND r2.createdAt < :endDate AND r2.status = '1' GROUP BY r2.refundId)")
+  double sumSucceededAmountBetween(
+      @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+
+  @Query(
+      "SELECT COALESCE(SUM(r.amount), 0) FROM RefundLog r WHERE r.id IN ("
+          + "SELECT MIN(r2.id) FROM RefundLog r2 WHERE r2.createdAt >= :startDate "
+          + "AND r2.createdAt < :endDate AND r2.status = '1' AND r2.customerId = :customerId "
+          + "GROUP BY r2.refundId)")
+  double sumSucceededAmountBetweenAndCustomer(
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate,
+      @Param("customerId") Long customerId);
 }
