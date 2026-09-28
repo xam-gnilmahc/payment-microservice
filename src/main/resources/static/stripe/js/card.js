@@ -27,6 +27,31 @@ function setProcessing() {
     document.getElementById('payBtn').textContent = 'Processing...';
 }
 
+// ===== SKELETON LOADING =====
+function showCardSkeleton() {
+    const skel = document.getElementById('card-skeleton');
+    const el = document.getElementById('card-element');
+    if (skel) skel.classList.add('show');
+    if (el) el.style.display = 'none';
+}
+
+function hideCardSkeleton() {
+    const skel = document.getElementById('card-skeleton');
+    const el = document.getElementById('card-element');
+    if (skel) skel.classList.remove('show');
+    if (el) el.style.display = '';
+}
+
+function showWalletSkeleton() {
+    const s = document.getElementById('wallet-skeleton');
+    if (s) s.classList.add('show');
+}
+
+function hideWalletSkeleton() {
+    const s = document.getElementById('wallet-skeleton');
+    if (s) s.classList.remove('show');
+}
+
 // ===== GO TO CARD PAGE =====
 function goToCard(amount) {
     const user = getUser();
@@ -46,10 +71,18 @@ function goToCard(amount) {
     document.getElementById('payBtn').disabled = false;
     document.getElementById('payBtn').textContent = 'Pay Now';
     const wc = getWalletContainer();
-    if (wc) { wc.style.pointerEvents = ''; wc.style.opacity = ''; }
+    if (wc) { wc.style.pointerEvents = ''; wc.style.opacity = ''; wc.style.display = 'none'; }
+    const sep = document.getElementById('payOrSeparator');
+    if (sep) sep.style.display = 'none';
+
+    showCardSkeleton();
+    showWalletSkeleton();
+
     cardElement.unmount();
     cardElement.mount('#card-element');
     setupExpressCheckout(amount);
+
+    setTimeout(hideCardSkeleton, 3000);
 }
 
 // ===== CREATE PAYMENT INTENT ON DEMAND =====
@@ -135,10 +168,18 @@ function setupExpressCheckout(amount) {
     // Show wallet buttons when methods are available
     expressCheckoutEl.on('availablepaymentmethodschange', ({ paymentMethods }) => {
         console.log('[ExpressCheckout] available methods:', paymentMethods);
+        hideWalletSkeleton();
         if (paymentMethods && typeof paymentMethods === 'object' && Object.keys(paymentMethods).length > 0) {
             container.style.display = 'block';
             if (separator) separator.style.display = 'flex';
+        } else {
+            container.style.display = 'none';
+            if (separator) separator.style.display = 'none';
         }
+    });
+
+    expressCheckoutEl.on('ready', () => {
+        console.log('[ExpressCheckout] ready');
     });
 
     // Handle wallet confirm — create PI then confirm
@@ -197,9 +238,16 @@ function setupExpressCheckout(amount) {
     });
 
     // Mount AFTER handlers registered
+    showWalletSkeleton();
     container.style.display = 'block';
     if (separator) separator.style.display = 'flex';
     expressCheckoutEl.mount('#pr-button-container');
+
+    // Safety: never leave wallet skeleton up forever
+    setTimeout(() => {
+        const s = document.getElementById('wallet-skeleton');
+        if (s && s.classList.contains('show')) hideWalletSkeleton();
+    }, 4000);
 }
 
 // ===== PAY WITH CARD =====

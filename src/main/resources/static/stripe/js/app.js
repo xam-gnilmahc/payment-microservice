@@ -19,6 +19,9 @@ function initStripe(publicKey) {
     elements = stripe.elements();
     cardElement = elements.create('card', { hidePostalCode: true });
     cardElement.on('change', (e) => { document.getElementById('card-errors').textContent = e.error ? e.error.message : ''; });
+    cardElement.on('ready', () => {
+        if (typeof hideCardSkeleton === 'function') hideCardSkeleton();
+    });
 }
 
 // ===== LOAD USER GATEWAY & GO TO CHECKOUT =====

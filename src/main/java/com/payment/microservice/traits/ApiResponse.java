@@ -28,4 +28,13 @@ public class ApiResponse<T> {
   public static <T> ApiResponse<T> error(String message, int statusCode) {
     return ApiResponse.<T>builder().success(false).message(message).statusCode(statusCode).build();
   }
+
+  public static <T> ApiResponse<T> error(String message, int statusCode, T data) {
+    return ApiResponse.<T>builder()
+        .success(false)
+        .message(message)
+        .statusCode(statusCode)
+        .data(data)
+        .build();
+  }
 }

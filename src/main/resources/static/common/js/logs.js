@@ -34,10 +34,10 @@ async function loadLogs() {
 
 function renderLogs(logs) {
     const statusBadge = (s) => {
-        if (s === 'INITIATED' || s === '0') return '<span class="status-badge" style="background:#fef3c7;color:#92400e;">Initiated</span>';
-        if (s === 'PROCESSING' || s === '1') return '<span class="status-badge" style="background:#dbeafe;color:#1e40af;">Processing</span>';
-        if (s === 'SUCCEEDED' || s === '2') return '<span class="status-badge" style="background:#d1fae5;color:#065f46;">Succeeded</span>';
-        if (s === 'FAILED' || s === '3') return '<span class="status-badge" style="background:#fee2e2;color:#991b1b;">Failed</span>';
+        if (s === 'INITIATED' || s === '0') return '<span class="status-badge" style="background:#ffffff;color:#075985;border:1px solid #7dd3fc;">Initiated</span>';
+        if (s === 'PROCESSING' || s === '1') return '<span class="status-badge" style="background:#ffffff;color:#78350f;border:1px solid #fbbf24;">Processing</span>';
+        if (s === 'SUCCEEDED' || s === '2') return '<span class="status-badge" style="background:#ffffff;color:#14532d;border:1px solid #4ade80;">Succeeded</span>';
+        if (s === 'FAILED' || s === '3') return '<span class="status-badge" style="background:#ffffff;color:#7f1d1d;border:1px solid #f87171;">Failed</span>';
         return '<span class="status-badge">' + s + '</span>';
     };
     const fmt = (d) => {

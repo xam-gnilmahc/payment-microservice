@@ -12,6 +12,51 @@ document.getElementById('adminEmail').textContent = adminUser ? (adminUser.email
 
 function logout() { localStorage.clear(); token = null; window.location.href = '/index.html'; }
 
+// ===== SIDEBAR TOGGLE =====
+function isMobileNav() { return window.matchMedia('(max-width: 860px)').matches; }
+
+function openSidebar() {
+    const layout = document.getElementById('adminLayout');
+    if (!layout) return;
+    layout.classList.add('sidebar-open');
+}
+
+function closeSidebar() {
+    const layout = document.getElementById('adminLayout');
+    if (!layout) return;
+    layout.classList.remove('sidebar-open');
+}
+
+function toggleSidebar() {
+    const layout = document.getElementById('adminLayout');
+    if (!layout) return;
+    if (isMobileNav()) {
+        layout.classList.toggle('sidebar-open');
+    } else {
+        layout.classList.toggle('sidebar-collapsed');
+        try { localStorage.setItem('admSidebar', layout.classList.contains('sidebar-collapsed') ? '1' : '0'); } catch (e) {}
+        setTimeout(() => {
+            Object.values(dashboardCharts).forEach(c => { try { c && c.resize(); } catch (e) {} });
+        }, 220);
+    }
+}
+
+(function initSidebar() {
+    try {
+        if (localStorage.getItem('admSidebar') === '1' && !isMobileNav()) {
+            document.getElementById('adminLayout')?.classList.add('sidebar-collapsed');
+        }
+    } catch (e) {}
+    document.getElementById('sidebarToggle')?.addEventListener('click', toggleSidebar);
+    // close mobile drawer after nav click
+    document.querySelectorAll('.admin-nav-item').forEach(btn => {
+        btn.addEventListener('click', () => { if (isMobileNav()) closeSidebar(); });
+    });
+    window.addEventListener('resize', () => {
+        if (!isMobileNav()) closeSidebar();
+    });
+})();
+
 function showSection(section, el) {
     currentSection = section;
     if (el) {
@@ -54,42 +99,367 @@ function esc(s) {
 }
 
 // ===== DASHBOARD =====
-const METHOD_COLORS = { CARD:'#18181b', card:'#18181b', google_pay:'#52525b', GOOGLE_PAY:'#52525b', apple_pay:'#71717a', APPLE_PAY:'#71717a', link:'#a1a1aa', LINK:'#a1a1aa', amazon_pay:'#3f3f46', Unknown:'#d4d4d8' };
-const FALLBACK_COLORS = ['#18181b','#52525b','#71717a','#a1a1aa','#d4d4d8','#3f3f46','#e4e4e7','#27272a'];
-const STATUS_COLORS = { Succeeded:'#16a34a', Failed:'#dc2626', Processing:'#d97706', Initiated:'#71717a' };
+// Minimal neutral palette + single teal accent (status colors only in badges/charts)
+const METHOD_COLORS = {
+    card: '#0f766e', CARD: '#0f766e',
+    google_pay: '#0d9488', GOOGLE_PAY: '#0d9488', gpay: '#0d9488',
+    apple_pay: '#14b8a6', APPLE_PAY: '#14b8a6', applepay: '#14b8a6',
+    link: '#2dd4bf', LINK: '#2dd4bf',
+    amazon_pay: '#115e59', AMAZON_PAY: '#115e59',
+    sepa_debit: '#5eead4', SEPA_DEBIT: '#5eead4',
+    us_bank_account: '#134e4a', ACH: '#134e4a',
+    cashapp: '#99f6e4', Cashapp: '#99f6e4',
+    Unknown: '#d4d4d8', unknown: '#d4d4d8', null: '#e4e4e7'
+};
+const FALLBACK_COLORS = ['#0f766e', '#0d9488', '#14b8a6', '#2dd4bf', '#115e59', '#5eead4', '#134e4a', '#99f6e4', '#84cc16', '#d4d4d8'];
+const STATUS_COLORS = {
+    SUCCEEDED: '#059669', Succeeded: '#059669', succeeded: '#059669',
+    FAILED: '#e11d48', Failed: '#e11d48', failed: '#e11d48',
+    PROCESSING: '#d97706', Processing: '#d97706', processing: '#d97706',
+    INITIATED: '#0f766e', Initiated: '#0f766e', initiated: '#0f766e',
+    REFUNDED: '#7c3aed', Refunded: '#7c3aed',
+    Unknown: '#d4d4d8'
+};
 
 let dashboardCharts = { methods: null, status: null, transactions: null, revenue: null };
 let dashboardLoading = false;
+let dashCustomersLoaded = false;
+
+async function ensureDashCustomers() {
+    if (dashCustomersLoaded) return;
+    try {
+        const res = await fetch('/api/v1/admin/users', { headers: authHeaders() });
+        const data = await res.json();
+        if (!data.success || !data.data) return;
+        const sel = document.getElementById('dashCustomer');
+        if (!sel) return;
+        const current = sel.value;
+        sel.innerHTML = '<option value="">All customers</option>' +
+            data.data.map(u => `<option value="${u.id}">${esc(u.name || u.email || ('User #' + u.id))}</option>`).join('');
+        sel.value = current;
+        dashCustomersLoaded = true;
+    } catch (e) { console.error(e); }
+}
+
+function fmtMoney(n) {
+    return '$' + (Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function pctDelta(cur, prev) {
+    const c = Number(cur) || 0;
+    const p = Number(prev) || 0;
+    if (p === 0 && c === 0) return { text: '—', cls: 'flat', up: false };
+    if (p === 0) return { text: 'new', cls: 'up', up: true };
+    const d = ((c - p) / p) * 100;
+    const sign = d > 0 ? '+' : '';
+    return {
+        text: sign + d.toFixed(1) + '%',
+        cls: d > 0 ? 'up' : d < 0 ? 'down' : 'flat',
+        up: d > 0
+    };
+}
+
+function setDelta(id, cur, prev, invert) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const d = pctDelta(cur, prev);
+    let cls = d.cls;
+    if (invert && d.cls !== 'flat') cls = d.up ? 'up bad' : 'down good';
+    el.innerHTML = `<span class="delta ${cls}">${esc(d.text)}</span>`;
+    el.title = 'Previous period: ' + (prev ?? 0);
+}
+
+function formatPeriod(key, grain) {
+    if (!key || key === 'unknown') return 'Unknown';
+    if (grain === 'year') return String(key);
+    if (grain === 'month') {
+        const [y, m] = key.split('-');
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        return (months[parseInt(m, 10) - 1] || m) + ' ' + y;
+    }
+    if (grain === 'week') {
+        // keys like "2026-W26" → "Week 26" (current year) or "Week 26 · 2025"
+        const parts = String(key).split('-W');
+        const year = parts[0];
+        const week = parts[1] || '';
+        const nowYear = String(new Date().getFullYear());
+        if (!week) return String(key);
+        return year === nowYear ? 'Week ' + week : 'Week ' + week + ' · ' + year;
+    }
+    const dt = new Date(key + 'T00:00:00');
+    if (isNaN(dt)) return key;
+    return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function grainLabel(g) {
+    return ({ day: 'Daily', week: 'Weekly', month: 'Monthly', year: 'Yearly' })[g] || g;
+}
+
+function renderBreakdown(series, grain) {
+    const body = document.getElementById('breakdownBody');
+    const sub = document.getElementById('breakdownSub');
+    if (sub) sub.textContent = grainLabel(grain) + ' performance · click range/grain to re-slice';
+    if (!series || !series.length) {
+        body.innerHTML = '<tr><td colspan="6" class="admin-empty">No data in this range.</td></tr>';
+        return;
+    }
+    let tPay = 0, tSuc = 0, tFail = 0, tRev = 0;
+    series.forEach(p => {
+        tPay += p.payments || 0;
+        tSuc += p.succeeded || 0;
+        tFail += p.failed || 0;
+        tRev += p.revenue || 0;
+    });
+    const rows = series.map(p => {
+        const rate = Number(p.successRate) || 0;
+        const rateCls = rate >= 80 ? 'high' : rate >= 50 ? 'mid' : 'low';
+        return `<tr>
+            <td class="period-cell">${esc(formatPeriod(p.period, grain))}</td>
+            <td>${p.payments ?? 0}</td>
+            <td style="color:#047857;font-weight:600;">${p.succeeded ?? 0}</td>
+            <td style="color:#be123c;font-weight:600;">${p.failed ?? 0}</td>
+            <td><span class="rate-bar ${rateCls}">${rate.toFixed(1)}%</span></td>
+            <td style="font-weight:600;">${fmtMoney(p.revenue)}</td>
+        </tr>`;
+    }).join('');
+    const tRate = tPay > 0 ? (tSuc * 100 / tPay) : 0;
+    body.innerHTML = rows + `<tr class="summary-row">
+        <td>Total</td>
+        <td>${tPay}</td>
+        <td>${tSuc}</td>
+        <td>${tFail}</td>
+        <td>${tRate.toFixed(1)}%</td>
+        <td>${fmtMoney(tRev)}</td>
+    </tr>`;
+}
+
+function renderDashLogs(d) {
+    const body = document.getElementById('dashLogsBody');
+    const countEl = document.getElementById('dashLogsCount');
+    const subEl = document.getElementById('dashLogsSub');
+    if (!body) return;
+    const logs = Array.isArray(d.paymentLogs) ? d.paymentLogs : [];
+    if (countEl) countEl.textContent = logs.length + (logs.length === 1 ? ' log' : ' logs');
+    if (subEl) {
+        const custSel = document.getElementById('dashCustomer');
+        const custName = custSel && custSel.value
+            ? (custSel.options[custSel.selectedIndex]?.text || 'selected customer')
+            : 'all customers';
+        subEl.textContent = (d.rangeStart || '?') + ' → ' + (d.rangeEnd || '?') + ' · ' + custName;
+    }
+    if (!logs.length) {
+        body.innerHTML = '<tr><td colspan="7" class="admin-empty">No payment logs in this range.</td></tr>';
+        return;
+    }
+    body.innerHTML = logs.map(l => `
+        <tr>
+            <td>${l.id}</td>
+            <td>${esc(l.email) || (l.customerId ? 'User #' + l.customerId : '-')}</td>
+            <td>${esc(l.paymentMethod) || '-'}</td>
+            <td style="font-weight:600;white-space:nowrap;">${l.currency ? String(l.currency).toUpperCase() : 'USD'} $${parseFloat(l.amount).toFixed(2)}</td>
+            <td>${paymentBadge(l.status)}</td>
+            <td style="color:${l.failureCode ? '#be123c' : '#71717a'}">${esc(l.failureCode) || '-'}</td>
+            <td style="white-space:nowrap;color:#71717a;">${fmtDate(l.createdAt)}</td>
+        </tr>
+    `).join('');
+}
 
 async function loadDashboard() {
     if (dashboardLoading) return;
     dashboardLoading = true;
+    await ensureDashCustomers();
     const range = document.getElementById('dashRange').value;
+    const startEl = document.getElementById('dashStart');
+    const endEl = document.getElementById('dashEnd');
+    const grainSel = document.getElementById('dashGrain');
+    const grain = grainSel ? grainSel.value : 'auto';
+    const customerSel = document.getElementById('dashCustomer');
+    const customerId = customerSel ? customerSel.value : '';
+
+    let url = '/api/v1/admin/dashboard?grain=' + grain;
+    if (range === 'custom' || (startEl && startEl.value && endEl && endEl.value)) {
+        const s = startEl ? startEl.value : '';
+        const e = endEl ? endEl.value : '';
+        if (s && e) {
+            url += '&range=custom&startDate=' + encodeURIComponent(s) + '&endDate=' + encodeURIComponent(e);
+        } else {
+            url += '&range=' + range;
+        }
+    } else {
+        url += '&range=' + range;
+    }
+    if (customerId) url += '&customerId=' + customerId;
     try {
-        const res = await fetch('/api/v1/admin/dashboard?range=' + range, { headers: authHeaders() });
+        const res = await fetch(url, { headers: authHeaders() });
         const data = await res.json();
         if (!data.success) { dashboardLoading = false; return; }
         const d = data.data;
+        const prev = d.previous || {};
 
-        document.getElementById('statTotal').textContent = d.totalPayments ?? '-';
-        document.getElementById('statSucceeded').textContent = d.succeeded ?? '-';
-        document.getElementById('statFailed').textContent = d.failed ?? '-';
-        document.getElementById('statRefunds').textContent = d.totalRefunds ?? '-';
+        // Keep inputs in sync with resolved window
+        if (startEl && d.rangeStart) startEl.value = d.rangeStart;
+        if (endEl && d.rangeEnd) endEl.value = d.rangeEnd && d.rangeEnd.length >= 10 ? d.rangeEnd.slice(0, 10) : d.rangeEnd;
 
-        const total = d.totalPayments || 0;
-        const succRate = total > 0 ? ((d.succeeded / total) * 100).toFixed(1) : null;
-        const failRate = total > 0 ? ((d.failed / total) * 100).toFixed(1) : null;
-        document.getElementById('statSuccessRate').textContent = succRate !== null ? succRate + '% success rate' : 'No payments in range';
-        document.getElementById('statFailRate').textContent = failRate !== null ? failRate + '% failure rate' : 'No payments in range';
+        const rangeText = document.getElementById('dashRangeText');
+        if (rangeText) {
+            rangeText.textContent = (d.rangeStart || '?') + ' → ' + (d.rangeEnd || '?');
+        }
 
-        let revenue = 0;
-        Object.values(d.dailyRevenue || {}).forEach(v => { revenue += Number(v) || 0; });
-        document.getElementById('statRevenue').textContent = '$' + revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        animateStat(document.getElementById('statTotal'), d.totalPayments);
+        animateStat(document.getElementById('statSucceeded'), d.succeeded);
+        animateStat(document.getElementById('statFailed'), d.failed);
+        animateStat(document.getElementById('statRefunds'), d.totalRefunds);
+        const refundAmtEl = document.getElementById('statRefundAmount');
+        if (refundAmtEl) refundAmtEl.textContent = fmtMoney(d.refundedAmount);
+
+        const revenue = Number(d.revenue) || 0;
+        animateStat(document.getElementById('statRevenue'), revenue, true);
+
+        const chip = document.getElementById('compareChip');
+        if (chip && prev.start) chip.textContent = 'vs ' + prev.start + ' → ' + prev.end;
+
+        const g = d.grain || 'auto';
+        const txnSub = document.getElementById('txnChartSub');
+        const revSub = document.getElementById('revChartSub');
+        if (txnSub) txnSub.textContent = grainLabel(g) + ' payment volume';
+        if (revSub) revSub.textContent = grainLabel(g) + ' succeeded revenue';
 
         renderDashboardCharts(d);
+        renderBreakdown(d.series || [], g);
+        renderDashLogs(d);
     } catch (e) { console.error(e); }
     finally { dashboardLoading = false; }
 }
+
+function isoDate(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+}
+
+function setDashDefaultDates() {
+    const startEl = document.getElementById('dashStart');
+    const endEl = document.getElementById('dashEnd');
+    if (!startEl || !endEl) return;
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 6); // last 7 days including today
+    startEl.value = isoDate(start);
+    endEl.value = isoDate(end);
+    startEl.max = isoDate(end);
+}
+
+function onDashPresetChange() {
+    const preset = document.getElementById('dashRange').value;
+    const startEl = document.getElementById('dashStart');
+    const endEl = document.getElementById('dashEnd');
+    if (preset !== 'custom') clearMonthYear();
+    const end = new Date();
+    let start = new Date();
+    if (preset === 'today') {
+        // both today
+    } else if (preset === 'week') {
+        start.setDate(start.getDate() - 6);
+    } else if (preset === 'month') {
+        start = new Date(end.getFullYear(), end.getMonth(), 1);
+    } else if (preset === 'year') {
+        start = new Date(end.getFullYear(), 0, 1);
+    } else if (preset === 'all') {
+        start = new Date(2020, 0, 1);
+    } else {
+        // custom — leave dates as-is (default last 7 days if empty)
+        if (!startEl.value || !endEl.value) setDashDefaultDates();
+        loadDashboard();
+        return;
+    }
+    if (startEl) startEl.value = isoDate(start);
+    if (endEl) endEl.value = isoDate(end);
+    loadDashboard();
+}
+
+function onDashDateChange() {
+    const rangeSel = document.getElementById('dashRange');
+    if (rangeSel) rangeSel.value = 'custom';
+    clearMonthYear();
+    const startEl = document.getElementById('dashStart');
+    const endEl = document.getElementById('dashEnd');
+    if (startEl && endEl && startEl.value && endEl.value && startEl.value > endEl.value) {
+        endEl.value = startEl.value;
+    }
+    loadDashboard();
+}
+
+// ---- Month / Year filter ----
+function populateDashYears() {
+    const yearSel = document.getElementById('dashYear');
+    if (!yearSel || yearSel.options.length > 1) return;
+    const nowY = new Date().getFullYear();
+    for (let y = nowY; y >= nowY - 5; y--) {
+        const o = document.createElement('option');
+        o.value = String(y);
+        o.textContent = String(y);
+        yearSel.appendChild(o);
+    }
+}
+
+function clearMonthYear() {
+    const m = document.getElementById('dashMonth');
+    const y = document.getElementById('dashYear');
+    if (m) m.value = '';
+    if (y) y.value = '';
+}
+
+function onDashMonthYearChange() {
+    const mSel = document.getElementById('dashMonth');
+    const ySel = document.getElementById('dashYear');
+    const presetSel = document.getElementById('dashRange');
+    const startEl = document.getElementById('dashStart');
+    const endEl = document.getElementById('dashEnd');
+    const m = mSel ? mSel.value : '';
+    const y = ySel ? ySel.value : '';
+    if (!m && !y) return;
+    const now = new Date();
+    const yy = y ? parseInt(y, 10) : now.getFullYear();
+    let start, end;
+    if (m) {
+        const mm = parseInt(m, 10) - 1;
+        start = new Date(yy, mm, 1);
+        end = new Date(yy, mm + 1, 0);
+    } else {
+        start = new Date(yy, 0, 1);
+        end = new Date(yy, 11, 31);
+    }
+    if (startEl) startEl.value = isoDate(start);
+    if (endEl) endEl.value = isoDate(end);
+    if (presetSel) presetSel.value = 'custom';
+    loadDashboard();
+}
+
+// ---- count-up animation for stat values ----
+function animateStat(el, target, isMoney) {
+    if (!el) return;
+    if (target == null || isNaN(Number(target))) { el.textContent = '-'; el.dataset.raw = ''; return; }
+    const to = Number(target);
+    const from = el.dataset.raw !== undefined && el.dataset.raw !== '' && !isNaN(Number(el.dataset.raw))
+        ? Number(el.dataset.raw) : 0;
+    el.dataset.raw = String(to);
+    const fmt = v => isMoney ? fmtMoney(v) : String(Math.round(v));
+    if (from === to) { el.textContent = fmt(to); return; }
+    const dur = 700;
+    const t0 = performance.now();
+    function step(t) {
+        const p = Math.min(1, (t - t0) / dur);
+        const e = 1 - Math.pow(1 - p, 3);
+        el.textContent = fmt(from + (to - from) * e);
+        if (p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+}
+
+// init default: last 7 days
+setDashDefaultDates();
+populateDashYears();
 
 function destroyChart(key) {
     if (dashboardCharts[key]) { dashboardCharts[key].destroy(); dashboardCharts[key] = null; }
@@ -102,54 +472,168 @@ const doughnutOpts = (legendPos = 'bottom') => ({
     maintainAspectRatio: false,
     cutout: '68%',
     plugins: {
-        legend: { position: legendPos, labels: { padding: 14, usePointStyle: true, pointStyleWidth: 8, font: CHART_FONT, color: '#64748b' } },
-        tooltip: { backgroundColor: '#09090b', padding: 10, cornerRadius: 8, titleFont: { ...CHART_FONT, weight: '600' }, bodyFont: CHART_FONT, displayColors: true, boxPadding: 4 }
+        legend: { position: legendPos, labels: { padding: 14, usePointStyle: true, pointStyleWidth: 8, font: CHART_FONT, color: '#71717a' } },
+        tooltip: { backgroundColor: '#18181b', padding: 10, cornerRadius: 8, titleFont: { ...CHART_FONT, weight: '600' }, bodyFont: CHART_FONT, displayColors: true, boxPadding: 4 }
     }
 });
+
+function prettyLabel(s) {
+    if (s == null || s === '') return 'Unknown';
+    return String(s).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
 
 function renderDashboardCharts(d) {
     destroyChart('methods'); destroyChart('status'); destroyChart('transactions'); destroyChart('revenue');
 
-    const methodLabels = Object.keys(d.methodCounts || {});
-    const methodValues = Object.values(d.methodCounts || {});
-    const methodColors = methodLabels.map((l, i) => METHOD_COLORS[l] || FALLBACK_COLORS[i % FALLBACK_COLORS.length]);
+    const methodEntries = Object.entries(d.methodCounts || {})
+        .sort((a, b) => (b[1] || 0) - (a[1] || 0));
+    const methodLabels = methodEntries.map(([k]) => prettyLabel(k));
+    const methodValues = methodEntries.map(([, v]) => v || 0);
+    const methodRawKeys = methodEntries.map(([k]) => k);
+    const methodColors = methodRawKeys.map((k, i) => METHOD_COLORS[k] || FALLBACK_COLORS[i % FALLBACK_COLORS.length]);
 
     dashboardCharts.methods = new Chart(document.getElementById('chartMethods'), {
-        type: 'doughnut',
+        type: 'bar',
         data: {
             labels: methodLabels.length ? methodLabels : ['No Data'],
-            datasets: [{ data: methodValues.length ? methodValues : [1], backgroundColor: methodLabels.length ? methodColors : ['#e2e8f0'], borderWidth: 0, hoverOffset: 6 }]
+            datasets: [{
+                label: 'Payments',
+                data: methodValues.length ? methodValues : [0],
+                backgroundColor: methodLabels.length ? methodColors : ['#e4e4e7'],
+                hoverBackgroundColor: methodLabels.length ? methodColors.map(c => c) : ['#d4d4d8'],
+                borderRadius: 6,
+                borderSkipped: false,
+                maxBarThickness: 36,
+                barPercentage: 0.7,
+                categoryPercentage: 0.8
+            }]
         },
-        options: doughnutOpts()
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#18181b', padding: 10, cornerRadius: 8,
+                    titleFont: { ...CHART_FONT, weight: '600' }, bodyFont: CHART_FONT,
+                    displayColors: true, boxPadding: 4,
+                    callbacks: { label: (c) => ' ' + c.parsed.x + ' payments' }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1, font: CHART_FONT, color: '#71717a', precision: 0 },
+                    grid: CHART_GRID,
+                    border: { display: false }
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: { font: { ...CHART_FONT, weight: '600', size: 12 }, color: '#3f3f46' },
+                    border: { display: false }
+                }
+            }
+        }
     });
 
-    const statusLabels = Object.keys(d.statusCounts || {});
-    const statusValues = Object.values(d.statusCounts || {});
+    const statusEntries = Object.entries(d.statusCounts || {})
+        .sort((a, b) => (b[1] || 0) - (a[1] || 0));
+    const statusLabels = statusEntries.map(([k]) => prettyLabel(k));
+    const statusValues = statusEntries.map(([, v]) => v || 0);
+    const statusRawKeys = statusEntries.map(([k]) => k);
+    const statusColors = statusRawKeys.map(k => STATUS_COLORS[k] || STATUS_COLORS[prettyLabel(k)] || '#71717a');
 
     dashboardCharts.status = new Chart(document.getElementById('chartStatus'), {
         type: 'doughnut',
         data: {
             labels: statusLabels.length ? statusLabels : ['No Data'],
-            datasets: [{ data: statusValues.length ? statusValues : [1], backgroundColor: statusLabels.length ? statusLabels.map(s => STATUS_COLORS[s] || '#94a3b8') : ['#e2e8f0'], borderWidth: 0, hoverOffset: 6 }]
+            datasets: [{
+                data: statusValues.length ? statusValues : [1],
+                backgroundColor: statusLabels.length ? statusColors : ['#e4e4e7'],
+                borderWidth: 3,
+                borderColor: '#ffffff',
+                hoverOffset: 8,
+                spacing: 2
+            }]
         },
-        options: doughnutOpts()
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '64%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 14,
+                        usePointStyle: true,
+                        pointStyleWidth: 10,
+                        pointStyle: 'circle',
+                        font: { ...CHART_FONT, weight: '600', size: 12 },
+                        color: '#3f3f46',
+                        generateLabels(chart) {
+                            const ds = chart.data.datasets[0];
+                            return (chart.data.labels || []).map((label, i) => ({
+                                text: label,
+                                fillStyle: (ds.backgroundColor || [])[i] || '#a1a1aa',
+                                strokeStyle: 'transparent',
+                                pointStyle: 'circle',
+                                hidden: false,
+                                index: i,
+                                datasetIndex: 0
+                            }));
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#18181b', padding: 10, cornerRadius: 8,
+                    titleFont: { ...CHART_FONT, weight: '600' }, bodyFont: CHART_FONT,
+                    displayColors: true, boxPadding: 4,
+                    callbacks: { label: (c) => ' ' + c.parsed + ' payments' }
+                }
+            }
+        }
     });
 
-    const days = Object.keys(d.dailyCounts || {}).sort();
-    const dayLabels = days.map(day => new Date(day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+    const series = Array.isArray(d.series) && d.series.length
+        ? d.series
+        : Object.keys(d.dailyCounts || {}).sort().map(k => ({
+            period: k,
+            payments: d.dailyCounts[k] || 0,
+            revenue: (d.dailyRevenue || {})[k] || 0,
+            succeeded: null,
+            failed: null,
+            successRate: 0
+        }));
+    const grain = d.grain || 'day';
+    const periodKeys = series.map(p => p.period);
+    const dayLabels = periodKeys.map(k => formatPeriod(k, grain));
+    const counts = series.map(p => p.payments || 0);
+    const revs = series.map(p => p.revenue || 0);
+    const fullTips = periodKeys.map(k => formatPeriod(k, grain));
 
     dashboardCharts.transactions = new Chart(document.getElementById('chartTransactions'), {
         type: 'bar',
         data: {
             labels: dayLabels.length ? dayLabels : ['No Data'],
-            datasets: [{ label: 'Transactions', data: days.length ? days.map(day => d.dailyCounts[day] || 0) : [0], backgroundColor: '#18181b', hoverBackgroundColor: '#3f3f46', borderRadius: 6, borderSkipped: false, maxBarThickness: 28 }]
+            datasets: [{ label: 'Transactions', data: counts.length ? counts : [0], backgroundColor: counts.map((_, i) => i % 2 === 0 ? '#0f766e' : '#5eead4'), hoverBackgroundColor: '#115e59', borderRadius: 6, borderSkipped: false, maxBarThickness: 30, barPercentage: 0.72, categoryPercentage: 0.85 }]
         },
         options: {
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: { backgroundColor: '#09090b', padding: 10, cornerRadius: 8, bodyFont: CHART_FONT, titleFont: CHART_FONT } },
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#18181b', padding: 10, cornerRadius: 8, bodyFont: CHART_FONT, titleFont: CHART_FONT,
+                    callbacks: {
+                        title: (items) => fullTips[items[0].dataIndex] || items[0].label,
+                        label: (c) => ' ' + c.parsed.y + ' payments'
+                    }
+                }
+            },
             scales: {
-                y: { beginAtZero: true, ticks: { stepSize: 1, font: CHART_FONT, color: '#94a3b8' }, grid: CHART_GRID, border: { display: false } },
-                x: { grid: { display: false }, ticks: { font: CHART_FONT, color: '#94a3b8', maxRotation: 0, autoSkipPadding: 12 }, border: { display: false } }
+                y: { beginAtZero: true, ticks: { stepSize: 1, font: CHART_FONT, color: '#71717a' }, grid: CHART_GRID, border: { display: false } },
+                x: { grid: { display: false }, ticks: { font: CHART_FONT, color: '#71717a', maxRotation: 45, autoSkipPadding: 8 }, border: { display: false } }
             }
         }
     });
@@ -160,28 +644,35 @@ function renderDashboardCharts(d) {
             labels: dayLabels.length ? dayLabels : ['No Data'],
             datasets: [{
                 label: 'Revenue ($)',
-                data: days.length ? days.map(day => (d.dailyRevenue || {})[day] || 0) : [0],
-                borderColor: '#16a34a',
-                backgroundColor: 'rgba(22, 163, 74, 0.06)',
+                data: revs.length ? revs : [0],
+                borderColor: '#0f766e',
+                backgroundColor: 'rgba(15, 118, 110, 0.08)',
                 fill: true,
-                tension: 0.35,
-                borderWidth: 2.5,
-                pointRadius: 3,
+                tension: 0.4,
+                borderWidth: 2,
+                pointRadius: series.length > 40 ? 0 : 3,
                 pointHoverRadius: 5,
-                pointBackgroundColor: '#16a34a',
-                pointBorderColor: '#fff',
+                pointBackgroundColor: '#0f766e',
+                pointBorderColor: '#ffffff',
                 pointBorderWidth: 2
             }]
         },
         options: {
             responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
             plugins: {
                 legend: { display: false },
-                tooltip: { backgroundColor: '#09090b', padding: 10, cornerRadius: 8, bodyFont: CHART_FONT, titleFont: CHART_FONT, callbacks: { label: c => ' $' + Number(c.parsed.y).toFixed(2) } }
+                tooltip: {
+                    backgroundColor: '#18181b', padding: 10, cornerRadius: 8, bodyFont: CHART_FONT, titleFont: CHART_FONT,
+                    callbacks: {
+                        title: (items) => fullTips[items[0].dataIndex] || items[0].label,
+                        label: (c) => ' $' + Number(c.parsed.y).toFixed(2)
+                    }
+                }
             },
             scales: {
-                y: { beginAtZero: true, ticks: { font: CHART_FONT, color: '#94a3b8', callback: v => '$' + v }, grid: CHART_GRID, border: { display: false } },
-                x: { grid: { display: false }, ticks: { font: CHART_FONT, color: '#94a3b8', maxRotation: 0, autoSkipPadding: 12 }, border: { display: false } }
+                y: { beginAtZero: true, ticks: { font: CHART_FONT, color: '#71717a', callback: v => '$' + v }, grid: CHART_GRID, border: { display: false } },
+                x: { grid: { display: false }, ticks: { font: CHART_FONT, color: '#71717a', maxRotation: 45, autoSkipPadding: 8 }, border: { display: false } }
             }
         }
     });
@@ -232,8 +723,8 @@ async function loadAllLogs(page) {
                 <td style="font-weight:600;white-space:nowrap;">${l.currency ? l.currency.toUpperCase() : 'USD'} $${parseFloat(l.amount).toFixed(2)}</td>
                 <td>${paymentBadge(l.status)}</td>
                 <td style="white-space:normal;word-wrap:break-word;max-width:180px;">${esc(l.message) || '-'}</td>
-                <td style="color:${l.failureCode ? '#d93025' : '#8b8fa3'}">${esc(l.failureCode) || '-'}</td>
-                <td style="white-space:nowrap;color:#8b8fa3;">${fmtDate(l.createdAt)}</td>
+                <td style="color:${l.failureCode ? '#be123c' : '#71717a'}">${esc(l.failureCode) || '-'}</td>
+                <td style="white-space:nowrap;color:#71717a;">${fmtDate(l.createdAt)}</td>
             </tr>
         `).join('');
 
@@ -298,7 +789,7 @@ async function loadAdminRefundLogs(page = 0) {
                 <td style="font-weight:600;white-space:nowrap;">${r.currency ? r.currency.toUpperCase() : 'USD'} $${parseFloat(r.amount).toFixed(2)}</td>
                 <td>${refundBadge(r.status)}</td>
                 <td style="white-space:normal;word-wrap:break-word;max-width:180px;">${esc(r.message) || '-'}</td>
-                <td style="white-space:nowrap;color:#8b8fa3;">${fmtDate(r.createdAt)}</td>
+                <td style="white-space:nowrap;color:#71717a;">${fmtDate(r.createdAt)}</td>
             </tr>
         `).join('');
 

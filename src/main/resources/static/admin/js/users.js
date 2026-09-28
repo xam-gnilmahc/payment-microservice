@@ -36,7 +36,7 @@ async function loadUsers() {
             const assigned = allUserGateways.filter(x => x.userId === user.id);
 
             const gwCell = assigned.length === 0
-                ? '<span style="color:#8b8fa3;">None</span>'
+                ? '<span style="color:#71717a;">None</span>'
                 : '<div class="gw-badges">' + assigned.map(a2 => `
                     <span class="gw-badge ${a2.enabled === '1' ? 'badge-green' : 'badge-yellow'}">${esc(a2.gatewayTitle)}</span>
                     <button class="btn-link" style="font-size:11px;" onclick="openCredentials(${a2.id})">Credentials</button>
