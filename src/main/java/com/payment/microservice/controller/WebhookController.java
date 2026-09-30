@@ -310,38 +310,31 @@ public class WebhookController {
       case "succeeded" -> {
         statusCode = "1";
         if ("refund.created".equals(type)) {
-          message = "Refund succeeded. Funds deducted from balance" + refStr + ".";
+          message = "Your refund has been started! The money was deducted from our account and is on its way to your bank" + refStr + ".";
         } else {
-          // refund.updated - succeeded (e.g. ARN/tracking info attached after the fact)
-          message = "Refund confirmed succeeded" + refStr + ". Balance was already deducted.";
+          // refund.updated - succeeded
+          message = "Refund complete! The money has been successfully sent to your bank. It usually takes 5 to 10 days to show up on your statement" + refStr + ".";
         }
       }
       case "pending" -> {
         statusCode = "0";
-        message =
-            "Refund pending network processing"
-                + refStr
-                + ". Balance not yet deducted; awaiting settlement.";
+        message = "Your refund is being processed. The funds are currently held and waiting to clear with the banking networks" + refStr + ".";
       }
       case "requires_action" -> {
         statusCode = "0";
-        message = "Refund requires additional action before it can proceed. Balance not deducted.";
+        message = "We need additional information or action from you before this refund can be sent out.";
       }
       case "canceled" -> {
         statusCode = "2";
-        message =
-            "Refund was canceled before completion. Balance was not deducted (or was restored).";
+        message = "This refund was canceled before it could complete. No money was moved.";
       }
       case "failed" -> {
         statusCode = "2";
-        message =
-            "Refund failed: "
-                + failureReason
-                + ". Customer was not refunded and balance was restored.";
+        message = "The refund failed because your bank turned it down (" + failureReason + "). The money was returned to our system.";
       }
       default -> {
         statusCode = "0";
-        message = "Refund status unrecognized (" + status + "). Review manually.";
+        message = "We are checking on the status of your refund (" + status + "). Please check back soon.";
       }
     }
 
@@ -368,10 +361,13 @@ public class WebhookController {
     refundLogRepository.save(refundLog);
     log.info("Refund log saved: refundId={}, status={}, type={}", refundId, statusCode, type);
 
-    // Customer refund receipt — first terminal event (success or failure) to avoid dupes
+    // Customer refund receipt — Triggers on terminal events (Success via updated, or failure)
     boolean terminal = "1".equals(statusCode) || "2".equals(statusCode);
-    boolean firstEvent = "refund.created".equals(type) || "refund.failed".equals(type);
-    if (terminal && firstEvent) {
+    
+    // FIX: Send email when refund finalizes on updated event, or if it outright fails
+    boolean shouldSendEmail = ("refund.updated".equals(type) && "1".equals(statusCode)) || "refund.failed".equals(type);
+    
+    if (terminal && shouldSendEmail) {
       try {
         boolean sent = receiptEmailService.sendRefundReceipt(refundLog);
         log.info("Refund receipt for log id={}: sent={}", refundLog.getId(), sent);
@@ -380,4 +376,5 @@ public class WebhookController {
       }
     }
   }
+
 }

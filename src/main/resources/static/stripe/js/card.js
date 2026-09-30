@@ -30,14 +30,14 @@ function setProcessing() {
 // ===== SKELETON LOADING =====
 function showCardSkeleton() {
     const skel = document.getElementById('card-skeleton');
-    const el = document.getElementById('card-element');
+    const el = document.getElementById('card-fields');
     if (skel) skel.classList.add('show');
     if (el) el.style.display = 'none';
 }
 
 function hideCardSkeleton() {
     const skel = document.getElementById('card-skeleton');
-    const el = document.getElementById('card-element');
+    const el = document.getElementById('card-fields');
     if (skel) skel.classList.remove('show');
     if (el) el.style.display = '';
 }
@@ -78,8 +78,9 @@ function goToCard(amount) {
     showCardSkeleton();
     showWalletSkeleton();
 
-    cardElement.unmount();
-    cardElement.mount('#card-element');
+    if (cardNumberEl) { cardNumberEl.unmount(); cardNumberEl.mount('#card-number'); }
+    if (cardExpiryEl) { cardExpiryEl.unmount(); cardExpiryEl.mount('#card-expiry'); }
+    if (cardCvcEl) { cardCvcEl.unmount(); cardCvcEl.mount('#card-cvc'); }
     setupExpressCheckout(amount);
 
     setTimeout(hideCardSkeleton, 3000);
@@ -137,16 +138,25 @@ function showPaymentError(message) {
 }
 
 // ===== EXPRESS CHECKOUT ELEMENT (Apple Pay, Google Pay, Link) =====
+// Runs strictly in this order:
+//   STEP 1  cleanup old element
+//   STEP 2  create new element (invisible, nothing on page yet)
+//   STEP 3  attach events — they are only REGISTERED here, they RUN after STEP 4
+//   STEP 4  mount — element goes live, Stripe starts its wallet check
+//   STEP 5  safety timeout for the skeleton
+// After STEP 4 Stripe fires: availablepaymentmethodschange -> user taps wallet -> confirm
 function setupExpressCheckout(amount) {
     const container = document.getElementById('pr-button-container');
     const separator = document.getElementById('payOrSeparator');
 
+    // ---- STEP 1: remove previous element (fresh one every visit to this step) ----
     if (expressCheckoutEl) {
         expressCheckoutEl.unmount();
         expressCheckoutEl = null;
         expressCheckoutElements = null;
     }
 
+    // ---- STEP 2: create element (memory only, nothing visible yet) ----
     const totalInCents = Math.round(parseFloat(amount) * 100);
 
     expressCheckoutElements = stripe.elements({
@@ -162,10 +172,14 @@ function setupExpressCheckout(amount) {
         },
         buttonType: { googlePay: 'checkout', applePay: 'check-out' },
         buttonHeight: 40,
-        layout: { maxColumns: 2, maxRows: 2 }
+        layout: { maxColumns: 3, maxRows: 2, overflow: 'auto' }
     });
 
-    // Show wallet buttons when methods are available
+    // NOTE: both events below are registered HERE (before mount),
+    // but they only TRIGGER after STEP 4 (mount) — Stripe's reply and
+    // the user's tap both happen after the element goes live.
+
+    // ---- STEP 3a: REGISTER event — RUNS after STEP 4, when Stripe replies with wallet list ----
     expressCheckoutEl.on('availablepaymentmethodschange', ({ paymentMethods }) => {
         console.log('[ExpressCheckout] available methods:', paymentMethods);
         hideWalletSkeleton();
@@ -178,11 +192,7 @@ function setupExpressCheckout(amount) {
         }
     });
 
-    expressCheckoutEl.on('ready', () => {
-        console.log('[ExpressCheckout] ready');
-    });
-
-    // Handle wallet confirm — create PI then confirm
+    // ---- STEP 3b: REGISTER event — RUNS after STEP 4, when user taps a wallet button ----
     expressCheckoutEl.on('confirm', async (event) => {
         console.log('[ExpressCheckout] confirm event fired', event);
         const walletType = event.expressPaymentType || 'wallet';
@@ -237,13 +247,13 @@ function setupExpressCheckout(amount) {
         }
     });
 
-    // Mount AFTER handlers registered
-    showWalletSkeleton();
+    // ---- STEP 4: MOUNT — element goes live; STEP 3 events fire AFTER this ----
     container.style.display = 'block';
     if (separator) separator.style.display = 'flex';
     expressCheckoutEl.mount('#pr-button-container');
+    // from here: Stripe checks wallets STEP 3a runs -> buttons visible
 
-    // Safety: never leave wallet skeleton up forever
+    // ---- STEP 5: safety net — hide skeleton after 4s if Stripe never replies ----
     setTimeout(() => {
         const s = document.getElementById('wallet-skeleton');
         if (s && s.classList.contains('show')) hideWalletSkeleton();
@@ -278,7 +288,7 @@ document.getElementById('payBtn').addEventListener('click', async () => {
         } : {};
 
         const { error, paymentIntent } = await stripe.confirmCardPayment(paymentIntentData.clientSecret, {
-            payment_method: { card: cardElement, billing_details: billingDetails }
+            payment_method: { card: cardNumberEl, billing_details: billingDetails }
         });
 
         if (error) {

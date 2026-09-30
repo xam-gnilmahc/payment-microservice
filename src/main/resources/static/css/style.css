@@ -22,8 +22,10 @@ body { font-family: 'Inter', -apple-system, Arial, sans-serif; background: #ffff
 .form-group input::placeholder { color: #aaa; }
 .form-group select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7084' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
 
-#card-element { padding: 14px; border: 1.5px solid #d4d4d8; background: #ffffff; }
-#card-element:focus-within { border-color: #1a1a2e; background: #fff; }
+#card-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+#card-number { grid-column: 1 / -1; }
+#card-number, #card-expiry, #card-cvc { padding: 14px; border: 1.5px solid #d4d4d8; background: #ffffff; }
+#card-number:focus-within, #card-expiry:focus-within, #card-cvc:focus-within { border-color: #1a1a2e; background: #fff; }
 #card-errors { color: #e53e3e; font-size: 12px; margin-top: 6px; min-height: 16px; }
 
 .btn { width: 100%; padding: 13px; border: none; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; }
@@ -119,7 +121,7 @@ body { font-family: 'Inter', -apple-system, Arial, sans-serif; background: #ffff
 .logs-pagination-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 #pr-button-container .PaymentRequestButton { min-height: 48px; }
-#pr-button-container { display: none; max-width: 600px; }
+#pr-button-container { display: none; width: 100%; max-width: 100%; }
 
 .success-animation { display: flex; flex-direction: column; align-items: center; padding: 40px 0 20px; }
 .success-checkmark { width: 80px; height: 80px; border-radius: 50%; background: #15803d; display: flex; align-items: center; justify-content: center; animation: scaleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
@@ -154,7 +156,7 @@ body { font-family: 'Inter', -apple-system, Arial, sans-serif; background: #ffff
 /* Wallet skeleton — two full-width bars like real wallet buttons */
 #wallet-skeleton { display: none; margin-bottom: 4px; }
 #wallet-skeleton.show { display: block; }
-.skel-wallet-stack { display: flex; flex-direction: column; gap: 10px; }
+.skel-wallet-stack { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .skel-wallet-btn {
   height: 44px;
   background: #e8eaef;
@@ -171,84 +173,19 @@ body { font-family: 'Inter', -apple-system, Arial, sans-serif; background: #ffff
   animation: skelShimmer 1.35s ease-in-out infinite;
 }
 .skel-wallet-btn:nth-child(2)::after { animation-delay: 0.12s; }
+.skel-wallet-btn:nth-child(3)::after { animation-delay: 0.24s; }
 
-/* Card skeleton — same box as real #card-element */
+/* Card skeleton — same three-field layout as the real inputs */
 .card-skeleton { display: none; }
-.card-skeleton.show { display: block; }
-.skel-card-box {
-  padding: 16px 14px;
-  border: 1.5px solid #d4d4d8;
-  background: #ffffff;
-  min-height: 52px;
-}
-.skel-card-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.skel-card-brand {
-  width: 38px;
-  height: 24px;
-  background: #e4e6ec;
-  border-radius: 3px;
-  flex-shrink: 0;
+.card-skeleton.show { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.skel-card-field {
+  height: 50px;
+  background: #e8eaef;
   position: relative;
   overflow: hidden;
 }
-.skel-card-brand::after,
-.skel-card-num::after,
-.skel-card-cvc::after,
-.skel-card-exp::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,0.65) 50%, transparent 80%);
-  transform: translateX(-100%);
-  animation: skelShimmer 1.35s ease-in-out infinite;
-}
-.skel-card-num {
-  flex: 1;
-  height: 12px;
-  max-width: 200px;
-  background: #e4e6ec;
-  border-radius: 4px;
-  position: relative;
-  overflow: hidden;
-}
-.skel-card-exp {
-  width: 52px;
-  height: 12px;
-  background: #e4e6ec;
-  border-radius: 4px;
-  position: relative;
-  overflow: hidden;
-  animation-delay: 0.1s;
-}
-.skel-card-cvc {
-  width: 44px;
-  height: 12px;
-  background: #e4e6ec;
-  border-radius: 4px;
-  position: relative;
-  overflow: hidden;
-  animation-delay: 0.18s;
-}
-.skel-card-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 14px;
-}
-.skel-card-line {
-  height: 9px;
-  background: #eceef2;
-  border-radius: 4px;
-  position: relative;
-  overflow: hidden;
-}
-.skel-card-line.short { width: 72px; }
-.skel-card-line.long { width: 120px; }
-.skel-card-line::after {
+.skel-card-field:first-child { grid-column: 1 / -1; }
+.skel-card-field::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -256,4 +193,14 @@ body { font-family: 'Inter', -apple-system, Arial, sans-serif; background: #ffff
   transform: translateX(-100%);
   animation: skelShimmer 1.35s ease-in-out infinite;
 }
-.skel-card-line.long::after { animation-delay: 0.15s; }
+.skel-card-field:nth-child(2)::after { animation-delay: 0.12s; }
+.skel-card-field:nth-child(3)::after { animation-delay: 0.24s; }
+
+/* ============================================================
+   CUSTOMER CHECKOUT — layout only: equal width steps, flat (no radius/shadow)
+   ============================================================ */
+body.theme-customer .container, body.theme-customer .header-inner { max-width: 820px; }
+body.theme-customer *, body.theme-customer *::before, body.theme-customer *::after {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}

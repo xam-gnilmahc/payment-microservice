@@ -7,19 +7,26 @@ let selectedGatewayId = null;
 let selectedGatewayTitle = null;
 let stripe = null;
 let elements = null;
-let cardElement = null;
+let cardNumberEl = null;
+let cardExpiryEl = null;
+let cardCvcEl = null;
 
 // ===== HELPERS =====
-function goToLogin() { localStorage.clear(); token = paymentIntentData = null; selectedGatewayId = null; selectedGatewayTitle = null; stripe = null; elements = null; cardElement = null; window.location.href = '/index.html'; }
+function goToLogin() { localStorage.clear(); token = paymentIntentData = null; selectedGatewayId = null; selectedGatewayTitle = null; stripe = null; elements = null; cardNumberEl = null; cardExpiryEl = null; cardCvcEl = null; window.location.href = '/index.html'; }
 function goToNoGateway() { hideAll(); document.getElementById('step-no-gateway').classList.remove('hidden'); }
 
 // ===== INIT STRIPE WITH PUBLIC KEY =====
 function initStripe(publicKey) {
     stripe = Stripe(publicKey);
     elements = stripe.elements();
-    cardElement = elements.create('card', { hidePostalCode: true });
-    cardElement.on('change', (e) => { document.getElementById('card-errors').textContent = e.error ? e.error.message : ''; });
-    cardElement.on('ready', () => {
+    const onCardChange = (e) => { document.getElementById('card-errors').textContent = e.error ? e.error.message : ''; };
+    cardNumberEl = elements.create('cardNumber');
+    cardExpiryEl = elements.create('cardExpiry');
+    cardCvcEl = elements.create('cardCvc');
+    cardNumberEl.on('change', onCardChange);
+    cardExpiryEl.on('change', onCardChange);
+    cardCvcEl.on('change', onCardChange);
+    cardNumberEl.on('ready', () => {
         if (typeof hideCardSkeleton === 'function') hideCardSkeleton();
     });
 }
