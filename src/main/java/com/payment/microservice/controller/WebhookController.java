@@ -224,14 +224,14 @@ public class WebhookController {
     log.info("Saved: id={}, pi={}, pm={}", logEntry.getId(), piId, paymentMethod);
 
     // Customer receipt on success or failure
-    if (pStatus == PaymentStatus.SUCCEEDED || pStatus == PaymentStatus.FAILED) {
-      try {
-        boolean sent = receiptEmailService.sendPaymentReceipt(logEntry);
-        log.info("Payment receipt for log id={}: sent={}", logEntry.getId(), sent);
-      } catch (Exception e) {
-        log.warn("Payment receipt failed for log id={}: {}", logEntry.getId(), e.getMessage());
-      }
-    }
+    // if (pStatus == PaymentStatus.SUCCEEDED || pStatus == PaymentStatus.FAILED) {
+    //   try {
+    //     boolean sent = receiptEmailService.sendPaymentReceipt(logEntry);
+    //     log.info("Payment receipt for log id={}: sent={}", logEntry.getId(), sent);
+    //   } catch (Exception e) {
+    //     log.warn("Payment receipt failed for log id={}: {}", logEntry.getId(), e.getMessage());
+    //   }
+    // }
   }
 
   /** Calls Stripe API to resolve payment method ID to type (card, link, etc.) */
@@ -361,20 +361,20 @@ public class WebhookController {
     refundLogRepository.save(refundLog);
     log.info("Refund log saved: refundId={}, status={}, type={}", refundId, statusCode, type);
 
-    // Customer refund receipt — Triggers on terminal events (Success via updated, or failure)
-    boolean terminal = "1".equals(statusCode) || "2".equals(statusCode);
+    // // Customer refund receipt — Triggers on terminal events (Success via updated, or failure)
+    // boolean terminal = "1".equals(statusCode) || "2".equals(statusCode);
     
-    // FIX: Send email when refund finalizes on updated event, or if it outright fails
-    boolean shouldSendEmail = ("refund.updated".equals(type) && "1".equals(statusCode)) || "refund.failed".equals(type);
+    // // FIX: Send email when refund finalizes on updated event, or if it outright fails
+    // boolean shouldSendEmail = ("refund.updated".equals(type) && "1".equals(statusCode)) || "refund.failed".equals(type);
     
-    if (terminal && shouldSendEmail) {
-      try {
-        boolean sent = receiptEmailService.sendRefundReceipt(refundLog);
-        log.info("Refund receipt for log id={}: sent={}", refundLog.getId(), sent);
-      } catch (Exception e) {
-        log.warn("Refund receipt failed for log id={}: {}", refundLog.getId(), e.getMessage());
-      }
-    }
+    // if (terminal && shouldSendEmail) {
+    //   try {
+    //     boolean sent = receiptEmailService.sendRefundReceipt(refundLog);
+    //     log.info("Refund receipt for log id={}: sent={}", refundLog.getId(), sent);
+    //   } catch (Exception e) {
+    //     log.warn("Refund receipt failed for log id={}: {}", refundLog.getId(), e.getMessage());
+    //   }
+    // }
   }
 
 }
