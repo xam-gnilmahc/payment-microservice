@@ -58,6 +58,36 @@ body { font-family: 'Inter', -apple-system, Arial, sans-serif; background: #ffff
 .btn-primary { background: #1a1a2e; color: #fff; }
 .btn-primary:hover { background: #0f0f18; }
 .btn:disabled { background: #ccc; color: #888; cursor: not-allowed; }
+.btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; animation: segRowIn 0.25s ease; }
+.btn-secondary { background: #ffffff; color: #1a1a2e; border: 1.5px solid #1a1a2e; }
+.btn-secondary:hover { background: #f7f8fa; }
+/* active segment visibly wipes into place each time you switch modes */
+.btn-row .btn-primary {
+  background-color: #ffffff;
+  background-image: linear-gradient(#1a1a2e, #1a1a2e);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  animation: segWipe 0.35s ease;
+}
+@keyframes segRowIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes segWipe { from { background-size: 0% 100%; } to { background-size: 100% 100%; } }
+/* auth submit loading state — spinner + keep active segment navy while disabled */
+.btn-spinner {
+  display: inline-block; width: 12px; height: 12px; margin-right: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.35); border-top-color: #ffffff;
+  border-radius: 50%; vertical-align: -2px;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.btn-row .btn-primary:disabled {
+  background-color: #1a1a2e;
+  background-image: linear-gradient(#1a1a2e, #1a1a2e);
+  background-size: 100% 100%;
+  color: #ffffff;
+  opacity: 0.85;
+  cursor: default;
+}
+.btn-row .btn-secondary:disabled { background: #ffffff; color: #9aa0b0; border-color: #c9ccd6; cursor: default; }
 .btn-link { background: none; border: none; color: #1a1a2e; font-size: 13px; font-weight: 500; cursor: pointer; padding: 0; }
 .btn-link:hover { text-decoration: underline; }
 

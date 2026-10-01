@@ -1,5 +1,7 @@
 package com.payment.microservice.dto;
 
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
@@ -19,6 +21,8 @@ public class PaymentRequest {
 
   @NotNull(message = "Amount is required")
   @Positive(message = "Amount must be positive")
+  @DecimalMin(value = "0.50", message = "Amount must be at least 0.50")
+  @DecimalMax(value = "999999.99", message = "Amount must not exceed 999999.99")
   private BigDecimal amount;
 
   private String email;

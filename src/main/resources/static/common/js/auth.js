@@ -32,12 +32,28 @@ async function routeToGateway() {
     }
 }
 
+// ===== AUTH BUTTON LOADING STATE =====
+function setAuthLoading(row, activeBtn, text) {
+    if (!activeBtn.dataset.orig) activeBtn.dataset.orig = activeBtn.innerHTML;
+    row.querySelectorAll('button').forEach(b => { b.disabled = true; });
+    activeBtn.innerHTML = '<span class="btn-spinner"></span>' + text;
+}
+function clearAuthLoading(row) {
+    row.querySelectorAll('button').forEach(b => {
+        b.disabled = false;
+        if (b.dataset.orig) b.innerHTML = b.dataset.orig;
+    });
+}
+
 // ===== LOGIN =====
 document.getElementById('loginBtn').addEventListener('click', async () => {
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value.trim();
     const err = document.getElementById('login-error');
     if (!email || !password) { showMsg(err, 'Please fill in all fields.'); return; }
+    const btn = document.getElementById('loginBtn');
+    const row = btn.closest('.btn-row');
+    setAuthLoading(row, btn, 'Signing in...');
     try {
         const res = await fetch('/api/v1/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
         const data = await res.json();
@@ -48,6 +64,7 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
         console.log('[Login] getUser result:', getUser());
         await routeToGateway();
     } catch (e) { showMsg(err, 'Server error: ' + e.message); }
+    finally { clearAuthLoading(row); }
 });
 
 // ===== TOGGLE LOGIN/REGISTER =====
@@ -72,6 +89,9 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
     const password = document.getElementById('regPassword').value.trim();
     const err = document.getElementById('reg-error');
     if (!name || !email || !password) { showMsg(err, 'Please fill in all fields.'); return; }
+    const btn = document.getElementById('registerBtn');
+    const row = btn.closest('.btn-row');
+    setAuthLoading(row, btn, 'Creating account...');
     try {
         const res = await fetch('/api/v1/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, password }) });
         const data = await res.json();
@@ -80,6 +100,7 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
         localStorage.setItem('jwtToken', token);
         await routeToGateway();
     } catch (e) { showMsg(err, 'Server error: ' + e.message); }
+    finally { clearAuthLoading(row); }
 });
 
 // ===== INIT =====

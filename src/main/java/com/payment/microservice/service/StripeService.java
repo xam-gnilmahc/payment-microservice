@@ -6,6 +6,7 @@ import com.stripe.model.PaymentIntent;
 import com.stripe.model.Refund;
 import com.stripe.param.PaymentIntentCreateParams;
 import com.stripe.param.RefundCreateParams;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -50,7 +51,8 @@ public class StripeService implements PaymentGatewayService {
       // Step 2: Build PaymentIntent params — Stripe charges in cents, so multiply by 100
       PaymentIntentCreateParams params =
           PaymentIntentCreateParams.builder()
-              .setAmount(request.getAmount().longValue() * 100) // convert to cents
+              .setAmount(
+                  request.getAmount().setScale(2, RoundingMode.HALF_UP).movePointRight(2).longValue()) // convert to cents
               .setCurrency("usd")
               .setCaptureMethod(
                   PaymentIntentCreateParams.CaptureMethod.AUTOMATIC) // Fixes automatic_async issue

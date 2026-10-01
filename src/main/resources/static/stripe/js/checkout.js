@@ -18,12 +18,20 @@ async function goToCheckout() {
 }
 
 // ===== GO TO PAY PAGE =====
+const MIN_AMOUNT = 0.50;
+const MAX_AMOUNT = 999999.99;
+
 document.getElementById('checkoutBtn').addEventListener('click', () => {
-    const amount = document.getElementById('amountInput').value.trim();
+    const raw = document.getElementById('amountInput').value.trim();
     const err = document.getElementById('checkout-error');
-    if (!amount || parseFloat(amount) < 0.50) { showMsg(err, 'Minimum amount is $0.50.'); return; }
+    if (!raw) { showMsg(err, 'Please enter an amount.'); return; }
+    const amount = Number(raw);
+    if (!Number.isFinite(amount) || amount < MIN_AMOUNT || amount > MAX_AMOUNT) {
+        showMsg(err, 'Enter an amount between $' + MIN_AMOUNT.toFixed(2) + ' and $' + MAX_AMOUNT.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '.');
+        return;
+    }
     if (!selectedAddressId) { showMsg(err, 'Please add a billing address.'); return; }
     const addr = billingAddresses.find(a => a.id === selectedAddressId);
     if (!addr) { showMsg(err, 'Selected address not found.'); return; }
-    goToCard(amount);
+    goToCard(amount.toFixed(2));
 });
