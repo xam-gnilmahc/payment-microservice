@@ -4,6 +4,7 @@ import com.payment.microservice.dto.PaymentRequest;
 import com.payment.microservice.dto.RefundRequest;
 import com.payment.microservice.model.PaymentLog;
 import com.payment.microservice.model.RefundLog;
+import com.payment.microservice.model.User;
 import com.payment.microservice.repository.PaymentLogRepository;
 import com.payment.microservice.repository.RefundLogRepository;
 import com.payment.microservice.service.PaymentGatewayService;
@@ -16,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -27,6 +29,13 @@ public class PaymentController {
   private final PaymentService paymentService;
   private final PaymentLogRepository paymentLogRepository;
   private final RefundLogRepository refundLogRepository;
+
+  private boolean isSuperAdmin() {
+    Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    if (!(principal instanceof User user)) return false;
+    String flag = user.getIsSuperAdmin();
+    return flag != null && ("1".equals(flag) || "true".equalsIgnoreCase(flag));
+  }
 
   @PostMapping
   public ResponseEntity<ApiResponse<Map<String, String>>> createPayment(
@@ -89,7 +98,15 @@ public class PaymentController {
   public ResponseEntity<ApiResponse<Map<String, Object>>> getPaymentLogs(
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "50") int size) {
     try {
-      Page<PaymentLog> logPage = paymentLogRepository.findAllByIdDesc(PageRequest.of(page, size));
+      User user =
+          (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+      boolean isSuperAdmin = isSuperAdmin();
+
+      Page<PaymentLog> logPage =
+          isSuperAdmin
+              ? paymentLogRepository.findAllByIdDesc(PageRequest.of(page, size))
+              : paymentLogRepository.findByCustomerIdOrderByIdDesc(
+                  user.getId(), PageRequest.of(page, size));
 
       Map<String, Object> response =
           Map.of(
@@ -109,6 +126,18 @@ public class PaymentController {
   public ResponseEntity<ApiResponse<java.util.List<RefundLog>>> getRefundLogs(
       @RequestParam String chargeId) {
     try {
+      User user =
+          (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+      boolean isSuperAdmin = isSuperAdmin();
+
+      if (!isSuperAdmin) {
+        boolean ownsCharge =
+            paymentLogRepository.findByChargeId(chargeId).map(l -> user.getId().equals(l.getCustomerId())).orElse(false);
+        if (!ownsCharge) {
+          return ResponseEntity.badRequest().body(ApiResponse.error("Refund logs not found", 404));
+        }
+      }
+
       java.util.List<RefundLog> logs = refundLogRepository.findByChargeId(chargeId);
       return ResponseEntity.ok(ApiResponse.success("Refund logs fetched", 200, logs));
     } catch (Exception e) {
