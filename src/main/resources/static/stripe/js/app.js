@@ -12,6 +12,14 @@ let cardExpiryEl = null;
 let cardCvcEl = null;
 
 // ===== HELPERS =====
+// single message area on the pay page (below the card fields)
+function setCardMsg(type, text) {
+    const el = document.getElementById('card-msg');
+    if (!el) return;
+    el.textContent = text || '';
+    el.className = type || '';
+    if (text) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
 function goToLogin() { localStorage.clear(); token = paymentIntentData = null; selectedGatewayId = null; selectedGatewayTitle = null; stripe = null; elements = null; cardNumberEl = null; cardExpiryEl = null; cardCvcEl = null; window.location.href = '/index.html'; }
 function goToNoGateway() { hideAll(); document.getElementById('step-no-gateway').classList.remove('hidden'); }
 
@@ -19,7 +27,7 @@ function goToNoGateway() { hideAll(); document.getElementById('step-no-gateway')
 function initStripe(publicKey) {
     stripe = Stripe(publicKey);
     elements = stripe.elements();
-    const onCardChange = (e) => { document.getElementById('card-errors').textContent = e.error ? e.error.message : ''; };
+    const onCardChange = (e) => { setCardMsg(e.error ? 'error' : '', e.error ? e.error.message : ''); };
     cardNumberEl = elements.create('cardNumber');
     cardExpiryEl = elements.create('cardExpiry');
     cardCvcEl = elements.create('cardCvc');
@@ -73,17 +81,12 @@ if (returnedPiId && returnedPiSecret) {
 
                 hideAll();
                 document.getElementById('step-card').classList.remove('hidden');
-                document.getElementById('detailPiId').textContent = paymentIntent.id;
-                document.getElementById('detailChargeId').textContent = paymentIntent.latest_charge || 'N/A';
 
                 if (paymentIntent.status === 'succeeded') {
-                    document.getElementById('detailStatus').innerHTML = '<span class="status-badge success">Succeeded</span>';
-                    document.getElementById('resultPiId').textContent = paymentIntent.id;
-                    showMsg(document.getElementById('card-success'), 'Payment successful!');
+                    setCardMsg('success', 'Payment successful!');
                     confirmOnBackend(paymentIntent.id, 'wallet');
                 } else {
-                    document.getElementById('detailStatus').innerHTML = '<span class="status-badge error">' + paymentIntent.status + '</span>';
-                    showMsg(document.getElementById('card-error'), 'Payment status: ' + paymentIntent.status);
+                    setCardMsg('error', 'Payment status: ' + paymentIntent.status);
                 }
             });
         }

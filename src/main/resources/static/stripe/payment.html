@@ -17,6 +17,8 @@
     </div>
 </div>
 
+<div class="sandbox-banner">Sandbox testing mode &mdash; no real money is charged. Use test cards only.</div>
+
 <!-- ===== NO GATEWAY ===== -->
 <div class="container hidden" id="step-no-gateway">
     <div class="card">
@@ -36,7 +38,10 @@
 <div class="container hidden" id="step-checkout">
     <div class="card">
         <div class="card-header">
-            <div class="card-title">New Payment — <span id="selectedGatewayTitle">-</span></div>
+            <div>
+                <div class="card-title">New Payment — <span id="selectedGatewayTitle">-</span></div>
+                <div class="card-desc">Enter the amount you wish to pay and select a billing address. You'll review the details before confirming.</div>
+            </div>
             <div>
                 <button class="btn-link" onclick="goToLogin()" style="font-size:12px;">Logout</button>
             </div>
@@ -67,7 +72,7 @@
         </div>
 
         <div id="addressList"></div>
-        <div id="addressEmpty" style="text-align:center;padding:20px 0;color:#b0b3c1;font-size:13px;">No billing address. <button class="btn-link" onclick="showBillingForm()" style="font-size:12px;">Add one</button></div>
+        <div id="addressEmpty" class="empty-state">No billing address. <button class="btn-link" onclick="showBillingForm()" style="font-size:12px;">Add one</button></div>
 
         <div class="divider"></div>
         <button class="btn btn-primary" id="checkoutBtn">Continue to Pay</button>
@@ -81,15 +86,15 @@
         <div class="info-steps">
             <div class="info-step">
                 <div class="info-step-num">1</div>
-                <div class="info-step-text"><strong>PaymentIntent</strong> is created on Stripe. No money is charged yet.</div>
+                <div class="info-step-text"><strong>Enter amount</strong> — set the amount you wish to pay.</div>
             </div>
             <div class="info-step">
                 <div class="info-step-num">2</div>
-                <div class="info-step-text"><strong>Card details</strong> are entered on the next step. Stripe handles all security.</div>
+                <div class="info-step-text"><strong>Choose address</strong> — pick a saved billing address or add a new one.</div>
             </div>
             <div class="info-step">
                 <div class="info-step-num">3</div>
-                <div class="info-step-text"><strong>3D Secure</strong> authentication is handled automatically if required.</div>
+                <div class="info-step-text"><strong>Pay securely</strong> — review, confirm, and get an instant receipt.</div>
             </div>
         </div>
     </div>
@@ -200,37 +205,29 @@
 <div class="container hidden" id="step-card">
     <div class="card">
         <div class="card-header">
-            <div class="card-title">Pay with Card</div>
+            <div>
+                <div class="card-title">Pay with Card</div>
+                <div class="card-desc">Card details are entered on Stripe's encrypted form and never reach our servers. 3D Secure applies automatically.</div>
+            </div>
             <button class="btn-link" onclick="goToCheckout()" style="font-size:12px;">Back</button>
         </div>
-        <div class="banner banner-error" id="card-error"></div>
-        <div class="banner banner-success" id="card-success"></div>
+        <div id="card-msg"></div>
 
         <div class="amount-display">
             <div class="label">Amount to Pay</div>
             <div class="amount" id="payAmount">$0.00</div>
         </div>
 
-        <div class="detail-row">
-            <span class="detail-label">PaymentIntent ID</span>
-            <span class="detail-value" id="detailPiId">-</span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">Customer</span>
-            <span class="detail-value" id="detailCustomer">-</span>
-        </div>
-
-        <div class="divider"></div>
-
-        <div id="wallet-skeleton">
-            <div class="skel-wallet-stack">
-                <div class="skel-wallet-btn"></div>
-                <div class="skel-wallet-btn"></div>
-                <div class="skel-wallet-btn"></div>
+        <button type="button" id="walletToggle" class="wallet-toggle" onclick="toggleWalletPanel()" aria-expanded="false">
+            <span>Prefer a wallet?</span>
+            <span class="wallet-toggle-hint">Show options</span>
+        </button>
+        <div id="wallet-panel">
+            <div class="wallet-panel-inner">
+                <div id="wallet-loading">Loading wallet options&hellip;</div>
+                <div id="pr-button-container"></div>
             </div>
         </div>
-
-        <div id="pr-button-container" style="margin-bottom:16px;"></div>
 
         <div class="separator" id="payOrSeparator"><span class="separator-line"></span><span class="separator-text">or pay with card</span><span class="separator-line"></span></div>
 
@@ -247,30 +244,30 @@
             <div id="card-expiry"></div>
             <div id="card-cvc"></div>
         </div>
-        <div id="card-errors"></div>
+        <div class="sandbox-note">Test card: <strong>4242 4242 4242 4242</strong>, any future expiry, any CVC.</div>
 
-        <button class="btn btn-primary" id="payBtn" style="margin-top:20px;">Pay Now</button>
+        <button class="btn btn-primary" id="payBtn">Pay Now</button>
     </div>
 
-    <div class="card">
-        <div class="card-header">
-            <div class="card-title">Transaction Result</div>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">PaymentIntent ID</span>
-            <span class="detail-value" id="resultPiId">-</span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">Charge ID</span>
-            <span class="detail-value" id="detailChargeId">Waiting...</span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">Status</span>
-            <span class="detail-value" id="detailStatus"><span class="status-badge pending">Pending</span></span>
+    <div class="info-section">
+        <div class="info-title">What we accept</div>
+        <div class="info-steps">
+            <div class="info-step">
+                <div class="info-step-num">&#10003;</div>
+                <div class="info-step-text"><strong>Cards</strong> — Visa, Mastercard, Amex, Discover, and JCB.</div>
+            </div>
+            <div class="info-step">
+                <div class="info-step-num">&#10003;</div>
+                <div class="info-step-text"><strong>Wallets</strong> — Apple Pay, Google Pay, and Link where available.</div>
+            </div>
+            <div class="info-step">
+                <div class="info-step-num">&#10003;</div>
+                <div class="info-step-text"><strong>Receipt</strong> — instant confirmation and an email receipt after payment.</div>
+            </div>
         </div>
     </div>
 
-    <div class="text-center" style="margin-top:8px;">
+    <div class="text-center" style="margin-top:12px;">
         <button class="btn-link" onclick="goToCheckout()">Make another payment</button>
     </div>
 </div>
@@ -285,12 +282,12 @@
         <div class="banner banner-error" id="logs-error"></div>
         <div id="logsTable"></div>
         <div id="logsPagination"></div>
-        <div id="logsEmpty" style="text-align:center;padding:24px 0;color:#b0b3c1;font-size:13px;">No payment logs yet.</div>
+        <div id="logsEmpty" class="empty-state">No payment logs yet.</div>
     </div>
 </div>
 
 <!-- ===== REFUND MODAL ===== -->
-<div id="refundModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;display:none;align-items:center;justify-content:center;">
+<div id="refundModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
     <div style="background:#fff;max-width:420px;width:90%;padding:28px;">
         <div class="card-header" style="margin-bottom:16px;">
             <div class="card-title">Refund Payment</div>
@@ -323,7 +320,7 @@
 
 <!-- ===== REFUND LOGS MODAL ===== -->
 <div id="refundLogsModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
-    <div style="background:#fff;max-width:820px;width:92%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;border-radius:12px;">
+    <div style="background:#fff;max-width:820px;width:92%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;">
         <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid #e2e4e9;flex-shrink:0;">
             <div style="font-size:16px;font-weight:600;color:#1a1a2e;">Refund Logs</div>
             <button class="btn-link" onclick="closeRefundLogsModal()" style="font-size:13px;">Close</button>

@@ -6,6 +6,7 @@ let selectedLog = null;
 async function goToLogs() {
     logsPage = 0;
     hideAll();
+    document.body.classList.add('wide-header');
     document.getElementById('step-logs').classList.remove('hidden');
     document.getElementById('logs-error').classList.remove('show');
     document.getElementById('logsTable').innerHTML = '<div style="text-align:center;padding:20px 0;color:#8b8fa3;font-size:13px;">Loading...</div>';

@@ -42,41 +42,81 @@ function hideCardSkeleton() {
     if (el) el.style.display = '';
 }
 
-function showWalletSkeleton() {
-    const s = document.getElementById('wallet-skeleton');
-    if (s) s.classList.add('show');
+// ===== WALLET PREFERENCE TOGGLE (wallets load in background, reveal on click) =====
+// The toggle bar ALWAYS stays visible — it never auto-hides.
+let walletMethodsReady = false;
+let walletAnyAvailable = false;
+
+function toggleWalletPanel() {
+    const panel = document.getElementById('wallet-panel');
+    const toggle = document.getElementById('walletToggle');
+    if (!panel || !toggle) return;
+    const opening = panel.classList.toggle('open') === true;
+    toggle.setAttribute('aria-expanded', opening ? 'true' : 'false');
+    const hint = toggle.querySelector('.wallet-toggle-hint');
+    if (hint) hint.textContent = opening ? 'Hide options' : 'Show options';
+    refreshWalletPanel();
 }
 
-function hideWalletSkeleton() {
-    const s = document.getElementById('wallet-skeleton');
-    if (s) s.classList.remove('show');
+function refreshWalletPanel() {
+    const panel = document.getElementById('wallet-panel');
+    if (!panel || !panel.classList.contains('open')) return;
+    const loading = document.getElementById('wallet-loading');
+    const wc = getWalletContainer();
+    const inner = panel.querySelector('.wallet-panel-inner');
+    const startH = inner ? inner.getBoundingClientRect().height : 0;
+    if (walletAnyAvailable) {
+        if (loading) loading.style.display = 'none';
+        if (wc) wc.style.display = 'block';
+    } else {
+        if (wc) wc.style.display = 'none';
+        if (loading) {
+            loading.style.display = '';
+            loading.textContent = walletMethodsReady
+                ? 'No wallet options available for this payment — please pay with card below.'
+                : 'Loading wallet options…';
+        }
+    }
+    // smooth height change when content swaps while already open (skip opening frame — grid anim covers it)
+    if (inner && inner.animate && startH > 1) {
+        const endH = inner.getBoundingClientRect().height;
+        if (Math.abs(endH - startH) > 1) {
+            inner.animate([{ height: startH + 'px' }, { height: endH + 'px' }], { duration: 250, easing: 'ease' });
+        }
+    }
 }
 
 // ===== GO TO CARD PAGE =====
 function goToCard(amount) {
-    const user = getUser();
-    const addr = billingAddresses.find(a => a.id === selectedAddressId);
     payAmount = parseFloat(amount);
     paymentIntentData = null;
     hideAll();
     document.getElementById('step-card').classList.remove('hidden');
     document.getElementById('payAmount').textContent = '$' + payAmount.toFixed(2);
-    document.getElementById('detailPiId').textContent = 'Click Pay to create...';
-    document.getElementById('detailCustomer').textContent = (addr ? addr.name : user.name);
-    document.getElementById('detailChargeId').textContent = 'Waiting...';
-    document.getElementById('detailStatus').innerHTML = '<span class="status-badge pending">Pending</span>';
-    document.getElementById('resultPiId').textContent = '-';
-    document.getElementById('card-success').classList.remove('show');
-    document.getElementById('card-error').classList.remove('show');
+    setCardMsg('', '');
     document.getElementById('payBtn').disabled = false;
     document.getElementById('payBtn').textContent = 'Pay Now';
     const wc = getWalletContainer();
     if (wc) { wc.style.pointerEvents = ''; wc.style.opacity = ''; wc.style.display = 'none'; }
+
+    // wallet: reset to collapsed; cards are usable immediately regardless
+    walletMethodsReady = false;
+    walletAnyAvailable = false;
+    const toggle = document.getElementById('walletToggle');
+    if (toggle) {
+        toggle.style.display = '';
+        toggle.setAttribute('aria-expanded', 'false');
+        const hint = toggle.querySelector('.wallet-toggle-hint');
+        if (hint) hint.textContent = 'Show options';
+    }
+    const panel = document.getElementById('wallet-panel');
+    if (panel) panel.classList.remove('open');
+    const loading = document.getElementById('wallet-loading');
+    if (loading) { loading.style.display = ''; loading.textContent = 'Loading wallet options…'; }
     const sep = document.getElementById('payOrSeparator');
-    if (sep) sep.style.display = 'none';
+    if (sep) sep.style.display = 'flex';
 
     showCardSkeleton();
-    showWalletSkeleton();
 
     if (cardNumberEl) { cardNumberEl.unmount(); cardNumberEl.mount('#card-number'); }
     if (cardExpiryEl) { cardExpiryEl.unmount(); cardExpiryEl.mount('#card-expiry'); }
@@ -103,7 +143,6 @@ async function createPaymentIntent() {
     const data = await res.json();
     if (!data.success) throw new Error(data.message || 'Failed to create payment');
     paymentIntentData = data.data;
-    document.getElementById('detailPiId').textContent = paymentIntentData.paymentIntentId || '-';
     return paymentIntentData;
 }
 
@@ -122,10 +161,7 @@ async function confirmOnBackend(paymentIntentId, paymentMethod) {
 
 // ===== UI STATES =====
 function showPaymentSuccess(paymentIntent) {
-    document.getElementById('detailChargeId').textContent = 'N/A';
-    document.getElementById('detailStatus').innerHTML = '<span class="status-badge success">Succeeded</span>';
-    document.getElementById('resultPiId').textContent = paymentIntent.id;
-    showMsg(document.getElementById('card-success'), 'Payment successful!');
+    setCardMsg('success', 'Payment successful!');
     document.getElementById('payBtn').disabled = true;
     document.getElementById('payBtn').textContent = 'Paid';
     const wc = getWalletContainer();
@@ -133,8 +169,7 @@ function showPaymentSuccess(paymentIntent) {
 }
 
 function showPaymentError(message) {
-    document.getElementById('detailStatus').innerHTML = '<span class="status-badge error">Failed</span>';
-    showMsg(document.getElementById('card-error'), message);
+    setCardMsg('error', message);
 }
 
 // ===== EXPRESS CHECKOUT ELEMENT (Apple Pay, Google Pay, Link) =====
@@ -143,12 +178,9 @@ function showPaymentError(message) {
 //   STEP 2  create new element (invisible, nothing on page yet)
 //   STEP 3  attach events — they are only REGISTERED here, they RUN after STEP 4
 //   STEP 4  mount — element goes live, Stripe starts its wallet check
-//   STEP 5  safety timeout for the skeleton
+//   STEP 5  safety timeout — note slow loading inside the panel (toggle bar never hides)
 // After STEP 4 Stripe fires: availablepaymentmethodschange -> user taps wallet -> confirm
 function setupExpressCheckout(amount) {
-    const container = document.getElementById('pr-button-container');
-    const separator = document.getElementById('payOrSeparator');
-
     // ---- STEP 1: remove previous element (fresh one every visit to this step) ----
     if (expressCheckoutEl) {
         expressCheckoutEl.unmount();
@@ -182,14 +214,11 @@ function setupExpressCheckout(amount) {
     // ---- STEP 3a: REGISTER event — RUNS after STEP 4, when Stripe replies with wallet list ----
     expressCheckoutEl.on('availablepaymentmethodschange', ({ paymentMethods }) => {
         console.log('[ExpressCheckout] available methods:', paymentMethods);
-        hideWalletSkeleton();
-        if (paymentMethods && typeof paymentMethods === 'object' && Object.keys(paymentMethods).length > 0) {
-            container.style.display = 'block';
-            if (separator) separator.style.display = 'flex';
-        } else {
-            container.style.display = 'none';
-            if (separator) separator.style.display = 'none';
-        }
+        lastAvailableMethods = paymentMethods || {};
+        walletMethodsReady = true;
+        walletAnyAvailable = paymentMethods && typeof paymentMethods === 'object' &&
+            Object.values(paymentMethods).some(m => m && m.available);
+        refreshWalletPanel();
     });
 
     // ---- STEP 3b: REGISTER event — RUNS after STEP 4, when user taps a wallet button ----
@@ -230,11 +259,7 @@ function setupExpressCheckout(amount) {
 
             if (paymentIntent.status === 'succeeded') {
                 showPaymentSuccess(paymentIntent);
-                confirmOnBackend(paymentIntent.id, walletType).then(data => {
-                    if (data && data.success && data.data.chargeId) {
-                        document.getElementById('detailChargeId').textContent = data.data.chargeId;
-                    }
-                });
+                confirmOnBackend(paymentIntent.id, walletType);
             } else if (paymentIntent.status === 'requires_action') {
                 console.log('[ExpressCheckout] requires_action — Stripe will handle redirect');
             } else {
@@ -248,24 +273,25 @@ function setupExpressCheckout(amount) {
     });
 
     // ---- STEP 4: MOUNT — element goes live; STEP 3 events fire AFTER this ----
-    container.style.display = 'block';
-    if (separator) separator.style.display = 'flex';
+    // container stays hidden until Stripe replies AND the user opens the wallet panel
     expressCheckoutEl.mount('#pr-button-container');
-    // from here: Stripe checks wallets STEP 3a runs -> buttons visible
 
-    // ---- STEP 5: safety net — hide skeleton after 4s if Stripe never replies ----
+    // ---- STEP 5: safety net — if Stripe is slow, say so inside the panel (bar stays) ----
     setTimeout(() => {
-        const s = document.getElementById('wallet-skeleton');
-        if (s && s.classList.contains('show')) hideWalletSkeleton();
+        if (!walletMethodsReady) {
+            const loading = document.getElementById('wallet-loading');
+            const panel = document.getElementById('wallet-panel');
+            if (loading && panel && panel.classList.contains('open')) {
+                loading.textContent = 'Wallet options are taking longer than usual…';
+            }
+        }
     }, 4000);
 }
 
 // ===== PAY WITH CARD =====
 document.getElementById('payBtn').addEventListener('click', async () => {
     const user = getUser();
-    const err = document.getElementById('card-error');
-    const ok = document.getElementById('card-success');
-    err.classList.remove('show'); ok.classList.remove('show');
+    setCardMsg('', '');
     setProcessing();
 
     try {
@@ -292,18 +318,14 @@ document.getElementById('payBtn').addEventListener('click', async () => {
         });
 
         if (error) {
-            showMsg(err, error.message);
+            setCardMsg('error', error.message);
             enableAllPaymentButtons();
             return;
         }
         showPaymentSuccess(paymentIntent);
-        confirmOnBackend(paymentIntent.id, 'card').then(data => {
-            if (data && data.success && data.data.chargeId) {
-                document.getElementById('detailChargeId').textContent = data.data.chargeId;
-            }
-        });
+        confirmOnBackend(paymentIntent.id, 'card');
     } catch (e) {
-        showMsg(err, e.message);
+        setCardMsg('error', e.message);
         enableAllPaymentButtons();
     }
 });
