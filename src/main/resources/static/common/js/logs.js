@@ -35,17 +35,18 @@ async function loadLogs() {
 
 function renderLogs(logs) {
     const statusBadge = (s) => {
-        if (s === 'INITIATED' || s === '0') return '<span class="status-badge" style="background:#ffffff;color:#075985;border:1px solid #7dd3fc;">Initiated</span>';
-        if (s === 'PROCESSING' || s === '1') return '<span class="status-badge" style="background:#ffffff;color:#78350f;border:1px solid #fbbf24;">Processing</span>';
-        if (s === 'SUCCEEDED' || s === '2') return '<span class="status-badge" style="background:#ffffff;color:#14532d;border:1px solid #4ade80;">Succeeded</span>';
-        if (s === 'FAILED' || s === '3') return '<span class="status-badge" style="background:#ffffff;color:#7f1d1d;border:1px solid #f87171;">Failed</span>';
-        return '<span class="status-badge">' + s + '</span>';
+        if (s === 'INITIATED' || s === '0') return '<span class="status-badge initiated">Initiated</span>';
+        if (s === 'PROCESSING' || s === '1') return '<span class="status-badge processing">Processing</span>';
+        if (s === 'SUCCEEDED' || s === '2') return '<span class="status-badge success">Succeeded</span>';
+        if (s === 'FAILED' || s === '3') return '<span class="status-badge error">Failed</span>';
+        return '<span class="status-badge pending">' + s + '</span>';
     };
     const fmt = (d) => {
         if (!d) return '-';
         const dt = new Date(d);
         return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     };
+    const money = (v) => Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     document.getElementById('logsTable').innerHTML = `
         <div class="logs-table-wrap">
             <table class="logs-table">
@@ -65,7 +66,7 @@ function renderLogs(logs) {
                     ${logs.map(l => `
                         <tr>
                             <td>${l.paymentMethod || '-'}</td>
-                            <td class="amt">${l.currency ? l.currency.toUpperCase() : 'USD'} $${parseFloat(l.amount).toFixed(2)}</td>
+                            <td class="amt">${l.currency ? l.currency.toUpperCase() : 'USD'} $${money(l.amount)}</td>
                             <td>${statusBadge(l.status)}</td>
                             <td class="mono">${l.chargeId || '-'}</td>
                             <td style="white-space:normal;word-wrap:break-word;max-width:180px;">${l.message || '-'}</td>
@@ -73,8 +74,8 @@ function renderLogs(logs) {
                             <td>${fmt(l.createdAt)}</td>
                             <td>${(l.status === 'SUCCEEDED' || l.status === '2') && l.chargeId
                                 ? (l.refundId
-                                    ? '<button class="btn-link" style="font-size:12px;color:#6b7280;" onclick=\'showRefundLogs(' + JSON.stringify({chargeId: l.chargeId}).replace(/'/g, "\\'") + ')\'>Refund Logs</button>'
-                                    : '<button class="btn-link" style="font-size:12px;color:#d93025;" onclick=\'openRefundModal(' + JSON.stringify({id: l.id, transactionId: l.transactionId, chargeId: l.chargeId, amount: l.amount, customerId: l.customerId}).replace(/'/g, "\\'") + ')\'>Refund</button>')
+                                    ? '<button class="btn-link btn-link-sm" onclick=\'showRefundLogs(' + JSON.stringify({chargeId: l.chargeId}).replace(/'/g, "\\'") + ')\'>Refund logs</button>'
+                                    : '<button class="btn-refund" onclick=\'openRefundModal(' + JSON.stringify({id: l.id, transactionId: l.transactionId, chargeId: l.chargeId, amount: l.amount, customerId: l.customerId}).replace(/'/g, "\\'") + ')\'>Refund</button>')
                                 : '-'}</td>
                         </tr>
                     `).join('')}

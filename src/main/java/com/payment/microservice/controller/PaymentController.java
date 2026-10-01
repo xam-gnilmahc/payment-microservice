@@ -122,6 +122,46 @@ public class PaymentController {
     }
   }
 
+  @GetMapping("/summary")
+  public ResponseEntity<ApiResponse<Map<String, Object>>> getPaymentSummary() {
+    try {
+      User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+      boolean isSuperAdmin = isSuperAdmin();
+      Long userId = user.getId();
+
+      long total =
+          isSuperAdmin ? paymentLogRepository.count() : paymentLogRepository.countByCustomerId(userId);
+      long succeeded =
+          isSuperAdmin
+              ? paymentLogRepository.countByStatus(com.payment.microservice.model.PaymentStatus.SUCCEEDED)
+              : paymentLogRepository.countByCustomerIdAndStatus(
+                  userId, com.payment.microservice.model.PaymentStatus.SUCCEEDED);
+      long failed =
+          isSuperAdmin
+              ? paymentLogRepository.countByStatus(com.payment.microservice.model.PaymentStatus.FAILED)
+              : paymentLogRepository.countByCustomerIdAndStatus(
+                  userId, com.payment.microservice.model.PaymentStatus.FAILED);
+      java.math.BigDecimal volume =
+          isSuperAdmin
+              ? paymentLogRepository.sumAmountByStatus(
+                  com.payment.microservice.model.PaymentStatus.SUCCEEDED)
+              : paymentLogRepository.sumAmountByCustomerIdAndStatus(
+                  userId, com.payment.microservice.model.PaymentStatus.SUCCEEDED);
+
+      Map<String, Object> summary =
+          Map.of(
+              "total", total,
+              "succeeded", succeeded,
+              "failed", failed,
+              "volume", volume == null ? java.math.BigDecimal.ZERO : volume);
+
+      return ResponseEntity.ok(ApiResponse.success("Payment summary fetched", 200, summary));
+    } catch (Exception e) {
+      return ResponseEntity.badRequest()
+          .body(ApiResponse.error("Failed to fetch payment summary: " + e.getMessage(), 400));
+    }
+  }
+
   @GetMapping("/refund-logs")
   public ResponseEntity<ApiResponse<java.util.List<RefundLog>>> getRefundLogs(
       @RequestParam String chargeId) {

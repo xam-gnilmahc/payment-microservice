@@ -44,6 +44,7 @@ function renderAddressList() {
         const label = showAllAddresses ? 'Show less' : `Show all (${billingAddresses.length})`;
         list.innerHTML += `<div class="address-expand"><a class="text-link" onclick="toggleAddressList()" style="font-size:12px;">${label}</a></div>`;
     }
+    updateSummaryAddress();
 }
 
 function toggleAddressList() {
@@ -51,9 +52,20 @@ function toggleAddressList() {
     renderAddressList();
 }
 
+// keep the order-summary cards in sync with the chosen address
+function updateSummaryAddress() {
+    const addr = billingAddresses.find(a => a.id === selectedAddressId);
+    const text = addr ? `${addr.addressLine1}, ${addr.city}` : 'Not selected';
+    ['summaryAddress', 'summaryAddress2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+    });
+}
+
 function selectAddress(id) {
     selectedAddressId = id;
     renderAddressList();
+    updateSummaryAddress();
 }
 
 // ===== SHOW/HIDE ADDRESS FORM =====

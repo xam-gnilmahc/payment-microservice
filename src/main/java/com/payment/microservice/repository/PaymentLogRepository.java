@@ -37,6 +37,21 @@ public interface PaymentLogRepository extends JpaRepository<PaymentLog, Long> {
 
   Optional<PaymentLog> findByTransactionId(String transactionId);
 
+  // ===== summary counts for the customer payment-logs page =====
+  long countByCustomerId(Long customerId);
+
+  long countByCustomerIdAndStatus(Long customerId, PaymentStatus status);
+
+  long countByStatus(PaymentStatus status);
+
+  @Query("SELECT COALESCE(SUM(p.amount), 0) FROM PaymentLog p WHERE p.customerId = :customerId "
+      + "AND p.status = :status")
+  java.math.BigDecimal sumAmountByCustomerIdAndStatus(
+      @Param("customerId") Long customerId, @Param("status") PaymentStatus status);
+
+  @Query("SELECT COALESCE(SUM(p.amount), 0) FROM PaymentLog p WHERE p.status = :status")
+  java.math.BigDecimal sumAmountByStatus(@Param("status") PaymentStatus status);
+
   @Query(
       "SELECT p FROM PaymentLog p WHERE p.createdAt >= :startDate AND p.createdAt < :endDate "
           + "ORDER BY p.id DESC")

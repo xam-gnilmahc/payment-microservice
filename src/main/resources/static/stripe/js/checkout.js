@@ -1,10 +1,25 @@
 // ===== GO TO CHECKOUT =====
+const money = (v) => Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function updateCheckoutSummary() {
+    const raw = parseFloat(document.getElementById('amountInput').value);
+    const shown = Number.isFinite(raw) && raw > 0 ? '$' + money(raw) : '$0.00';
+    ['summaryAmount', 'summaryTotal'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = shown;
+    });
+}
+
 async function goToCheckout() {
     const user = getUser();
     if (!user) { goToLogin(); return; }
     hideAll();
     document.getElementById('step-checkout').classList.remove('hidden');
     document.getElementById('selectedGatewayTitle').textContent = selectedGatewayTitle || 'Unknown';
+    ['summaryGateway', 'summaryGateway2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = selectedGatewayTitle || 'Unknown';
+    });
     document.getElementById('userAvatar').textContent = (user.name || 'U').charAt(0).toUpperCase();
     document.getElementById('userName').textContent = user.name || 'Unknown';
     document.getElementById('userEmailDisplay').textContent = user.email || '';
@@ -14,8 +29,11 @@ async function goToCheckout() {
     document.getElementById('checkout-error').classList.remove('show');
     paymentIntentData = null;
     showAllAddresses = false;
+    updateCheckoutSummary();
     await loadBillingAddresses();
 }
+
+document.getElementById('amountInput').addEventListener('input', updateCheckoutSummary);
 
 // ===== GO TO PAY PAGE =====
 const MIN_AMOUNT = 0.50;

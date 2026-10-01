@@ -36,68 +36,96 @@
 
 <!-- ===== STEP 2: CHECKOUT ===== -->
 <div class="container hidden" id="step-checkout">
-    <div class="card">
-        <div class="card-header">
-            <div>
-                <div class="card-title">New Payment — <span id="selectedGatewayTitle">-</span></div>
-                <div class="card-desc">Enter the amount you wish to pay and select a billing address. You'll review the details before confirming.</div>
+    <div class="split">
+        <div class="split-main">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">New Payment — <span id="selectedGatewayTitle">-</span></div>
+                        <div class="card-desc">Enter the amount you wish to pay and select a billing address. You'll review the details before confirming.</div>
+                    </div>
+                    <div>
+                        <button class="btn-link" onclick="goToLogin()" style="font-size:12px;">Logout</button>
+                    </div>
+                </div>
+                <div class="banner banner-error" id="checkout-error"></div>
+
+                <div class="user-badge">
+                    <div class="user-avatar" id="userAvatar">-</div>
+                    <div class="user-info">
+                        <div class="user-name" id="userName">-</div>
+                        <div class="user-email" id="userEmailDisplay">-</div>
+                    </div>
+                    <div class="user-label">Customer</div>
+                </div>
+
+                <div class="form-group">
+                    <label>Amount</label>
+                    <div class="amount-wrapper">
+                        <span class="currency">$</span>
+                        <input type="number" id="amountInput" step="0.01" min="0.50" max="999999.99" value="99.99" placeholder="0.00" />
+                    </div>
+                    <div class="card-desc">Between $0.50 and $999,999.99 per payment.</div>
+                </div>
+
+                <div class="divider"></div>
+                <div class="section-label">
+                    <span class="section-label-text">Billing Address</span>
+                    <button class="btn-ghost-sm" onclick="showBillingForm()">+ Add New</button>
+                </div>
+
+                <div id="addressList"></div>
+                <div id="addressEmpty" class="empty-state">No billing address. <button class="btn-ghost-sm" onclick="showBillingForm()">Add one</button></div>
+
+                <div class="divider"></div>
+                <button class="btn btn-primary" id="checkoutBtn">Continue to Pay</button>
+                <div style="text-align:center;margin-top:12px;">
+                    <button class="btn-link" onclick="goToLogs()" style="font-size:12px;">Payment Logs</button>
+                </div>
             </div>
-            <div>
-                <button class="btn-link" onclick="goToLogin()" style="font-size:12px;">Logout</button>
+
+            <div class="info-section">
+                <div class="info-title">How it works</div>
+                <div class="info-steps">
+                    <div class="info-step">
+                        <div class="info-step-num">1</div>
+                        <div class="info-step-text"><strong>Enter amount</strong> — set the amount you wish to pay.</div>
+                    </div>
+                    <div class="info-step">
+                        <div class="info-step-num">2</div>
+                        <div class="info-step-text"><strong>Choose address</strong> — pick a saved billing address or add a new one.</div>
+                    </div>
+                    <div class="info-step">
+                        <div class="info-step-num">3</div>
+                        <div class="info-step-text"><strong>Pay securely</strong> — review, confirm, and get an instant receipt.</div>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="banner banner-error" id="checkout-error"></div>
 
-        <div class="user-badge">
-            <div class="user-avatar" id="userAvatar">-</div>
-            <div class="user-info">
-                <div class="user-name" id="userName">-</div>
-                <div class="user-email" id="userEmailDisplay">-</div>
+        <aside class="split-side">
+            <div class="summary-card">
+                <div class="summary-label">Order summary</div>
+                <div class="summary-amount" id="summaryAmount">$99.99</div>
+                <div class="summary-row">
+                    <span>Billing address</span>
+                    <span id="summaryAddress">Not selected</span>
+                </div>
+                <div class="summary-row">
+                    <span>Payment method</span>
+                    <span>Card or wallet</span>
+                </div>
+                <div class="summary-row">
+                    <span>Gateway</span>
+                    <span id="summaryGateway">-</span>
+                </div>
+                <div class="summary-total">
+                    <span>Total due</span>
+                    <span id="summaryTotal">$99.99</span>
+                </div>
+                <div class="summary-note">Secured with encryption. You'll confirm the payment on the next step.</div>
             </div>
-            <div class="user-label">Customer</div>
-        </div>
-
-        <div class="form-group">
-            <label>Amount</label>
-            <div class="amount-wrapper">
-                <span class="currency">$</span>
-                <input type="number" id="amountInput" step="0.01" min="0.50" max="999999.99" value="99.99" placeholder="0.00" />
-            </div>
-            <div class="card-desc">Between $0.50 and $999,999.99 per payment.</div>
-        </div>
-
-        <div class="divider"></div>
-        <div class="section-label">
-            <span class="section-label-text">Billing Address</span>
-            <button class="btn-link" onclick="showBillingForm()" style="font-size:12px;">+ Add New</button>
-        </div>
-
-        <div id="addressList"></div>
-        <div id="addressEmpty" class="empty-state">No billing address. <button class="btn-link" onclick="showBillingForm()" style="font-size:12px;">Add one</button></div>
-
-        <div class="divider"></div>
-        <button class="btn btn-primary" id="checkoutBtn">Continue to Pay</button>
-        <div style="text-align:center;margin-top:12px;">
-            <button class="btn-link" onclick="goToLogs()" style="font-size:12px;">Payment Logs</button>
-        </div>
-    </div>
-
-    <div class="info-section">
-        <div class="info-title">How it works</div>
-        <div class="info-steps">
-            <div class="info-step">
-                <div class="info-step-num">1</div>
-                <div class="info-step-text"><strong>Enter amount</strong> — set the amount you wish to pay.</div>
-            </div>
-            <div class="info-step">
-                <div class="info-step-num">2</div>
-                <div class="info-step-text"><strong>Choose address</strong> — pick a saved billing address or add a new one.</div>
-            </div>
-            <div class="info-step">
-                <div class="info-step-num">3</div>
-                <div class="info-step-text"><strong>Pay securely</strong> — review, confirm, and get an instant receipt.</div>
-            </div>
-        </div>
+        </aside>
     </div>
 </div>
 
@@ -204,72 +232,95 @@
 
 <!-- ===== STEP 3: CARD ===== -->
 <div class="container hidden" id="step-card">
-    <div class="card">
-        <div class="card-header">
-            <div>
-                <div class="card-title">Pay with Card</div>
-                <div class="card-desc">Card details are entered on Stripe's encrypted form and never reach our servers. 3D Secure applies automatically.</div>
+    <div class="split">
+        <div class="split-main">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Pay with Card</div>
+                        <div class="card-desc">Card details are entered on Stripe's encrypted form and never reach our servers. 3D Secure applies automatically.</div>
+                    </div>
+                    <button class="btn-link" onclick="goToCheckout()" style="font-size:12px;">Back</button>
+                </div>
+                <div id="card-msg"></div>
+
+                <button type="button" id="walletToggle" class="wallet-toggle" onclick="toggleWalletPanel()" aria-expanded="false">
+                    <span>Prefer a wallet?</span>
+                    <span class="wallet-toggle-hint">Show options</span>
+                </button>
+                <div id="wallet-panel">
+                    <div class="wallet-panel-inner">
+                        <div id="wallet-loading">Loading wallet options&hellip;</div>
+                        <div id="pr-button-container"></div>
+                    </div>
+                </div>
+
+                <div class="separator" id="payOrSeparator"><span class="separator-line"></span><span class="separator-text">or pay with card</span><span class="separator-line"></span></div>
+
+                <div class="form-group">
+                    <label>Card Details</label>
+                </div>
+                <div class="card-skeleton" id="card-skeleton">
+                    <div class="skel-card-field"></div>
+                    <div class="skel-card-field"></div>
+                    <div class="skel-card-field"></div>
+                </div>
+                <div id="card-fields">
+                    <div id="card-number"></div>
+                    <div id="card-expiry"></div>
+                    <div id="card-cvc"></div>
+                </div>
+                <div class="sandbox-note">Test card: <strong>4242 4242 4242 4242</strong>, any future expiry, any CVC.</div>
+
+                <button class="btn btn-primary" id="payBtn">Pay Now</button>
             </div>
-            <button class="btn-link" onclick="goToCheckout()" style="font-size:12px;">Back</button>
-        </div>
-        <div id="card-msg"></div>
 
-        <div class="amount-display">
-            <div class="label">Amount to Pay</div>
-            <div class="amount" id="payAmount">$0.00</div>
-        </div>
+            <div class="info-section">
+                <div class="info-title">What we accept</div>
+                <div class="info-steps">
+                    <div class="info-step">
+                        <div class="info-step-num">&#10003;</div>
+                        <div class="info-step-text"><strong>Cards</strong> — Visa, Mastercard, Amex, Discover, and JCB.</div>
+                    </div>
+                    <div class="info-step">
+                        <div class="info-step-num">&#10003;</div>
+                        <div class="info-step-text"><strong>Wallets</strong> — Apple Pay, Google Pay, and Link where available.</div>
+                    </div>
+                    <div class="info-step">
+                        <div class="info-step-num">&#10003;</div>
+                        <div class="info-step-text"><strong>Receipt</strong> — instant confirmation and an email receipt after payment.</div>
+                    </div>
+                </div>
+            </div>
 
-        <button type="button" id="walletToggle" class="wallet-toggle" onclick="toggleWalletPanel()" aria-expanded="false">
-            <span>Prefer a wallet?</span>
-            <span class="wallet-toggle-hint">Show options</span>
-        </button>
-        <div id="wallet-panel">
-            <div class="wallet-panel-inner">
-                <div id="wallet-loading">Loading wallet options&hellip;</div>
-                <div id="pr-button-container"></div>
+            <div class="text-center" style="margin-top:12px;">
+                <button class="btn-link" onclick="goToCheckout()">Make another payment</button>
             </div>
         </div>
 
-        <div class="separator" id="payOrSeparator"><span class="separator-line"></span><span class="separator-text">or pay with card</span><span class="separator-line"></span></div>
-
-        <div class="form-group">
-            <label>Card Details</label>
-        </div>
-        <div class="card-skeleton" id="card-skeleton">
-            <div class="skel-card-field"></div>
-            <div class="skel-card-field"></div>
-            <div class="skel-card-field"></div>
-        </div>
-        <div id="card-fields">
-            <div id="card-number"></div>
-            <div id="card-expiry"></div>
-            <div id="card-cvc"></div>
-        </div>
-        <div class="sandbox-note">Test card: <strong>4242 4242 4242 4242</strong>, any future expiry, any CVC.</div>
-
-        <button class="btn btn-primary" id="payBtn">Pay Now</button>
-    </div>
-
-    <div class="info-section">
-        <div class="info-title">What we accept</div>
-        <div class="info-steps">
-            <div class="info-step">
-                <div class="info-step-num">&#10003;</div>
-                <div class="info-step-text"><strong>Cards</strong> — Visa, Mastercard, Amex, Discover, and JCB.</div>
+        <aside class="split-side">
+            <div class="summary-card">
+                <div class="summary-label">Amount to pay</div>
+                <div class="summary-amount" id="payAmount">$0.00</div>
+                <div class="summary-row">
+                    <span>Billing address</span>
+                    <span id="summaryAddress2">-</span>
+                </div>
+                <div class="summary-row">
+                    <span>Payment method</span>
+                    <span>Card or wallet</span>
+                </div>
+                <div class="summary-row">
+                    <span>Gateway</span>
+                    <span id="summaryGateway2">-</span>
+                </div>
+                <div class="summary-total">
+                    <span>Total due</span>
+                    <span id="payTotal">$0.00</span>
+                </div>
+                <div class="summary-note">Secured with encryption. A receipt is emailed after payment.</div>
             </div>
-            <div class="info-step">
-                <div class="info-step-num">&#10003;</div>
-                <div class="info-step-text"><strong>Wallets</strong> — Apple Pay, Google Pay, and Link where available.</div>
-            </div>
-            <div class="info-step">
-                <div class="info-step-num">&#10003;</div>
-                <div class="info-step-text"><strong>Receipt</strong> — instant confirmation and an email receipt after payment.</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="text-center" style="margin-top:12px;">
-        <button class="btn-link" onclick="goToCheckout()">Make another payment</button>
+        </aside>
     </div>
 </div>
 

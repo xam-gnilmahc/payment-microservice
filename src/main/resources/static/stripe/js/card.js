@@ -92,7 +92,11 @@ function goToCard(amount) {
     paymentIntentData = null;
     hideAll();
     document.getElementById('step-card').classList.remove('hidden');
-    document.getElementById('payAmount').textContent = '$' + payAmount.toFixed(2);
+    const amountText = '$' + payAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('payAmount').textContent = amountText;
+    const totalEl = document.getElementById('payTotal');
+    if (totalEl) totalEl.textContent = amountText;
+    updateSummaryAddress();
     setCardMsg('', '');
     document.getElementById('payBtn').disabled = false;
     document.getElementById('payBtn').textContent = 'Pay Now';
