@@ -14,7 +14,12 @@ import com.payment.microservice.repository.UserPaymentCredentialsRepository;
 import com.payment.microservice.repository.UserPaymentGatewayRepository;
 import com.payment.microservice.repository.UserRepository;
 import com.payment.microservice.traits.ApiResponse;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.context.SecurityContextRepository;
+import com.payment.microservice.traits.CurrentUser;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -23,13 +28,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
-@SecurityRequirement(name = "BearerAuth")
 public class AdminController {
 
   private final UserRepository userRepository;
@@ -38,10 +43,76 @@ public class AdminController {
   private final UserPaymentCredentialsRepository userPaymentCredentialsRepository;
   private final RefundLogRepository refundLogRepository;
   private final PaymentLogRepository paymentLogRepository;
+  private final PasswordEncoder passwordEncoder;
+  private final SecurityContextRepository securityContextRepository;
 
   @GetMapping("/users")
   public ResponseEntity<ApiResponse<Iterable<User>>> getUsers() {
     return ResponseEntity.ok(ApiResponse.success("Users fetched", 200, userRepository.findAll()));
+  }
+
+  // Sign in as a user.
+  //
+  // The admin's own password is not enough on its own: the target account's password is required
+  // too, so a hijacked admin session cannot silently take over an account. On success the session
+  // is REPLACED, which means the admin is signed out of the panel and lands as that user.
+  @PostMapping("/users/{id}/login-as")
+  public ResponseEntity<ApiResponse<Object>> loginAsUser(
+      @PathVariable Long id,
+      @RequestBody Map<String, Object> body,
+      jakarta.servlet.http.HttpServletRequest httpRequest,
+      jakarta.servlet.http.HttpServletResponse httpResponse) {
+    User target = userRepository.findById(id).orElse(null);
+    if (target == null) {
+      return ResponseEntity.badRequest().body(ApiResponse.error("User not found", 404));
+    }
+    if (Boolean.FALSE.equals(target.getIsActive())) {
+      return ResponseEntity.status(HttpStatus.FORBIDDEN)
+          .body(ApiResponse.error("That account is blocked. Unblock it first.", 403));
+    }
+    String password = body.get("password") != null ? body.get("password").toString() : "";
+    if (!passwordEncoder.matches(password, target.getPassword())) {
+      return ResponseEntity.badRequest()
+          .body(ApiResponse.error("That password does not match this account", 400));
+    }
+
+    // replace the session: from here this browser is that user, not the admin
+    Authentication authentication =
+        new UsernamePasswordAuthenticationToken(target, null, target.getAuthorities());
+    SecurityContextHolder.getContext().setAuthentication(authentication);
+    securityContextRepository.saveContext(SecurityContextHolder.getContext(), httpRequest, httpResponse);
+
+    return ResponseEntity.ok(
+        ApiResponse.success(
+            "Signed in as " + target.getEmail() + ". You are now signed in as that user.",
+            200,
+            Map.of(
+                "userId", target.getId(),
+                "email", target.getEmail(),
+                "name", target.getName() != null ? target.getName() : "",
+                "isSuperAdmin", target.getIsSuperAdmin() != null ? target.getIsSuperAdmin() : "0")));
+  }
+
+  // Block / unblock an account. Blocking flips is_active, which is what login checks, so the
+  // account keeps its existing session until it expires but cannot sign in again.
+  @PutMapping("/users/{id}/status")
+  public ResponseEntity<ApiResponse<Object>> toggleUserStatus(@PathVariable Long id) {
+    User user = userRepository.findById(id).orElse(null);
+    if (user == null) {
+      return ResponseEntity.badRequest().body(ApiResponse.error("User not found", 404));
+    }
+    if (user.getId().equals(CurrentUser.id())) {
+      return ResponseEntity.badRequest()
+          .body(ApiResponse.error("You cannot block your own account", 400));
+    }
+    boolean nowActive = Boolean.FALSE.equals(user.getIsActive());
+    user.setIsActive(nowActive);
+    userRepository.save(user);
+    return ResponseEntity.ok(
+        ApiResponse.success(
+            nowActive ? "User unblocked" : "User blocked",
+            200,
+            Map.of("userId", user.getId(), "isActive", nowActive)));
   }
 
   @GetMapping("/gateways")
@@ -368,8 +439,9 @@ public class AdminController {
     Map<String, Long> methodCounts = new HashMap<>();
     List<Object[]> methodRows =
         byCustomer
-            ? paymentLogRepository.countGroupByPaymentMethodAndCustomer(startDateDt, customerId)
-            : paymentLogRepository.countGroupByPaymentMethod(startDateDt);
+            ? paymentLogRepository.countGroupByPaymentMethodAndCustomer(
+                startDateDt, endDateDt, customerId)
+            : paymentLogRepository.countGroupByPaymentMethod(startDateDt, endDateDt);
     for (Object[] row : methodRows) {
       methodCounts.put((String) row[0], (Long) row[1]);
     }
@@ -377,8 +449,8 @@ public class AdminController {
     Map<String, Long> statusCounts = new HashMap<>();
     List<Object[]> statusRows =
         byCustomer
-            ? paymentLogRepository.countGroupByStatusAndCustomer(startDateDt, customerId)
-            : paymentLogRepository.countGroupByStatus(startDateDt);
+            ? paymentLogRepository.countGroupByStatusAndCustomer(startDateDt, endDateDt, customerId)
+            : paymentLogRepository.countGroupByStatus(startDateDt, endDateDt);
     for (Object[] row : statusRows) {
       PaymentStatus st = (PaymentStatus) row[0];
       statusCounts.put(st != null ? st.getLabel() : "Unknown", (Long) row[1]);
@@ -473,6 +545,12 @@ public class AdminController {
     result.put("rangeEnd", endDateDt.minusDays(1).toLocalDate().toString());
     result.put("range", range);
 
+    // The dashboard only ships the newest 100 rows, but the panel needs to say so, otherwise
+    // "100 logs" reads as if that is the whole range. So the real count goes out too.
+    long logsTotal =
+        byCustomer
+            ? paymentLogRepository.countBetweenAndCustomer(startDateDt, endDateDt, customerId)
+            : paymentLogRepository.countBetween(startDateDt, endDateDt);
     List<PaymentLog> logRows =
         byCustomer
             ? paymentLogRepository.findBetweenAndCustomer(startDateDt, endDateDt, customerId)
@@ -481,6 +559,7 @@ public class AdminController {
       logRows = new ArrayList<>(logRows.subList(0, 100));
     }
     result.put("paymentLogs", logRows);
+    result.put("paymentLogsTotal", logsTotal);
 
     return ResponseEntity.ok(ApiResponse.success("Dashboard fetched", 200, result));
   }

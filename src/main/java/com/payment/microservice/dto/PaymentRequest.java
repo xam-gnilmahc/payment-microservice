@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PaymentRequest {
 
-  @NotNull(message = "Customer ID is required")
+  // Filled in by the server from the session, never sent by the browser, so it is not validated.
   private Long customerId;
 
   @NotNull(message = "Amount is required")

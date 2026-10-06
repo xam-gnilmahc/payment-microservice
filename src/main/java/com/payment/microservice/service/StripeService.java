@@ -37,7 +37,7 @@ public class StripeService implements PaymentGatewayService {
    */
   public Map<String, String> createPaymentIntent(PaymentRequest request) {
     try {
-      // Step 1: Store user info in metadata so webhooks can retrieve it for logging
+      //Store user info in metadata so webhooks can retrieve it for logging
       // Webhooks don't have access to our database, so we pass data via Stripe metadata
       Map<String, String> metadata = new HashMap<>();
       metadata.put("customerId", String.valueOf(request.getCustomerId()));
@@ -48,7 +48,7 @@ public class StripeService implements PaymentGatewayService {
         metadata.put("name", request.getName());
       }
 
-      // Step 2: Build PaymentIntent params — Stripe charges in cents, so multiply by 100
+      //Build PaymentIntent params — Stripe charges in cents, so multiply by 100
       PaymentIntentCreateParams params =
           PaymentIntentCreateParams.builder()
               .setAmount(
@@ -65,10 +65,10 @@ public class StripeService implements PaymentGatewayService {
               .putAllMetadata(metadata)
               .build();
 
-      // Step 3: Call Stripe API to create the PaymentIntent
+      //Call Stripe API to create the PaymentIntent
       PaymentIntent paymentIntent = PaymentIntent.create(params);
 
-      // Step 4: Return clientSecret so frontend can confirm the payment with Stripe.js
+      //Return clientSecret so frontend can confirm the payment with Stripe.js
       Map<String, String> response = new HashMap<>();
       response.put("paymentIntentId", paymentIntent.getId());
       response.put("clientSecret", paymentIntent.getClientSecret());
@@ -96,10 +96,10 @@ public class StripeService implements PaymentGatewayService {
   public Map<String, String> getPaymentIntentStatus(
       String paymentIntentId, Long customerId, String paymentMethod) {
     try {
-      // Step 1: Retrieve the PaymentIntent from Stripe to get current status
+      //Retrieve the PaymentIntent from Stripe to get current status
       PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentIntentId);
 
-      // Step 2: Build response with status info for the frontend
+      //Build response with status info for the frontend
       Map<String, String> response = new HashMap<>();
       response.put("paymentIntentId", paymentIntent.getId());
       response.put("status", paymentIntent.getStatus());
@@ -107,7 +107,7 @@ public class StripeService implements PaymentGatewayService {
       response.put("amount", String.valueOf(paymentIntent.getAmount()));
       response.put("message", "PaymentIntent status: " + paymentIntent.getStatus());
 
-      // Step 3: If succeeded, update message — frontend uses this to show success UI
+      //If succeeded, update message — frontend uses this to show success UI
       if ("succeeded".equals(paymentIntent.getStatus())) {
         response.put("transactionId", paymentIntent.getId());
         response.put(

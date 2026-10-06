@@ -12,37 +12,31 @@ import com.payment.microservice.repository.PaymentGatewayRepository;
 import com.payment.microservice.repository.UserPaymentCredentialsRepository;
 import com.payment.microservice.repository.UserPaymentGatewayRepository;
 import com.payment.microservice.traits.ApiResponse;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
+import com.payment.microservice.traits.CurrentUser;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/payment-gateways")
 @RequiredArgsConstructor
-@SecurityRequirement(name = "BearerAuth")
 public class PaymentGatewayController {
 
   private final PaymentGatewayRepository paymentGatewayRepository;
   private final UserPaymentGatewayRepository userPaymentGatewayRepository;
   private final UserPaymentCredentialsRepository userPaymentCredentialsRepository;
 
-  private Long getUserId() {
-    User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-    return user.getId();
-  }
-
   // ===== PAYMENT GATEWAY =====
 
   @PostMapping
   public ResponseEntity<ApiResponse<PaymentGateway>> create(
       @Valid @RequestBody PaymentGatewayRequest request) {
-    Long userId = getUserId();
+    Long userId = CurrentUser.id();
     PaymentGateway gateway =
         PaymentGateway.builder()
             .title(request.getTitle())
@@ -106,6 +100,13 @@ public class PaymentGatewayController {
   @GetMapping("/user/{userId}/enabled")
   public ResponseEntity<ApiResponse<Map<String, Object>>> getUserEnabledGateway(
       @PathVariable Long userId) {
+    // ignore the id in the url when it is not our own, unless we are an admin
+    User caller = CurrentUser.get();
+    if (!caller.getId().equals(userId) && !"1".equals(caller.getIsSuperAdmin())) {
+      return ResponseEntity.status(HttpStatus.FORBIDDEN)
+          .body(ApiResponse.error("This account is not yours", 403));
+    }
+
     return userPaymentGatewayRepository.findByUserIdAndEnabled(userId, true).stream()
         .findFirst()
         .map(

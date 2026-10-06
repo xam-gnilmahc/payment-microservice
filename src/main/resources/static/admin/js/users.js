@@ -4,9 +4,8 @@ let assignUserId = null;
 let credentialUpgId = null;
 
 function usersFlash(type, msg) {
-    const el = document.getElementById(type === 'error' ? 'users-error' : 'users-success');
-    showMsg(el, msg);
-    setTimeout(() => el.classList.remove('show'), 4000);
+    if (type === 'error') notifyError(msg);
+    else notifySuccess(msg);
 }
 
 async function loadUsers() {
@@ -31,38 +30,169 @@ async function loadUsers() {
             return;
         }
 
-        body.innerHTML = allUsers.map(user => {
-            const isSuper = String(user.isSuperAdmin) === '1';
-            const assigned = allUserGateways.filter(x => x.userId === user.id);
+        renderUsers();
+    } catch (e) {
+        body.innerHTML = '<tr><td colspan="5" class="admin-empty">Failed to load: ' + esc(e.message) + '</td></tr>';
+    }
+}
 
+// Client-side search over the already-loaded list, so typing never hits the API.
+function renderUsers() {
+    const body = document.getElementById('usersBody');
+    if (!body) return;
+    const q = ((document.getElementById('usersSearch') || {}).value || '').trim().toLowerCase();
+    const rows = q
+        ? allUsers.filter(u => (u.email || '').toLowerCase().includes(q)
+            || (u.name || '').toLowerCase().includes(q)
+            || String(u.id) === q)
+        : allUsers;
+    const countEl = document.getElementById('usersCount');
+    if (countEl) {
+        countEl.textContent = q
+            ? rows.length + ' of ' + allUsers.length + ' users'
+            : allUsers.length + (allUsers.length === 1 ? ' user' : ' users');
+    }
+    if (rows.length === 0) {
+        body.innerHTML = '<tr><td colspan="5" class="admin-empty">'
+            + (allUsers.length === 0 ? 'No users yet.' : 'No users match &ldquo;' + esc(q) + '&rdquo;.')
+            + '</td></tr>';
+        return;
+    }
+    body.innerHTML = rows.map(user => {
+            const isSuper = String(user.isSuperAdmin) === '1';
+            const isActive = user.isActive === true || user.isActive === 1 || user.isActive === '1';
+            const assigned = allUserGateways.filter(x => x.userId === user.id);
+            const me = getUser();
+
+            // Gateways: just badges now. Clicking one opens its credentials, which removes the
+            // separate "Credentials" button that used to sit next to every badge.
             const gwCell = assigned.length === 0
-                ? '<span style="color:#71717a;">None</span>'
+                ? '<span class="gw-none">None</span>'
                 : '<div class="gw-badges">' + assigned.map(a2 => `
-                    <span class="gw-badge ${a2.enabled === '1' ? 'badge-green' : 'badge-yellow'}">${esc(a2.gatewayTitle)}</span>
-                    <button class="btn-link" style="font-size:11px;" onclick="openCredentials(${a2.id})">Credentials</button>
-                    <label class="toggle-switch" title="${a2.enabled === '1' ? 'Enabled' : 'Disabled'}">
+                    <span class="gw-chip ${a2.enabled === '1' ? 'is-on' : 'is-off'}"
+                          title="${a2.enabled === '1' ? 'Enabled' : 'Disabled'} — click to edit credentials"
+                          onclick="openCredentials(${a2.id})">${esc(a2.gatewayTitle)}</span>
+                    <label class="toggle-switch" title="${a2.enabled === '1' ? 'Disable gateway' : 'Enable gateway'}">
                         <input type="checkbox" ${a2.enabled === '1' ? 'checked' : ''} onchange="toggleGateway(${a2.id})" />
                         <span class="toggle-slider"></span>
                     </label>
                 `).join('') + '</div>';
 
+            const statusCell = isSuper
+                ? '<span class="status-badge initiated">Admin</span>'
+                : (isActive
+                    ? '<span class="status-badge success">Active</span>'
+                    : '<span class="status-badge error">Blocked</span>');
+
+            // One compact button group instead of loose links. Block/Unblock is disabled on your
+            // own row and on admin accounts, because neither can sensibly be blocked.
+            const canBlock = !isSuper && String(me && me.userId) !== String(user.id);
             const actions = `
-                ${!isSuper ? `<button class="btn-link" onclick="openAssign(${user.id})">Assign</button>` : ''}
-                <button class="btn-link" onclick="viewUserPaymentLogs(${user.id}, '${esc(user.email)}')">Payment Logs</button>
-                <button class="btn-link" onclick="viewUserRefundLogs(${user.id}, '${esc(user.email)}')">Refund Logs</button>
-            `;
+                <div class="action-group">
+                    ${!isSuper ? `<button class="act" onclick="openAssign(${user.id})">Assign</button>` : ''}
+                    <button class="act" onclick="viewUserPaymentLogs(${user.id}, '${esc(user.email)}')">Logs</button>
+                    <button class="act" onclick="viewUserRefundLogs(${user.id}, '${esc(user.email)}')">Refunds</button>
+                    ${isSuper ? '' : `<button class="act" onclick="openLoginAs(${user.id}, '${esc(user.email)}')">Sign in</button>`}
+                    ${isSuper ? '' : `<button class="act ${isActive ? 'act-danger' : 'act-ok'}" ${canBlock ? '' : 'disabled'}
+                        onclick="toggleUserBlock(${user.id}, ${isActive}, '${esc(user.email)}')">${isActive ? 'Block' : 'Unblock'}</button>`}
+                </div>`;
 
             return `
-                <tr>
+                <tr class="${isActive ? '' : 'row-blocked'}">
                     <td>${user.id}</td>
-                    <td style="font-weight:600;">${esc(user.name) || '-'}</td>
-                    <td>${esc(user.email)}</td>
+                    <td class="user-cell">
+                        <span class="user-name">${esc(user.name) || '-'}</span>
+                        <span class="user-email">${esc(user.email)}</span>
+                    </td>
+                    <td>${statusCell}</td>
                     <td>${gwCell}</td>
                     <td class="admin-actions">${actions}</td>
                 </tr>`;
         }).join('');
+}
+
+// ===== LOGIN AS USER =====
+// The password is required on purpose: it is the confirmation that the account really is yours to
+// open, and the server checks it before it replaces the session.
+let loginAsUserId = null;
+
+function openLoginAs(userId, email) {
+    loginAsUserId = userId;
+    const emailEl = document.getElementById('loginAsEmail');
+    const pwEl = document.getElementById('loginAsPassword');
+    if (emailEl) emailEl.value = email;
+    if (pwEl) pwEl.value = '';
+    const modal = document.getElementById('loginAsModal');
+    if (modal) modal.classList.add('show');
+    if (pwEl) pwEl.focus();
+}
+
+function closeLoginAsModal() {
+    const modal = document.getElementById('loginAsModal');
+    if (modal) modal.classList.remove('show');
+    loginAsUserId = null;
+}
+
+async function submitLoginAs() {
+    if (loginAsUserId == null) return;
+    const pwEl = document.getElementById('loginAsPassword');
+    const btn = document.getElementById('loginAsSubmit');
+    const password = pwEl ? pwEl.value : '';
+    if (!password) { notifyError('Enter this account\u2019s password to continue'); return; }
+    if (btn) { btn.disabled = true; btn.textContent = 'Signing in\u2026'; }
+
+    // Open the tab NOW, while we are still inside the click. After an await the browser no longer
+    // counts this as a user gesture, so window.open would be blocked as a popup and we would end up
+    // navigating this tab instead.
+    const opened = window.open('', '_blank');
+    if (opened) {
+        opened.document.open();
+        opened.document.write('<!doctype html><title>Signing in\u2026</title>'
+            + '<body style="font:14px -apple-system,system-ui;padding:32px;color:#52525b">'
+            + 'Signing in\u2026</body>');
+        opened.document.close();
+    }
+
+    try {
+        const res = await fetch('/api/v1/admin/users/' + loginAsUserId + '/login-as', {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ password: password })
+        });
+        const data = await res.json();
+        if (!data.success) {
+            if (opened) opened.close();          // nothing to show, so close the blank tab again
+            notifyError(data.message || 'Could not sign in as that user');
+            return;
+        }
+        const landing = '/stripe/payment.html';
+        if (opened) {
+            opened.location.href = landing;
+        } else {
+            window.location.href = landing;   // popup blocked outright: last resort
+        }
     } catch (e) {
-        body.innerHTML = '<tr><td colspan="5" class="admin-empty">Failed to load: ' + esc(e.message) + '</td></tr>';
+        if (opened) opened.close();
+        notifyError('Could not sign in as that user: ' + e.message);
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Sign in as this user'; }
+    }
+}
+
+// ===== BLOCK / UNBLOCK =====
+async function toggleUserBlock(userId, isActive, email) {
+    const verb = isActive ? 'Block' : 'Unblock';
+    if (!confirm(`${verb} ${email}?` + (isActive ? '\n\nThey will not be able to sign in again.' : ''))) return;
+    try {
+        const res = await fetch('/api/v1/admin/users/' + userId + '/status', {
+            method: 'PUT', headers: authHeaders()
+        });
+        const data = await res.json();
+        if (!data.success) { usersFlash('error', data.message || 'Failed to update user.'); return; }
+        usersFlash('success', data.message);
+        loadUsers();
+    } catch (e) {
+        usersFlash('error', 'Failed to update user: ' + e.message);
     }
 }
 

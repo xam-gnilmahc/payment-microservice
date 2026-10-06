@@ -33,8 +33,10 @@ public class WebhookController {
   private String webhookSecret;
 
   /**
-   * Main webhook endpoint — receives all Stripe webhook events. Verifies signature, parses raw
-   * JSON, and saves payment_intent events to payment_logs.
+   * Handles incoming Stripe webhooks. Verifies the signature, parses the event, and logs payment or refund events to the database. Sends email receipts for successful or failed payments and refunds.
+   * @param payload the raw JSON payload from Stripe
+   * @param sigHeader the Stripe-Signature header for signature verification
+   * @return a ResponseEntity with status 200 OK if the webhook is processed successfully,
    */
   @PostMapping("/stripe")
   public ResponseEntity<String> handleStripeWebhook(
@@ -202,6 +204,13 @@ public class WebhookController {
       String paymentEnv,
       String paymentMethod) {
 
+    // Without a payment method the event never became a real payment (for example the
+    // intent stopped before a method was attached), so nothing is written to the log.
+    if (paymentMethod == null || paymentMethod.isBlank()) {
+      log.warn("Skipped payment log for pi={} event={}: no payment method", piId, pEvent);
+      return;
+    }
+
     PaymentLog logEntry =
         PaymentLog.builder()
             .email(email)
@@ -224,14 +233,15 @@ public class WebhookController {
     log.info("Saved: id={}, pi={}, pm={}", logEntry.getId(), piId, paymentMethod);
 
     // Customer receipt on success or failure
-    if (pStatus == PaymentStatus.SUCCEEDED || pStatus == PaymentStatus.FAILED) {
-      try {
-        boolean sent = receiptEmailService.sendPaymentReceipt(logEntry);
-        log.info("Payment receipt for log id={}: sent={}", logEntry.getId(), sent);
-      } catch (Exception e) {
-        log.warn("Payment receipt failed for log id={}: {}", logEntry.getId(), e.getMessage());
-      }
-    }
+    // Turned off on purpose: no email is sent for any webhook event any more.
+    // if (pStatus == PaymentStatus.SUCCEEDED || pStatus == PaymentStatus.FAILED) {
+    //   try {
+    //     boolean sent = receiptEmailService.sendPaymentReceipt(logEntry);
+    //     log.info("Payment receipt for log id={}: sent={}", logEntry.getId(), sent);
+    //   } catch (Exception e) {
+    //     log.warn("Payment receipt failed for log id={}: {}", logEntry.getId(), e.getMessage());
+    //   }
+    // }
   }
 
   /** Calls Stripe API to resolve payment method ID to type (card, link, etc.) */
@@ -258,14 +268,9 @@ public class WebhookController {
   }
 
   /**
-   * Handles refund events from Stripe:
-   *
-   * <ul>
-   *   <li>refund.created + status=succeeded → code "1" — Refund processed immediately (cards).
-   *   <li>refund.created + status=pending → code "0" — ACH/async refund, balance not deducted yet.
-   *   <li>refund.updated + status=succeeded → code "1" — Confirmed, funds returning to customer.
-   *   <li>refund.updated / refund.failed + status=failed → code "2" — Failed, balance restored.
-   * </ul>
+   * Handles refund events from Stripe webhooks. Extracts relevant fields, determines status and message, saves a new RefundLog entry, and sends email receipts for terminal events (success or failure).
+   * @param type the Stripe event type (e.g., refund.created, refund.updated, refund.failed)
+   * @param data the JSON node containing the refund object data
    */
   private void handleRefundEvent(String type, JsonNode data) {
     String refundId = data.path("id").asText(null);
@@ -361,20 +366,19 @@ public class WebhookController {
     refundLogRepository.save(refundLog);
     log.info("Refund log saved: refundId={}, status={}, type={}", refundId, statusCode, type);
 
-    // Customer refund receipt — Triggers on terminal events (Success via updated, or failure)
-    boolean terminal = "1".equals(statusCode) || "2".equals(statusCode);
-    
-    // FIX: Send email when refund finalizes on updated event, or if it outright fails
-    boolean shouldSendEmail = ("refund.updated".equals(type) && "1".equals(statusCode)) || "refund.failed".equals(type);
-    
-    if (terminal && shouldSendEmail) {
-      try {
-        boolean sent = receiptEmailService.sendRefundReceipt(refundLog);
-        log.info("Refund receipt for log id={}: sent={}", refundLog.getId(), sent);
-      } catch (Exception e) {
-        log.warn("Refund receipt failed for log id={}: {}", refundLog.getId(), e.getMessage());
-      }
-    }
+    // Customer refund receipt — turned off on purpose, same as the payment receipt above.
+    // boolean terminal = "1".equals(statusCode) || "2".equals(statusCode);
+    //
+    // boolean shouldSendEmail = ("refund.updated".equals(type) && "1".equals(statusCode)) || "refund.failed".equals(type);
+    //
+    // if (terminal && shouldSendEmail) {
+    //   try {
+    //     boolean sent = receiptEmailService.sendRefundReceipt(refundLog);
+    //     log.info("Refund receipt for log id={}: sent={}", refundLog.getId(), sent);
+    //   } catch (Exception e) {
+    //     log.warn("Refund receipt failed for log id={}: {}", refundLog.getId(), e.getMessage());
+    //   }
+    // }
   }
 
 }

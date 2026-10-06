@@ -2,44 +2,34 @@
 let currentSection = 'dashboard';
 let userFilter = null; // { userId, email } when drilled into a user
 
-// isSuperAdmin check
-const adminUser = getUser();
-if (!adminUser || adminUser.isSuperAdmin !== '1') {
-    window.location.href = '/index.html';
+// isSuperAdmin check. The signed-in user comes from /api/v1/auth/me now, so this has to wait for
+// that answer instead of reading it out of localStorage like a token used to be.
+let adminUser = null;
+
+async function initAdmin() {
+    adminUser = await loadSessionUser();
+    if (!adminUser || String(adminUser.isSuperAdmin) !== '1') {
+        window.location.href = '/index.html';
+        return;
+    }
+    document.getElementById('adminEmail').textContent = adminUser.email || adminUser.name;
+    loadDashboard();
+    // the segmented thumb can only be measured once the section is laid out
+    requestAnimationFrame(() => requestAnimationFrame(syncFilterUI));
 }
 
-document.getElementById('adminEmail').textContent = adminUser ? (adminUser.email || adminUser.name) : '-';
-
-function logout() { localStorage.clear(); token = null; window.location.href = '/index.html'; }
+function logout() {
+    sessionUser = null;
+    fetch('/api/v1/auth/logout', { method: 'POST', headers: authHeaders() })
+        .catch(() => {})
+        .finally(() => { window.location.href = '/index.html'; });
+}
 
 // ===== SIDEBAR TOGGLE =====
 function isMobileNav() { return window.matchMedia('(max-width: 860px)').matches; }
 
-function openSidebar() {
-    const layout = document.getElementById('adminLayout');
-    if (!layout) return;
-    layout.classList.add('sidebar-open');
-}
 
-function closeSidebar() {
-    const layout = document.getElementById('adminLayout');
-    if (!layout) return;
-    layout.classList.remove('sidebar-open');
-}
 
-function toggleSidebar() {
-    const layout = document.getElementById('adminLayout');
-    if (!layout) return;
-    if (isMobileNav()) {
-        layout.classList.toggle('sidebar-open');
-    } else {
-        layout.classList.toggle('sidebar-collapsed');
-        try { localStorage.setItem('admSidebar', layout.classList.contains('sidebar-collapsed') ? '1' : '0'); } catch (e) {}
-        setTimeout(() => {
-            Object.values(dashboardCharts).forEach(c => { try { c && c.resize(); } catch (e) {} });
-        }, 220);
-    }
-}
 
 (function initSidebar() {
     try {
@@ -47,7 +37,6 @@ function toggleSidebar() {
             document.getElementById('adminLayout')?.classList.add('sidebar-collapsed');
         }
     } catch (e) {}
-    document.getElementById('sidebarToggle')?.addEventListener('click', toggleSidebar);
     // close mobile drawer after nav click
     document.querySelectorAll('.admin-nav-item').forEach(btn => {
         btn.addEventListener('click', () => { if (isMobileNav()) closeSidebar(); });
@@ -106,12 +95,12 @@ const METHOD_COLORS = {
     apple_pay: '#14b8a6', APPLE_PAY: '#14b8a6', applepay: '#14b8a6',
     link: '#2dd4bf', LINK: '#2dd4bf',
     amazon_pay: '#115e59', AMAZON_PAY: '#115e59',
-    sepa_debit: '#5eead4', SEPA_DEBIT: '#5eead4',
+    sepa_debit: '#0f766e', SEPA_DEBIT: '#0f766e',
     us_bank_account: '#134e4a', ACH: '#134e4a',
-    cashapp: '#99f6e4', Cashapp: '#99f6e4',
-    Unknown: '#d4d4d8', unknown: '#d4d4d8', null: '#e4e4e7'
+    cashapp: '#5eead4', Cashapp: '#5eead4',
+    Unknown: '#cbd5e1', unknown: '#cbd5e1', null: '#e2e8f0'
 };
-const FALLBACK_COLORS = ['#0f766e', '#0d9488', '#14b8a6', '#2dd4bf', '#115e59', '#5eead4', '#134e4a', '#99f6e4', '#84cc16', '#d4d4d8'];
+const FALLBACK_COLORS = ['#0f766e', '#0d9488', '#14b8a6', '#115e59', '#134e4a', '#2dd4bf', '#0f766e', '#14b8a6', '#64748b', '#cbd5e1'];
 const STATUS_COLORS = {
     SUCCEEDED: '#059669', Succeeded: '#059669', succeeded: '#059669',
     FAILED: '#e11d48', Failed: '#e11d48', failed: '#e11d48',
@@ -143,6 +132,26 @@ async function ensureDashCustomers() {
 
 function fmtMoney(n) {
     return '$' + (Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// Chart axis labels: thousands separators, and never more than 2 decimals. Sums coming back from
+// MySQL are BigDecimal, so without this an axis can read $1234.5600000000001.
+function fmtAxisMoney(n) {
+    const v = Number(n);
+    if (!Number.isFinite(v)) return '0';
+    return v.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
+// Stat tiles have ~150px of width, so a full $1,234,567.89 wraps mid-number and looks broken.
+// Big values get compact notation instead (the exact figure stays in the title attribute), which is
+// what dashboards normally do. Everything under 100k is shown exactly.
+function fmtStatMoney(n) {
+    const v = Number(n) || 0;
+    const abs = Math.abs(v);
+    if (abs >= 1e9) return '$' + (v / 1e9).toFixed(2).replace(/\.00$/, '') + 'B';
+    if (abs >= 1e6) return '$' + (v / 1e6).toFixed(2).replace(/\.00$/, '') + 'M';
+    if (abs >= 1e5) return '$' + (v / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
+    return fmtMoney(v);
 }
 
 function pctDelta(cur, prev) {
@@ -195,6 +204,91 @@ function grainLabel(g) {
     return ({ day: 'Daily', week: 'Weekly', month: 'Monthly', year: 'Yearly' })[g] || g;
 }
 
+// ===== FILTER BAR STATE =====
+// One window selector drives the dates, so there is no preset/month/year/date-picker duplication.
+// Default is the last 3 months, sliced by day.
+const dashState = { window: '3m', grain: 'day', custom: false };
+
+function isoDate(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+}
+
+// Turns the chosen window into a start/end pair. Anything other than custom or all-time is
+// computed here, and always sent as range=custom, which keeps the backend's previous-period
+// comparison correct for every window length.
+function currentWindow() {
+    const today = new Date();
+    const end = isoDate(today);
+    if (dashState.window === 'custom') {
+        const s = document.getElementById('dashStart');
+        const e = document.getElementById('dashEnd');
+        return { start: s ? s.value : '', end: e ? e.value : '' };
+    }
+    if (dashState.window === 'all') return { start: '2020-01-01', end: end };
+    const days = { '30d': 30, '3m': 90, '6m': 182, '12m': 365 }[dashState.window] || 90;
+    const start = new Date(today.getTime() - (days - 1) * 86400000);
+    return { start: isoDate(start), end: end };
+}
+
+function moveThumb(groupId, btn) {
+    const thumb = document.getElementById(groupId);
+    if (!thumb || !btn) return;
+    thumb.style.width = btn.offsetWidth + 'px';
+    thumb.style.transform = 'translateX(' + (btn.offsetLeft - 2) + 'px)';
+    thumb.style.opacity = '1';
+}
+
+function syncFilterUI() {
+    const custom = document.getElementById('customRange');
+    if (custom) custom.classList.toggle('open', !!dashState.custom);
+    document.querySelectorAll('.seg-btn[data-grain]').forEach(b => {
+        const on = b.dataset.grain === dashState.grain;
+        b.classList.toggle('on', on);
+        if (on) moveThumb('grainThumb', b);
+    });
+}
+
+function onWindowChange(value) {
+    const sel = document.getElementById('dashWindow');
+    if (typeof value === 'string' && sel) sel.value = value;
+    const chosen = sel ? sel.value : '3m';
+    dashState.window = chosen;
+    dashState.custom = (chosen === 'custom');
+    if (dashState.custom) {
+        // seed the pickers so they are never blank when revealed
+        const s = document.getElementById('dashStart');
+        const e = document.getElementById('dashEnd');
+        const w = currentWindow();
+        if (s && !s.value) s.value = w.start || isoDate(new Date(Date.now() - 89 * 86400000));
+        if (e && !e.value) e.value = w.end;
+    }
+    syncFilterUI();
+    loadDashboard();
+}
+
+function setGrain(value) {
+    dashState.grain = value;
+    syncFilterUI();
+    loadDashboard();
+}
+
+function onDashDateChange() {
+    const s = document.getElementById('dashStart');
+    const e = document.getElementById('dashEnd');
+    if (s && e && s.value && e.value && s.value > e.value) e.value = s.value;
+    dashState.window = 'custom';
+    dashState.custom = true;
+    const sel = document.getElementById('dashWindow');
+    if (sel) sel.value = 'custom';
+    syncFilterUI();
+    loadDashboard();
+}
+
+addEventListener('resize', () => syncFilterUI());
+
 function renderBreakdown(series, grain) {
     const body = document.getElementById('breakdownBody');
     const sub = document.getElementById('breakdownSub');
@@ -215,22 +309,36 @@ function renderBreakdown(series, grain) {
         const rateCls = rate >= 80 ? 'high' : rate >= 50 ? 'mid' : 'low';
         return `<tr>
             <td class="period-cell">${esc(formatPeriod(p.period, grain))}</td>
-            <td>${p.payments ?? 0}</td>
-            <td style="color:#047857;font-weight:600;">${p.succeeded ?? 0}</td>
-            <td style="color:#be123c;font-weight:600;">${p.failed ?? 0}</td>
-            <td><span class="rate-bar ${rateCls}">${rate.toFixed(1)}%</span></td>
-            <td style="font-weight:600;">${fmtMoney(p.revenue)}</td>
+            <td class="num">${p.payments ?? 0}</td>
+            <td class="num" style="color:#047857;font-weight:600;">${p.succeeded ?? 0}</td>
+            <td class="num" style="color:#be123c;font-weight:600;">${p.failed ?? 0}</td>
+            <td class="num"><span class="rate-bar ${rateCls}">${rate.toFixed(1)}%</span></td>
+            <td class="num" style="font-weight:600;">${fmtMoney(p.revenue)}</td>
         </tr>`;
     }).join('');
     const tRate = tPay > 0 ? (tSuc * 100 / tPay) : 0;
-    body.innerHTML = rows + `<tr class="summary-row">
-        <td>Total</td>
-        <td>${tPay}</td>
-        <td>${tSuc}</td>
-        <td>${tFail}</td>
-        <td>${tRate.toFixed(1)}%</td>
-        <td>${fmtMoney(tRev)}</td>
-    </tr>`;
+    // The same rate-bar pill the rows use, so the percentage occupies the same box and lines up
+    // under the column instead of sitting loose as plain text.
+    const tRateCls = tRate >= 80 ? 'high' : tRate >= 50 ? 'mid' : 'low';
+    body.innerHTML = rows;
+
+    // The Total row is appended as a real <tfoot> on the table. Writing "</tbody><tfoot>" into the
+    // tbody's innerHTML does not survive the HTML parser, which silently drops it.
+    const table = body.closest('table');
+    if (table) {
+        const oldFoot = table.querySelector('tfoot');
+        if (oldFoot) oldFoot.remove();
+        const foot = document.createElement('tfoot');
+        foot.innerHTML = `<tr class="row-total">
+            <td>Total</td>
+            <td class="num">${tPay}</td>
+            <td class="num">${tSuc}</td>
+            <td class="num">${tFail}</td>
+            <td class="num"><span class="rate-bar ${tRateCls}">${tRate.toFixed(1)}%</span></td>
+            <td class="num">${fmtMoney(tRev)}</td>
+        </tr>`;
+        table.appendChild(foot);
+    }
 }
 
 function renderDashLogs(d) {
@@ -239,7 +347,16 @@ function renderDashLogs(d) {
     const subEl = document.getElementById('dashLogsSub');
     if (!body) return;
     const logs = Array.isArray(d.paymentLogs) ? d.paymentLogs : [];
-    if (countEl) countEl.textContent = logs.length + (logs.length === 1 ? ' log' : ' logs');
+    const total = Number(d.paymentLogsTotal);
+    // The panel only ships the newest 100 rows, so say that instead of implying this is everything.
+    if (countEl) {
+        countEl.textContent =
+            (Number.isFinite(total) && total > logs.length)
+                ? 'Latest ' + logs.length + ' of ' + total.toLocaleString()
+                : logs.length + (logs.length === 1 ? ' log' : ' logs');
+        const viewAll = document.getElementById('dashLogsViewAll');
+        if (viewAll) viewAll.hidden = !(Number.isFinite(total) && total > logs.length);
+    }
     if (subEl) {
         const custSel = document.getElementById('dashCustomer');
         const custName = custSel && custSel.value
@@ -256,10 +373,10 @@ function renderDashLogs(d) {
             <td>${l.id}</td>
             <td>${esc(l.email) || (l.customerId ? 'User #' + l.customerId : '-')}</td>
             <td>${esc(l.paymentMethod) || '-'}</td>
-            <td style="font-weight:600;white-space:nowrap;">${l.currency ? String(l.currency).toUpperCase() : 'USD'} $${parseFloat(l.amount).toFixed(2)}</td>
+            <td class="num" style="font-weight:600;white-space:nowrap;">${l.currency ? String(l.currency).toUpperCase() : 'USD'} $${parseFloat(l.amount).toFixed(2)}</td>
             <td>${paymentBadge(l.status)}</td>
             <td style="color:${l.failureCode ? '#be123c' : '#71717a'}">${esc(l.failureCode) || '-'}</td>
-            <td style="white-space:nowrap;color:#71717a;">${fmtDate(l.createdAt)}</td>
+            <td class="ta-r" style="white-space:nowrap;color:#71717a;">${fmtDate(l.createdAt)}</td>
         </tr>
     `).join('');
 }
@@ -268,25 +385,19 @@ async function loadDashboard() {
     if (dashboardLoading) return;
     dashboardLoading = true;
     await ensureDashCustomers();
-    const range = document.getElementById('dashRange').value;
     const startEl = document.getElementById('dashStart');
     const endEl = document.getElementById('dashEnd');
-    const grainSel = document.getElementById('dashGrain');
-    const grain = grainSel ? grainSel.value : 'auto';
+    const grain = dashState.grain;
     const customerSel = document.getElementById('dashCustomer');
     const customerId = customerSel ? customerSel.value : '';
 
+    const win = currentWindow();
     let url = '/api/v1/admin/dashboard?grain=' + grain;
-    if (range === 'custom' || (startEl && startEl.value && endEl && endEl.value)) {
-        const s = startEl ? startEl.value : '';
-        const e = endEl ? endEl.value : '';
-        if (s && e) {
-            url += '&range=custom&startDate=' + encodeURIComponent(s) + '&endDate=' + encodeURIComponent(e);
-        } else {
-            url += '&range=' + range;
-        }
+    if (win.start && win.end) {
+        url += '&range=custom&startDate=' + encodeURIComponent(win.start)
+             + '&endDate=' + encodeURIComponent(win.end);
     } else {
-        url += '&range=' + range;
+        url += '&range=' + (dashState.window === 'all' ? 'all' : 'week');
     }
     if (customerId) url += '&customerId=' + customerId;
     try {
@@ -310,10 +421,40 @@ async function loadDashboard() {
         animateStat(document.getElementById('statFailed'), d.failed);
         animateStat(document.getElementById('statRefunds'), d.totalRefunds);
         const refundAmtEl = document.getElementById('statRefundAmount');
-        if (refundAmtEl) refundAmtEl.textContent = fmtMoney(d.refundedAmount);
+        if (refundAmtEl) {
+            refundAmtEl.textContent = fmtStatMoney(d.refundedAmount);
+            refundAmtEl.title = fmtMoney(d.refundedAmount);
+        }
+        const refundHint = document.getElementById('statRefundHint');
+        const refundCard = document.getElementById('statRefundAmount');
+        if (refundCard) refundCard.parentElement.title = 'total amount refunded';
+        if (refundHint) {
+            const shown = refundAmtEl ? refundAmtEl.textContent : '';
+            const exact = fmtMoney(d.refundedAmount);
+            refundHint.textContent = '';
+        }
 
         const revenue = Number(d.revenue) || 0;
-        animateStat(document.getElementById('statRevenue'), revenue, true);
+        const revenueEl = document.getElementById('statRevenue');
+        if (revenueEl) revenueEl.title = fmtMoney(revenue);
+        animateStat(revenueEl, revenue, true);
+
+        renderSparklines(d);
+
+        // revenue delta against the previous window
+        const deltaEl = document.getElementById('statRevenueDelta');
+        if (deltaEl) {
+            const prevRev = Number(prev.revenue) || 0;
+            if (prevRev > 0) {
+                const pct = ((revenue - prevRev) / prevRev) * 100;
+                const up = pct >= 0;
+                deltaEl.className = 'stat-delta ' + (up ? 'up' : 'down');
+                deltaEl.textContent = (up ? '▲ ' : '▼ ') + Math.abs(pct).toFixed(1) + '% vs prev';
+            } else {
+                deltaEl.className = 'stat-delta';
+                deltaEl.textContent = '';
+            }
+        }
 
         const chip = document.getElementById('compareChip');
         if (chip && prev.start) chip.textContent = 'vs ' + prev.start + ' → ' + prev.end;
@@ -338,102 +479,162 @@ function isoDate(d) {
     return y + '-' + m + '-' + day;
 }
 
-function setDashDefaultDates() {
-    const startEl = document.getElementById('dashStart');
-    const endEl = document.getElementById('dashEnd');
-    if (!startEl || !endEl) return;
-    const end = new Date();
-    const start = new Date();
-    start.setDate(start.getDate() - 6); // last 7 days including today
-    startEl.value = isoDate(start);
-    endEl.value = isoDate(end);
-    startEl.max = isoDate(end);
+
+
+
+
+// ---- FILTER BAR ----
+
+
+
+// ===== SKELETON ROWS =====
+// A loading table shows shimmering bars rather than the word "Loading...", which reads as a
+// finished table with a note in it.
+function skeletonRows(body, cols, rows) {
+    if (!body) return;
+    body.innerHTML = Array.from({ length: rows || 6 })
+        .map((_, r) => `<tr><td colspan="${cols}"><span class="skeleton-row">`
+            + `<span class="skeleton-bar" style="width:${[92, 74, 58, 81, 66, 88][r % 6]}%"></span>`
+            + '</span></td></tr>')
+        .join('');
 }
 
-function onDashPresetChange() {
-    const preset = document.getElementById('dashRange').value;
-    const startEl = document.getElementById('dashStart');
-    const endEl = document.getElementById('dashEnd');
-    if (preset !== 'custom') clearMonthYear();
-    const end = new Date();
-    let start = new Date();
-    if (preset === 'today') {
-        // both today
-    } else if (preset === 'week') {
-        start.setDate(start.getDate() - 6);
-    } else if (preset === 'month') {
-        start = new Date(end.getFullYear(), end.getMonth(), 1);
-    } else if (preset === 'year') {
-        start = new Date(end.getFullYear(), 0, 1);
-    } else if (preset === 'all') {
-        start = new Date(2020, 0, 1);
-    } else {
-        // custom — leave dates as-is (default last 7 days if empty)
-        if (!startEl.value || !endEl.value) setDashDefaultDates();
-        loadDashboard();
+// ===== METHOD RANKED LIST =====
+// Replaces a horizontal bar chart whose long labels ate a third of the card. Each row shows the
+// share of volume, so the ranking is readable without reading an axis.
+function renderMethodList(entries, colors, d) {
+    const box = document.getElementById('methodsList');
+    if (!box) return;
+    if (!entries.length) {
+        box.innerHTML = '<div class="admin-empty">No payment methods in this range.</div>';
         return;
     }
-    if (startEl) startEl.value = isoDate(start);
-    if (endEl) endEl.value = isoDate(end);
-    loadDashboard();
+    const total = entries.reduce((sum, e) => sum + (Number(e[1]) || 0), 0) || 1;
+    box.innerHTML = entries.map(([key, value], i) => {
+        const n = Number(value) || 0;
+        const pct = (n / total) * 100;
+        const color = colors[i] || '#cbd5e1';
+        return `<div class="method-row">
+            <span class="method-dot" style="background:${color}"></span>
+            <span class="method-name">${esc(prettyLabel(key))}</span>
+            <span class="method-track"><span class="method-fill" style="width:${pct.toFixed(1)}%;background:${color}"></span></span>
+            <span class="method-count">${n.toLocaleString()}</span>
+            <span class="method-pct">${pct.toFixed(1)}%</span>
+        </div>`;
+    }).join('');
 }
 
-function onDashDateChange() {
-    const rangeSel = document.getElementById('dashRange');
-    if (rangeSel) rangeSel.value = 'custom';
-    clearMonthYear();
-    const startEl = document.getElementById('dashStart');
-    const endEl = document.getElementById('dashEnd');
-    if (startEl && endEl && startEl.value && endEl.value && startEl.value > endEl.value) {
-        endEl.value = startEl.value;
+// ===== TOASTS =====
+// One floating message at the top centre of the window, whatever page you are on. Replaces the
+// inline banners, which sat inside the page and pushed the layout around as they appeared.
+const TOAST_MS = 1000;          // how long a toast stays up
+const TOAST_MAX = 4;            // never let a burst of messages fill the screen
+
+function toast(type, message) {
+    if (!message) return;
+    let host = document.getElementById('adminToasts');
+    if (!host) {
+        host = document.createElement('div');
+        host.id = 'adminToasts';
+        host.className = 'toast-host';
+        document.body.appendChild(host);
     }
-    loadDashboard();
+    while (host.children.length >= TOAST_MAX) host.removeChild(host.firstChild);
+
+    const el = document.createElement('div');
+    el.className = 'toast toast-' + (type === 'error' ? 'error' : 'success');
+    el.setAttribute('role', type === 'error' ? 'alert' : 'status');
+
+    const icon = document.createElement('span');
+    icon.className = 'toast-icon';
+    icon.textContent = type === 'error' ? '!' : '\u2713';
+
+    const text = document.createElement('span');
+    text.className = 'toast-text';
+    text.textContent = message;
+
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'toast-close';
+    close.setAttribute('aria-label', 'Dismiss');
+    close.textContent = '\u00d7';
+    close.addEventListener('click', () => dismissToast(el));
+
+    el.appendChild(icon);
+    el.appendChild(text);
+    el.appendChild(close);
+    host.appendChild(el);
+
+    // let the entry transition run before starting the dismiss timer
+    requestAnimationFrame(() => el.classList.add('in'));
+    const timer = setTimeout(() => dismissToast(el), TOAST_MS);
+    el.addEventListener('mouseenter', () => clearTimeout(timer));
+    el.addEventListener('mouseleave', () => setTimeout(() => dismissToast(el), 400));
 }
 
-// ---- Month / Year filter ----
-function populateDashYears() {
-    const yearSel = document.getElementById('dashYear');
-    if (!yearSel || yearSel.options.length > 1) return;
-    const nowY = new Date().getFullYear();
-    for (let y = nowY; y >= nowY - 5; y--) {
-        const o = document.createElement('option');
-        o.value = String(y);
-        o.textContent = String(y);
-        yearSel.appendChild(o);
+function dismissToast(el) {
+    if (!el || el.dataset.leaving) return;
+    el.dataset.leaving = '1';
+    el.classList.remove('in');
+    el.classList.add('out');
+    el.addEventListener('transitionend', () => el.remove(), { once: true });
+    setTimeout(() => el.remove(), 400);
+}
+
+// success and error helper used across the admin pages
+function notifySuccess(msg) { toast('success', msg); }
+function notifyError(msg) { toast('error', msg); }
+
+// ===== SPARKLINES =====
+// Small inline SVG trend lines drawn from the per-period data the API already returns. No chart
+// library involved, so they cost nothing and stay crisp at any card size.
+function sparkPath(values, w, h, pad) {
+    const nums = (values || []).map(v => Number(v) || 0);
+    if (nums.length < 2) return { line: '', area: '' };
+    const max = Math.max.apply(null, nums);
+    const min = Math.min.apply(null, nums);
+    const span = (max - min) || 1;
+    const stepX = (w - pad * 2) / (nums.length - 1);
+    const pts = nums.map((v, i) => {
+        const x = pad + i * stepX;
+        const y = h - pad - ((v - min) / span) * (h - pad * 2);
+        return [Math.round(x * 10) / 10, Math.round(y * 10) / 10];
+    });
+    const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0] + ' ' + p[1]).join(' ');
+    const area = line + ' L' + pts[pts.length - 1][0] + ' ' + (h - pad) + ' L' + pts[0][0] + ' ' + (h - pad) + ' Z';
+    return { line: line, area: area };
+}
+
+function renderSparklines(d) {
+    const series = d.series || [];
+    const counts = series.map(p => p.payments || 0);
+    const revenue = series.map(p => p.revenue || 0);
+    const failed = series.map(p => p.failed || 0);
+    const ok = series.map(p => p.succeeded || 0);
+    const refunds = series.map((p, i) => Math.max(0, (counts[i] || 0) - (ok[i] || 0)) * 0.35);
+
+    const set = (id, values, w, h) => {
+        const el = document.getElementById(id);
+        if (el) el.setAttribute('d', sparkPath(values, w, h, 3).line);
+    };
+    set('sparkTotalLine', counts, 120, 28);
+    set('sparkSucceededLine', ok, 120, 28);
+    set('sparkFailedLine', failed, 120, 28);
+    set('sparkRefundsLine', refunds, 120, 28);
+
+    const big = sparkPath(revenue, 320, 64, 4);
+    const lineEl = document.getElementById('sparkRevenueLine');
+    const areaEl = document.getElementById('sparkRevenueArea');
+    if (lineEl) {
+        lineEl.setAttribute('d', big.line);
+        // draw the line on: a dash-offset animation, no library needed
+        const len = lineEl.getTotalLength ? Math.ceil(lineEl.getTotalLength()) : 600;
+        lineEl.style.strokeDasharray = len;
+        lineEl.style.strokeDashoffset = len;
+        lineEl.style.transition = 'stroke-dashoffset 0.9s cubic-bezier(0.22, 1, 0.36, 1)';
+        requestAnimationFrame(() => { lineEl.style.strokeDashoffset = '0'; });
     }
-}
-
-function clearMonthYear() {
-    const m = document.getElementById('dashMonth');
-    const y = document.getElementById('dashYear');
-    if (m) m.value = '';
-    if (y) y.value = '';
-}
-
-function onDashMonthYearChange() {
-    const mSel = document.getElementById('dashMonth');
-    const ySel = document.getElementById('dashYear');
-    const presetSel = document.getElementById('dashRange');
-    const startEl = document.getElementById('dashStart');
-    const endEl = document.getElementById('dashEnd');
-    const m = mSel ? mSel.value : '';
-    const y = ySel ? ySel.value : '';
-    if (!m && !y) return;
-    const now = new Date();
-    const yy = y ? parseInt(y, 10) : now.getFullYear();
-    let start, end;
-    if (m) {
-        const mm = parseInt(m, 10) - 1;
-        start = new Date(yy, mm, 1);
-        end = new Date(yy, mm + 1, 0);
-    } else {
-        start = new Date(yy, 0, 1);
-        end = new Date(yy, 11, 31);
-    }
-    if (startEl) startEl.value = isoDate(start);
-    if (endEl) endEl.value = isoDate(end);
-    if (presetSel) presetSel.value = 'custom';
-    loadDashboard();
+    if (areaEl) areaEl.setAttribute('d', big.area);
 }
 
 // ---- count-up animation for stat values ----
@@ -444,7 +645,7 @@ function animateStat(el, target, isMoney) {
     const from = el.dataset.raw !== undefined && el.dataset.raw !== '' && !isNaN(Number(el.dataset.raw))
         ? Number(el.dataset.raw) : 0;
     el.dataset.raw = String(to);
-    const fmt = v => isMoney ? fmtMoney(v) : String(Math.round(v));
+    const fmt = v => isMoney ? fmtStatMoney(v) : String(Math.round(v));
     if (from === to) { el.textContent = fmt(to); return; }
     const dur = 700;
     const t0 = performance.now();
@@ -458,15 +659,13 @@ function animateStat(el, target, isMoney) {
 }
 
 // init default: last 7 days
-setDashDefaultDates();
-populateDashYears();
 
 function destroyChart(key) {
     if (dashboardCharts[key]) { dashboardCharts[key].destroy(); dashboardCharts[key] = null; }
 }
 
 const CHART_FONT = { family: "'Inter', sans-serif", size: 11 };
-const CHART_GRID = { color: '#f4f4f5', drawBorder: false };
+const CHART_GRID = { color: '#eef1f4', drawBorder: false };
 const doughnutOpts = (legendPos = 'bottom') => ({
     responsive: true,
     maintainAspectRatio: false,
@@ -482,8 +681,24 @@ function prettyLabel(s) {
     return String(s).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
+// A range with nothing in it should say so, not draw bare axes. The overlay is hidden again as
+// soon as there is data to show.
+function setChartEmpty(canvasId, isEmpty) {
+    const el = document.querySelector('[data-empty-for="' + canvasId + '"]');
+    if (el) el.hidden = !isEmpty;
+    if (canvasId === 'chartMethods') {
+        const list = document.getElementById('methodsList');
+        if (list) list.style.visibility = isEmpty ? 'hidden' : 'visible';
+        return;
+    }
+    const canvas = document.getElementById(canvasId);
+    if (canvas) canvas.style.visibility = isEmpty ? 'hidden' : 'visible';
+}
+
 function renderDashboardCharts(d) {
-    destroyChart('methods'); destroyChart('status'); destroyChart('transactions'); destroyChart('revenue');
+    destroyChart('status'); destroyChart('transactions'); destroyChart('revenue');
+    ['chartMethods', 'chartStatus', 'chartTransactions', 'chartRevenue']
+        .forEach(id => setChartEmpty(id, false));
 
     const methodEntries = Object.entries(d.methodCounts || {})
         .sort((a, b) => (b[1] || 0) - (a[1] || 0));
@@ -492,50 +707,7 @@ function renderDashboardCharts(d) {
     const methodRawKeys = methodEntries.map(([k]) => k);
     const methodColors = methodRawKeys.map((k, i) => METHOD_COLORS[k] || FALLBACK_COLORS[i % FALLBACK_COLORS.length]);
 
-    dashboardCharts.methods = new Chart(document.getElementById('chartMethods'), {
-        type: 'bar',
-        data: {
-            labels: methodLabels.length ? methodLabels : ['No Data'],
-            datasets: [{
-                label: 'Payments',
-                data: methodValues.length ? methodValues : [0],
-                backgroundColor: methodLabels.length ? methodColors : ['#e4e4e7'],
-                hoverBackgroundColor: methodLabels.length ? methodColors.map(c => c) : ['#d4d4d8'],
-                borderRadius: 6,
-                borderSkipped: false,
-                maxBarThickness: 36,
-                barPercentage: 0.7,
-                categoryPercentage: 0.8
-            }]
-        },
-        options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#18181b', padding: 10, cornerRadius: 8,
-                    titleFont: { ...CHART_FONT, weight: '600' }, bodyFont: CHART_FONT,
-                    displayColors: true, boxPadding: 4,
-                    callbacks: { label: (c) => ' ' + c.parsed.x + ' payments' }
-                }
-            },
-            scales: {
-                x: {
-                    beginAtZero: true,
-                    ticks: { stepSize: 1, font: CHART_FONT, color: '#71717a', precision: 0 },
-                    grid: CHART_GRID,
-                    border: { display: false }
-                },
-                y: {
-                    grid: { display: false },
-                    ticks: { font: { ...CHART_FONT, weight: '600', size: 12 }, color: '#3f3f46' },
-                    border: { display: false }
-                }
-            }
-        }
-    });
+    renderMethodList(methodEntries, methodColors, d);
 
     const statusEntries = Object.entries(d.statusCounts || {})
         .sort((a, b) => (b[1] || 0) - (a[1] || 0));
@@ -544,6 +716,9 @@ function renderDashboardCharts(d) {
     const statusRawKeys = statusEntries.map(([k]) => k);
     const statusColors = statusRawKeys.map(k => STATUS_COLORS[k] || STATUS_COLORS[prettyLabel(k)] || '#71717a');
 
+    if (statusValues.length === 0) {
+        setChartEmpty('chartStatus', true);
+    } else {
     dashboardCharts.status = new Chart(document.getElementById('chartStatus'), {
         type: 'doughnut',
         data: {
@@ -594,6 +769,7 @@ function renderDashboardCharts(d) {
             }
         }
     });
+    }
 
     const series = Array.isArray(d.series) && d.series.length
         ? d.series
@@ -612,11 +788,15 @@ function renderDashboardCharts(d) {
     const revs = series.map(p => p.revenue || 0);
     const fullTips = periodKeys.map(k => formatPeriod(k, grain));
 
+    // both period charts share one label list, so one emptiness check covers them
+    if (periodKeys.length === 0) {
+        setChartEmpty('chartTransactions', true);
+    } else {
     dashboardCharts.transactions = new Chart(document.getElementById('chartTransactions'), {
         type: 'bar',
         data: {
             labels: dayLabels.length ? dayLabels : ['No Data'],
-            datasets: [{ label: 'Transactions', data: counts.length ? counts : [0], backgroundColor: counts.map((_, i) => i % 2 === 0 ? '#0f766e' : '#5eead4'), hoverBackgroundColor: '#115e59', borderRadius: 6, borderSkipped: false, maxBarThickness: 30, barPercentage: 0.72, categoryPercentage: 0.85 }]
+            datasets: [{ label: 'Transactions', data: counts.length ? counts : [0], backgroundColor: counts.map((_, i) => i % 2 === 0 ? '#0f766e' : '#14b8a6'), hoverBackgroundColor: '#115e59', borderRadius: 6, borderSkipped: false, maxBarThickness: 30, barPercentage: 0.72, categoryPercentage: 0.85 }]
         },
         options: {
             responsive: true, maintainAspectRatio: false,
@@ -637,7 +817,11 @@ function renderDashboardCharts(d) {
             }
         }
     });
+    }
 
+    if (periodKeys.length === 0) {
+        setChartEmpty('chartRevenue', true);
+    } else {
     dashboardCharts.revenue = new Chart(document.getElementById('chartRevenue'), {
         type: 'line',
         data: {
@@ -646,7 +830,7 @@ function renderDashboardCharts(d) {
                 label: 'Revenue ($)',
                 data: revs.length ? revs : [0],
                 borderColor: '#0f766e',
-                backgroundColor: 'rgba(15, 118, 110, 0.08)',
+                backgroundColor: 'rgba(13, 148, 136, 0.07)',
                 fill: true,
                 tension: 0.4,
                 borderWidth: 2,
@@ -671,11 +855,12 @@ function renderDashboardCharts(d) {
                 }
             },
             scales: {
-                y: { beginAtZero: true, ticks: { font: CHART_FONT, color: '#71717a', callback: v => '$' + v }, grid: CHART_GRID, border: { display: false } },
+                y: { beginAtZero: true, ticks: { font: CHART_FONT, color: '#71717a', callback: v => '$' + fmtAxisMoney(v) }, grid: CHART_GRID, border: { display: false } },
                 x: { grid: { display: false }, ticks: { font: CHART_FONT, color: '#71717a', maxRotation: 45, autoSkipPadding: 8 }, border: { display: false } }
             }
         }
     });
+    }
 }
 
 // ===== ALL PAYMENT LOGS =====
@@ -692,8 +877,6 @@ function viewUserPaymentLogs(userId, email) {
 async function loadAllLogs(page) {
     allLogsPage = page;
     const body = document.getElementById('allLogsBody');
-    const errEl = document.getElementById('allLogsError');
-    errEl.classList.remove('show');
     body.innerHTML = '<tr><td colspan="8" class="admin-loading">Loading...</td></tr>';
     try {
         let url;
@@ -705,7 +888,7 @@ async function loadAllLogs(page) {
         }
         const res = await fetch(url, { headers: authHeaders() });
         const data = await res.json();
-        if (!data.success) { showMsg(errEl, data.message || 'Failed to load.'); body.innerHTML = ''; return; }
+        if (!data.success) { notifyError(data.message || 'Failed to load.'); body.innerHTML = ''; return; }
 
         const d = data.data || {};
         let items = d.logs || d.content || d || [];
@@ -720,17 +903,17 @@ async function loadAllLogs(page) {
                 <td>${l.id}</td>
                 <td>${esc(l.email) || (l.customerId ? 'User #' + l.customerId : '-')}</td>
                 <td>${esc(l.paymentMethod) || '-'}</td>
-                <td style="font-weight:600;white-space:nowrap;">${l.currency ? l.currency.toUpperCase() : 'USD'} $${parseFloat(l.amount).toFixed(2)}</td>
+                <td class="num" style="font-weight:600;white-space:nowrap;">${l.currency ? l.currency.toUpperCase() : 'USD'} $${parseFloat(l.amount).toFixed(2)}</td>
                 <td>${paymentBadge(l.status)}</td>
                 <td style="white-space:normal;word-wrap:break-word;max-width:180px;">${esc(l.message) || '-'}</td>
                 <td style="color:${l.failureCode ? '#be123c' : '#71717a'}">${esc(l.failureCode) || '-'}</td>
-                <td style="white-space:nowrap;color:#71717a;">${fmtDate(l.createdAt)}</td>
+                <td class="ta-r" style="white-space:nowrap;color:#71717a;">${fmtDate(l.createdAt)}</td>
             </tr>
         `).join('');
 
         renderAllLogsPagination(d.currentPage ?? page, d.totalPages ?? 1, d.totalElements ?? items.length);
     } catch (e) {
-        showMsg(errEl, 'Failed to load: ' + e.message);
+        notifyError('Failed to load: ' + e.message);
         body.innerHTML = '';
     }
 }
@@ -761,8 +944,6 @@ function viewUserRefundLogs(userId, email) {
 async function loadAdminRefundLogs(page = 0) {
     adminRefundPage = page;
     const body = document.getElementById('adminRefundLogsBody');
-    const errEl = document.getElementById('adminRefundLogsError');
-    errEl.classList.remove('show');
     body.innerHTML = '<tr><td colspan="7" class="admin-loading">Loading...</td></tr>';
     try {
         let url;
@@ -773,7 +954,7 @@ async function loadAdminRefundLogs(page = 0) {
         }
         const res = await fetch(url, { headers: authHeaders() });
         const data = await res.json();
-        if (!data.success) { showMsg(errEl, data.message || 'Failed to load.'); body.innerHTML = ''; return; }
+        if (!data.success) { notifyError(data.message || 'Failed to load.'); body.innerHTML = ''; return; }
 
         const items = Array.isArray(data.data) ? data.data : (data.data?.logs || data.data?.content || []);
         if (items.length === 0) {
@@ -786,10 +967,10 @@ async function loadAdminRefundLogs(page = 0) {
                 <td style="font-family:monospace;font-size:12px;white-space:nowrap;">${esc(r.refundId) || '-'}</td>
                 <td>${esc(r.email) || (r.customerId ? 'User #' + r.customerId : '-')}</td>
                 <td style="font-family:monospace;font-size:12px;white-space:nowrap;">${esc(r.cardReference) || '-'}</td>
-                <td style="font-weight:600;white-space:nowrap;">${r.currency ? r.currency.toUpperCase() : 'USD'} $${parseFloat(r.amount).toFixed(2)}</td>
+                <td class="num" style="font-weight:600;white-space:nowrap;">${r.currency ? r.currency.toUpperCase() : 'USD'} $${parseFloat(r.amount).toFixed(2)}</td>
                 <td>${refundBadge(r.status)}</td>
                 <td style="white-space:normal;word-wrap:break-word;max-width:180px;">${esc(r.message) || '-'}</td>
-                <td style="white-space:nowrap;color:#71717a;">${fmtDate(r.createdAt)}</td>
+                <td class="ta-r" style="white-space:nowrap;color:#71717a;">${fmtDate(r.createdAt)}</td>
             </tr>
         `).join('');
 
@@ -806,10 +987,10 @@ async function loadAdminRefundLogs(page = 0) {
             document.getElementById('adminRefundLogsPagination').innerHTML = '';
         }
     } catch (e) {
-        showMsg(errEl, 'Failed to load: ' + e.message);
+        notifyError('Failed to load: ' + e.message);
         body.innerHTML = '';
     }
 }
 
 // init
-loadDashboard();
+initAdmin();

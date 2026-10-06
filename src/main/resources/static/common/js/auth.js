@@ -1,5 +1,11 @@
 // ===== LOGOUT =====
-function logout() { localStorage.clear(); token = null; window.location.href = '/index.html'; }
+// Tell the server to drop the session, then go back to the login page.
+function logout() {
+    sessionUser = null;
+    fetch('/api/v1/auth/logout', { method: 'POST', headers: authHeaders() })
+        .catch(() => {})
+        .finally(() => { window.location.href = '/index.html'; });
+}
 
 // ===== ROUTE AFTER LOGIN =====
 async function routeToGateway() {
@@ -11,7 +17,7 @@ async function routeToGateway() {
     }
     try {
         const res = await fetch('/api/v1/payment-gateways/user/' + user.userId + '/enabled', { headers: authHeaders() });
-        if (res.status === 401 || res.status === 403) { localStorage.clear(); token = null; return; }
+        if (res.status === 401 || res.status === 403) { sessionUser = null; return; }
         const data = await res.json();
         console.log('[Route] gateway data:', data);
         if (!data.success || !data.data) {
@@ -58,10 +64,8 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
         const res = await fetch('/api/v1/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
         const data = await res.json();
         if (!data.success) { showMsg(err, data.message || 'Login failed.'); return; }
-        token = data.data.token;
-        localStorage.setItem('jwtToken', token);
-        console.log('[Login] token set, calling routeToGateway');
-        console.log('[Login] getUser result:', getUser());
+        // the browser already holds the session cookie, so we are in
+        sessionUser = data.data;
         await routeToGateway();
     } catch (e) { showMsg(err, 'Server error: ' + e.message); }
     finally { clearAuthLoading(row); }
@@ -96,14 +100,12 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
         const res = await fetch('/api/v1/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, password }) });
         const data = await res.json();
         if (!data.success) { showMsg(err, data.message || 'Registration failed.'); return; }
-        token = data.data.token;
-        localStorage.setItem('jwtToken', token);
+        sessionUser = data.data;
         await routeToGateway();
     } catch (e) { showMsg(err, 'Server error: ' + e.message); }
     finally { clearAuthLoading(row); }
 });
 
 // ===== INIT =====
-if (token) {
-    routeToGateway();
-}
+// Already signed in? The session cookie is still valid, so go straight where we belong.
+loadSessionUser().then(user => { if (user) routeToGateway(); });

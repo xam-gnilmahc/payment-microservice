@@ -20,7 +20,17 @@ function setCardMsg(type, text) {
     el.className = type || '';
     if (text) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
-function goToLogin() { localStorage.clear(); token = paymentIntentData = null; selectedGatewayId = null; selectedGatewayTitle = null; stripe = null; elements = null; cardNumberEl = null; cardExpiryEl = null; cardCvcEl = null; window.location.href = '/index.html'; }
+function resetPaymentState() { sessionUser = null; paymentIntentData = null; selectedGatewayId = null; selectedGatewayTitle = null; stripe = null; elements = null; cardNumberEl = null; cardExpiryEl = null; cardCvcEl = null; }
+// used when the session is gone or unusable: just bounce to the login page
+function goToLogin() { resetPaymentState(); window.location.href = '/index.html'; }
+// used by the Logout buttons: ends the session on the server first, so the cookie cannot be
+// reused. Redirecting on its own left the session alive, which is not a sign-out.
+function signOut() {
+    resetPaymentState();
+    fetch('/api/v1/auth/logout', { method: 'POST', headers: authHeaders() })
+        .catch(() => {})
+        .finally(() => { window.location.href = '/index.html'; });
+}
 function goToNoGateway() { hideAll(); document.getElementById('step-no-gateway').classList.remove('hidden'); }
 
 // ===== INIT STRIPE WITH PUBLIC KEY =====
@@ -95,11 +105,8 @@ if (returnedPiId && returnedPiSecret) {
 
 // ===== INIT =====
 if (!returnedPiId && !returnedPiSecret) {
-    if (token) {
-        const user = decodeToken(token);
+    loadSessionUser().then(user => {
         if (user) loadUserGatewayAndCheckout();
         else goToLogin();
-    } else {
-        goToLogin();
-    }
+    });
 }

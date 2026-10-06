@@ -15,13 +15,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PaymentLogRepository extends JpaRepository<PaymentLog, Long> {
 
-  List<PaymentLog> findByCustomerId(Long customerId);
-
-  Page<PaymentLog> findByCustomerId(Long customerId, Pageable pageable);
-
   List<PaymentLog> findByEmail(String email);
-
-  List<PaymentLog> findByStatus(PaymentStatus status);
 
   @Query("SELECT p FROM PaymentLog p ORDER BY p.id DESC")
   Page<PaymentLog> findAllByIdDesc(Pageable pageable);
@@ -34,8 +28,6 @@ public interface PaymentLogRepository extends JpaRepository<PaymentLog, Long> {
       Long customerId, PaymentStatus status, Pageable pageable);
 
   Optional<PaymentLog> findByChargeId(String chargeId);
-
-  Optional<PaymentLog> findByTransactionId(String transactionId);
 
   // ===== summary counts for the customer payment-logs page =====
   long countByCustomerId(Long customerId);
@@ -66,46 +58,41 @@ public interface PaymentLogRepository extends JpaRepository<PaymentLog, Long> {
       @Param("endDate") LocalDateTime endDate,
       @Param("customerId") Long customerId);
 
-  @Query("SELECT COUNT(p) FROM PaymentLog p WHERE p.createdAt >= :startDate AND p.status = :status")
-  long countByCreatedAtAfterAndStatus(
-      @Param("startDate") LocalDateTime startDate, @Param("status") PaymentStatus status);
-
-  @Query("SELECT COUNT(p) FROM PaymentLog p WHERE p.createdAt >= :startDate")
-  long countByCreatedAtAfter(@Param("startDate") LocalDateTime startDate);
-
-  @Query(
-      "SELECT COUNT(p) FROM PaymentLog p WHERE p.createdAt >= :startDate "
-          + "AND p.status = :status AND p.customerId = :customerId")
-  long countByCreatedAtAfterAndStatusAndCustomer(
-      @Param("startDate") LocalDateTime startDate,
-      @Param("status") PaymentStatus status,
-      @Param("customerId") Long customerId);
-
   @Query(
       "SELECT COUNT(p) FROM PaymentLog p WHERE p.createdAt >= :startDate AND p.customerId = :customerId")
   long countByCreatedAtAfterAndCustomer(
       @Param("startDate") LocalDateTime startDate, @Param("customerId") Long customerId);
 
+  // The end of the window matters too: without it, picking a year counted every row from that
+  // year onwards, so an empty range still drew bars.
   @Query(
       "SELECT COALESCE(p.paymentMethod, 'Unknown'), COUNT(p) FROM PaymentLog p "
-          + "WHERE p.createdAt >= :startDate GROUP BY p.paymentMethod")
-  List<Object[]> countGroupByPaymentMethod(@Param("startDate") LocalDateTime startDate);
+          + "WHERE p.createdAt >= :startDate AND p.createdAt < :endDate GROUP BY p.paymentMethod")
+  List<Object[]> countGroupByPaymentMethod(
+      @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 
   @Query(
       "SELECT COALESCE(p.paymentMethod, 'Unknown'), COUNT(p) FROM PaymentLog p "
-          + "WHERE p.createdAt >= :startDate AND p.customerId = :customerId GROUP BY p.paymentMethod")
+          + "WHERE p.createdAt >= :startDate AND p.createdAt < :endDate "
+          + "AND p.customerId = :customerId GROUP BY p.paymentMethod")
   List<Object[]> countGroupByPaymentMethodAndCustomer(
-      @Param("startDate") LocalDateTime startDate, @Param("customerId") Long customerId);
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate,
+      @Param("customerId") Long customerId);
 
   @Query(
-      "SELECT p.status, COUNT(p) FROM PaymentLog p WHERE p.createdAt >= :startDate GROUP BY p.status")
-  List<Object[]> countGroupByStatus(@Param("startDate") LocalDateTime startDate);
+      "SELECT p.status, COUNT(p) FROM PaymentLog p "
+          + "WHERE p.createdAt >= :startDate AND p.createdAt < :endDate GROUP BY p.status")
+  List<Object[]> countGroupByStatus(
+      @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 
   @Query(
       "SELECT p.status, COUNT(p) FROM PaymentLog p WHERE p.createdAt >= :startDate "
-          + "AND p.customerId = :customerId GROUP BY p.status")
+          + "AND p.createdAt < :endDate AND p.customerId = :customerId GROUP BY p.status")
   List<Object[]> countGroupByStatusAndCustomer(
-      @Param("startDate") LocalDateTime startDate, @Param("customerId") Long customerId);
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate,
+      @Param("customerId") Long customerId);
 
   @Query(
       "SELECT FUNCTION('DATE', p.createdAt), COUNT(p), "
@@ -210,22 +197,6 @@ public interface PaymentLogRepository extends JpaRepository<PaymentLog, Long> {
       @Param("startDate") LocalDateTime startDate,
       @Param("endDate") LocalDateTime endDate,
       @Param("customerId") Long customerId);
-
-  @Query(
-      "SELECT FUNCTION('DATE', p.createdAt), COUNT(p), "
-          + "COALESCE(SUM(CASE WHEN p.status = com.payment.microservice.model.PaymentStatus.SUCCEEDED "
-          + "THEN p.amount ELSE 0 END), 0) "
-          + "FROM PaymentLog p WHERE p.createdAt >= :startDate GROUP BY FUNCTION('DATE', p.createdAt)")
-  List<Object[]> dailyCountsAndRevenue(@Param("startDate") LocalDateTime startDate);
-
-  @Query(
-      "SELECT FUNCTION('DATE', p.createdAt), COUNT(p), "
-          + "COALESCE(SUM(CASE WHEN p.status = com.payment.microservice.model.PaymentStatus.SUCCEEDED "
-          + "THEN p.amount ELSE 0 END), 0) "
-          + "FROM PaymentLog p WHERE p.createdAt >= :startDate AND p.customerId = :customerId "
-          + "GROUP BY FUNCTION('DATE', p.createdAt)")
-  List<Object[]> dailyCountsAndRevenueAndCustomer(
-      @Param("startDate") LocalDateTime startDate, @Param("customerId") Long customerId);
 
   @Query(
       "SELECT COUNT(p) FROM PaymentLog p WHERE p.createdAt >= :startDate AND p.createdAt < :endDate")

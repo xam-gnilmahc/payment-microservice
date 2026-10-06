@@ -5,32 +5,25 @@ import com.payment.microservice.model.BillingAddress;
 import com.payment.microservice.model.User;
 import com.payment.microservice.repository.BillingAddressRepository;
 import com.payment.microservice.traits.ApiResponse;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
+import com.payment.microservice.traits.CurrentUser;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/billing-addresses")
 @RequiredArgsConstructor
-@SecurityRequirement(name = "BearerAuth")
 public class BillingAddressController {
 
   private final BillingAddressRepository billingAddressRepository;
 
-  private Long getUserId() {
-    User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-    return user.getId();
-  }
-
   @PostMapping
   public ResponseEntity<ApiResponse<BillingAddress>> create(
       @Valid @RequestBody CreateBillingAddressRequest request) {
-    Long userId = getUserId();
+    Long userId = CurrentUser.id();
 
     if (Boolean.TRUE.equals(request.getIsDefault())) {
       billingAddressRepository
@@ -63,7 +56,7 @@ public class BillingAddressController {
 
   @GetMapping
   public ResponseEntity<ApiResponse<List<BillingAddress>>> list() {
-    Long userId = getUserId();
+    Long userId = CurrentUser.id();
     List<BillingAddress> addresses =
         billingAddressRepository.findByUserIdOrderByIsDefaultDescCreatedAtDesc(userId);
     return ResponseEntity.ok(ApiResponse.success("Billing addresses fetched", 200, addresses));
@@ -71,7 +64,7 @@ public class BillingAddressController {
 
   @DeleteMapping("/{id}")
   public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
-    Long userId = getUserId();
+    Long userId = CurrentUser.id();
     BillingAddress address =
         billingAddressRepository
             .findById(id)

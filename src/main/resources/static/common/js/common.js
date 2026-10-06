@@ -1,16 +1,21 @@
 // ===== SHARED STATE =====
-let token = localStorage.getItem('jwtToken');
+// There is no token in the browser any more. The server keeps who is signed in in its session and
+// the browser sends the session cookie by itself, so requests only need the JSON content type.
+// sessionUser is just a cache of what /api/v1/auth/me answered, for the page to display.
+let sessionUser = null;
 
-// ===== TOKEN =====
-function decodeToken(t) {
+async function loadSessionUser() {
     try {
-        const payload = JSON.parse(atob(t.split('.')[1]));
-        return { userId: payload.userId, email: payload.sub, name: payload.name, isSuperAdmin: payload.isSuperAdmin };
-    } catch (e) { return null; }
+        const res = await fetch('/api/v1/auth/me', { headers: authHeaders() });
+        if (res.status === 401) { sessionUser = null; return null; }
+        const data = await res.json();
+        sessionUser = data.success ? data.data : null;
+    } catch (e) { sessionUser = null; }
+    return sessionUser;
 }
 
-function getUser() { return token ? decodeToken(token) : null; }
-function authHeaders() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }; }
+function getUser() { return sessionUser; }
+function authHeaders() { return { 'Content-Type': 'application/json' }; }
 
 // ===== HELPERS =====
 function hideAll() { document.body.classList.remove('wide-header'); ['step-no-gateway', 'step-checkout', 'step-card', 'step-address', 'step-logs'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); }); }

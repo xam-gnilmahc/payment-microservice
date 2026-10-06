@@ -12,62 +12,47 @@
 <body>
 
 <div class="admin-layout" id="adminLayout">
-    <!-- SIDEBAR -->
-    <aside class="admin-sidebar" id="adminSidebar">
-        <div class="admin-sidebar-header">
-            <div class="admin-logo">
-                <img src="https://static.vecteezy.com/system/resources/previews/008/997/967/non_2x/uom-logo-uom-letter-uom-letter-logo-design-initials-uom-logo-linked-with-circle-and-uppercase-monogram-logo-uom-typography-for-technology-business-and-real-estate-brand-vector.jpg" alt="UOM" width="36" height="36" style="display:block;border-radius:50%;object-fit:cover;" />
-            </div>
-            <div class="admin-brand">
-                <div class="admin-brand-name">UOM</div>
-                <div class="admin-brand-tag">Analytics</div>
-            </div>
+    <!-- TOP NAVIGATION -->
+    <header class="admin-topbar">
+        <div class="topbar-brand">
+            <span class="topbar-brand-text">
+                <span class="topbar-brand-name">UOM</span>
+                <span class="topbar-brand-tag">Analytics</span>
+            </span>
         </div>
-        <nav class="admin-nav">
-            <div class="admin-nav-label">Overview</div>
+
+        <nav class="admin-nav topbar-nav" aria-label="Sections">
             <button class="admin-nav-item active" data-section="dashboard" onclick="showSection('dashboard', this)" title="Dashboard">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
                 <span class="nav-text">Dashboard</span>
             </button>
-            <div class="admin-nav-label">Manage</div>
             <button class="admin-nav-item" data-section="gateways" onclick="showSection('gateways', this)" title="Payment Gateways">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-                <span class="nav-text">Payment Gateways</span>
+                <span class="nav-text">Gateways</span>
             </button>
             <button class="admin-nav-item" data-section="users" onclick="showSection('users', this)" title="Users">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 <span class="nav-text">Users</span>
             </button>
-            <div class="admin-nav-label">Activity</div>
             <button class="admin-nav-item" data-section="all-logs" onclick="showSection('all-logs', this)" title="All Payment Logs">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
-                <span class="nav-text">All Payment Logs</span>
+                <span class="nav-text">Logs</span>
             </button>
             <button class="admin-nav-item" data-section="refund-logs" onclick="showSection('refund-logs', this)" title="Refund Logs">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                <span class="nav-text">Refund Logs</span>
+                <span class="nav-text">Refunds</span>
             </button>
         </nav>
-        <div class="admin-sidebar-footer">
-            <div class="user-email-mini" id="adminEmail">-</div>
-            <button class="logout-btn" onclick="logout()">Logout</button>
+
+        <div class="topbar-right">
+            <span class="topbar-range" id="topbarRange">—</span>
+            <span class="topbar-user" id="adminEmail">-</span>
+            <button class="logout-btn" onclick="logout()" title="Sign out">Sign out</button>
         </div>
-    </aside>
-
-    <!-- edge toggle, sitting on the sidebar / main-content line -->
-    <button type="button" class="sidebar-edge-toggle" id="sidebarToggle" title="Collapse sidebar" aria-label="Collapse sidebar">
-        <svg class="icon-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H6"/><path d="M12 18l-6-6 6-6"/></svg>
-        <svg class="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M12 6l6 6-6 6"/></svg>
-    </button>
-
-    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+    </header>
 
     <!-- MAIN -->
     <main class="admin-main">
-        <button type="button" class="sidebar-toggle mobile-nav-btn" onclick="openSidebar()" title="Menu" aria-label="Open menu">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>
-        </button>
-
         <!-- DASHBOARD -->
         <div class="admin-section active" id="section-dashboard">
             <div class="page-header">
@@ -79,65 +64,51 @@
             </div>
 
             <!-- FILTER PANEL -->
-            <div class="filter-panel">
-                <div class="filter-item">
-                    <span class="filter-label">Customer</span>
-                    <select id="dashCustomer" onchange="loadDashboard()">
-                        <option value="">All customers</option>
-                    </select>
+            <!-- DASHBOARD FILTER BAR: one row, three controls. Month, Year, From, To and Preset
+                 were five separate controls doing one job, so they are now a single preset group,
+                 with the date inputs revealed only when a custom range is chosen. -->
+            <div class="filter-bar">
+                <div class="filter-bar-row">
+                    <label class="compact-field">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                        <select id="dashWindow" onchange="onWindowChange()">
+                            <option value="30d">Last 30 days</option>
+                            <option value="3m" selected>Last 3 months</option>
+                            <option value="6m">Last 6 months</option>
+                            <option value="12m">Last 12 months</option>
+                            <option value="all">All time</option>
+                            <option value="custom">Custom range</option>
+                        </select>
+                    </label>
+
+                    <label class="compact-field compact-field-end">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                        <select id="dashCustomer" onchange="loadDashboard()">
+                            <option value="">All customers</option>
+                        </select>
+                    </label>
+
+                    <div class="seg seg-sm" role="group" aria-label="Granularity">
+                        <span class="seg-thumb" id="grainThumb" aria-hidden="true"></span>
+                        <button class="seg-btn on" data-grain="day" onclick="setGrain('day')">Day</button>
+                        <button class="seg-btn" data-grain="week" onclick="setGrain('week')">Week</button>
+                        <button class="seg-btn" data-grain="month" onclick="setGrain('month')">Month</button>
+                    </div>
                 </div>
-                <div class="filter-item">
-                    <span class="filter-label">Month</span>
-                    <select id="dashMonth" onchange="onDashMonthYearChange()">
-                        <option value="">All months</option>
-                        <option value="1">January</option>
-                        <option value="2">February</option>
-                        <option value="3">March</option>
-                        <option value="4">April</option>
-                        <option value="5">May</option>
-                        <option value="6">June</option>
-                        <option value="7">July</option>
-                        <option value="8">August</option>
-                        <option value="9">September</option>
-                        <option value="10">October</option>
-                        <option value="11">November</option>
-                        <option value="12">December</option>
-                    </select>
-                </div>
-                <div class="filter-item">
-                    <span class="filter-label">Year</span>
-                    <select id="dashYear" onchange="onDashMonthYearChange()">
-                        <option value="">All years</option>
-                    </select>
-                </div>
-                <div class="filter-item">
-                    <span class="filter-label">From</span>
-                    <input type="date" id="dashStart" onchange="onDashDateChange()" />
-                </div>
-                <div class="filter-item">
-                    <span class="filter-label">To</span>
-                    <input type="date" id="dashEnd" onchange="onDashDateChange()" />
-                </div>
-                <div class="filter-item">
-                    <span class="filter-label">Preset</span>
-                    <select id="dashRange" onchange="onDashPresetChange()">
-                        <option value="custom" selected>Custom</option>
-                        <option value="today">Today</option>
-                        <option value="week">Last 7 days</option>
-                        <option value="month">This Month</option>
-                        <option value="year">This Year</option>
-                        <option value="all">All Time</option>
-                    </select>
-                </div>
-                <div class="filter-item">
-                    <span class="filter-label">Grain</span>
-                    <select id="dashGrain" onchange="loadDashboard()">
-                        <option value="auto" selected>Auto</option>
-                        <option value="day">Day</option>
-                        <option value="week">Week</option>
-                        <option value="month">Month</option>
-                        <option value="year">Year</option>
-                    </select>
+
+                <div class="filter-custom" id="customRange">
+                    <div class="filter-custom-inner">
+                        <label class="compact-field compact-date">
+                            <span>From</span>
+                            <input type="date" id="dashStart" onchange="onDashDateChange()" />
+                        </label>
+                        <span class="range-arrow" aria-hidden="true">&rarr;</span>
+                        <label class="compact-field compact-date">
+                            <span>To</span>
+                            <input type="date" id="dashEnd" onchange="onDashDateChange()" />
+                        </label>
+                        <button class="link-btn" onclick="onWindowChange('30d')">Reset</button>
+                    </div>
                 </div>
             </div>
 
@@ -151,7 +122,13 @@
                     </div>
                     <div class="stat-label">Total Payments</div>
                     <div class="stat-value" id="statTotal">-</div>
-                    <div class="stat-hint">all transactions in range</div>
+                    <div class="stat-hint">in range</div>
+                    <div class="stat-spark">
+                        <svg viewBox="0 0 120 28" preserveAspectRatio="none" aria-hidden="true">
+                            <path id="sparkTotalLine" fill="none" stroke="#0d9488" stroke-width="1.75"
+                                  stroke-linecap="round" stroke-linejoin="round" d=""></path>
+                        </svg>
+                    </div>
                 </div>
 
                 <div class="stat-card">
@@ -162,7 +139,13 @@
                     </div>
                     <div class="stat-label">Succeeded</div>
                     <div class="stat-value green" id="statSucceeded">-</div>
-                    <div class="stat-hint">successful payments</div>
+                    <div class="stat-hint">successful</div>
+                    <div class="stat-spark">
+                        <svg viewBox="0 0 120 28" preserveAspectRatio="none" aria-hidden="true">
+                            <path id="sparkSucceededLine" fill="none" stroke="#059669" stroke-width="1.75"
+                                  stroke-linecap="round" stroke-linejoin="round" d=""></path>
+                        </svg>
+                    </div>
                 </div>
 
                 <div class="stat-card">
@@ -173,7 +156,13 @@
                     </div>
                     <div class="stat-label">Failed</div>
                     <div class="stat-value red" id="statFailed">-</div>
-                    <div class="stat-hint">failed payments</div>
+                    <div class="stat-hint">failed</div>
+                    <div class="stat-spark">
+                        <svg viewBox="0 0 120 28" preserveAspectRatio="none" aria-hidden="true">
+                            <path id="sparkFailedLine" fill="none" stroke="#e11d48" stroke-width="1.75"
+                                  stroke-linecap="round" stroke-linejoin="round" d=""></path>
+                        </svg>
+                    </div>
                 </div>
 
                 <div class="stat-card">
@@ -184,62 +173,88 @@
                     </div>
                     <div class="stat-label">Total Refunds</div>
                     <div class="stat-value" id="statRefunds">-</div>
-                    <div class="stat-hint"><span id="statRefundAmount">$0.00</span> · succeeded refunds</div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-card-top">
-                        <div class="stat-icon zinc">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                        </div>
+                    <div class="stat-hint"><span id="statRefundAmount">$0.00</span><span id="statRefundHint"></span></div>
+                    <div class="stat-spark">
+                        <svg viewBox="0 0 120 28" preserveAspectRatio="none" aria-hidden="true">
+                            <path id="sparkRefundsLine" fill="none" stroke="#d97706" stroke-width="1.75"
+                                  stroke-linecap="round" stroke-linejoin="round" d=""></path>
+                        </svg>
                     </div>
-                    <div class="stat-label">Revenue</div>
-                    <div class="stat-value accent" id="statRevenue">-</div>
-                    <div class="stat-hint">succeeded volume</div>
                 </div>
             </div>
 
-            <div class="charts-grid">
-                <div class="chart-card">
-                    <div class="chart-header">
+            <div class="dash-grid">
+                <!-- REVENUE: headline figure and its own chart in one panel -->
+                <section class="panel panel-revenue">
+                    <header class="panel-head">
                         <div>
-                            <div class="chart-title">Payment Methods</div>
-                            <div class="chart-sub">Volume by method</div>
+                            <div class="panel-title">Revenue</div>
+                            <div class="panel-sub" id="revChartSub">Succeeded revenue by period</div>
                         </div>
-                        <span class="chart-chip">Bar</span>
+                        <div class="panel-figure">
+                            <span class="stat-delta" id="statRevenueDelta"></span>
+                            <span class="panel-figure-value" id="statRevenue">-</span>
+                        </div>
+                    </header>
+                    <div class="panel-body panel-body-chart">
+                        <canvas id="chartRevenue"></canvas>
+                        <div class="chart-empty" data-empty-for="chartRevenue" hidden>
+                            <span class="chart-empty-title">No data in this range</span>
+                            <span class="chart-empty-sub">Pick a wider date range</span>
+                        </div>
                     </div>
-                    <div class="chart-body"><canvas id="chartMethods"></canvas></div>
-                </div>
-                <div class="chart-card">
-                    <div class="chart-header">
+                </section>
+
+                <!-- STATUS -->
+                <section class="panel panel-status">
+                    <header class="panel-head">
                         <div>
-                            <div class="chart-title">Payment Status</div>
-                            <div class="chart-sub">Outcome breakdown</div>
+                            <div class="panel-title">Payment Status</div>
+                            <div class="panel-sub">Outcome breakdown</div>
                         </div>
-                        <span class="chart-chip">Split</span>
+                    </header>
+                    <div class="panel-body panel-body-chart">
+                        <canvas id="chartStatus"></canvas>
+                        <div class="chart-empty" data-empty-for="chartStatus" hidden>
+                            <span class="chart-empty-title">No data in this range</span>
+                            <span class="chart-empty-sub">Pick a wider date range</span>
+                        </div>
                     </div>
-                    <div class="chart-body"><canvas id="chartStatus"></canvas></div>
-                </div>
-                <div class="chart-card">
-                    <div class="chart-header">
+                </section>
+
+                <!-- VOLUME -->
+                <section class="panel panel-volume">
+                    <header class="panel-head">
                         <div>
-                            <div class="chart-title">Transactions Over Time</div>
-                            <div class="chart-sub" id="txnChartSub">Volume by period</div>
+                            <div class="panel-title">Transactions</div>
+                            <div class="panel-sub" id="txnChartSub">Volume by period</div>
                         </div>
-                        <span class="chart-chip">Bar</span>
+                    </header>
+                    <div class="panel-body panel-body-chart">
+                        <canvas id="chartTransactions"></canvas>
+                        <div class="chart-empty" data-empty-for="chartTransactions" hidden>
+                            <span class="chart-empty-title">No data in this range</span>
+                            <span class="chart-empty-sub">Pick a wider date range</span>
+                        </div>
                     </div>
-                    <div class="chart-body"><canvas id="chartTransactions"></canvas></div>
-                </div>
-                <div class="chart-card">
-                    <div class="chart-header">
+                </section>
+
+                <!-- METHODS: a ranked list reads better than a bar chart with long labels -->
+                <section class="panel panel-methods">
+                    <header class="panel-head">
                         <div>
-                            <div class="chart-title">Revenue Over Time</div>
-                            <div class="chart-sub" id="revChartSub">Succeeded revenue by period</div>
+                            <div class="panel-title">Payment Methods</div>
+                            <div class="panel-sub">Share of volume</div>
                         </div>
-                        <span class="chart-chip accent">Trend</span>
+                    </header>
+                    <div class="panel-body">
+                        <div class="method-list" id="methodsList"></div>
+                        <div class="chart-empty" data-empty-for="chartMethods" hidden>
+                            <span class="chart-empty-title">No data in this range</span>
+                            <span class="chart-empty-sub">Pick a wider date range</span>
+                        </div>
                     </div>
-                    <div class="chart-body"><canvas id="chartRevenue"></canvas></div>
-                </div>
+                </section>
             </div>
 
             <div class="analytics-panel">
@@ -255,11 +270,11 @@
                         <thead>
                             <tr>
                                 <th>Period</th>
-                                <th>Payments</th>
-                                <th>Succeeded</th>
-                                <th>Failed</th>
-                                <th>Success %</th>
-                                <th>Revenue</th>
+                                <th class="num">Payments</th>
+                                <th class="num">Succeeded</th>
+                                <th class="num">Failed</th>
+                                <th class="num">Success %</th>
+                                <th class="num">Revenue</th>
                             </tr>
                         </thead>
                         <tbody id="breakdownBody">
@@ -275,7 +290,11 @@
                         <div class="chart-title">Payment Logs</div>
                         <div class="chart-sub" id="dashLogsSub">Filtered by current customer + date range</div>
                     </div>
-                    <div class="compare-chip" id="dashLogsCount">0 logs</div>
+                    <div class="dash-logs-actions">
+                        <button class="btn-link" id="dashLogsViewAll" hidden
+                                onclick="showSection('all-logs', document.querySelector('[data-section=&quot;all-logs&quot;]'))">View all</button>
+                        <span class="compare-chip" id="dashLogsCount">0 logs</span>
+                    </div>
                 </div>
                 <div class="admin-table-wrap">
                     <table class="admin-table">
@@ -284,14 +303,14 @@
                                 <th>ID</th>
                                 <th>Customer</th>
                                 <th>Method</th>
-                                <th>Amount</th>
+                                <th class="num">Amount</th>
                                 <th>Status</th>
                                 <th>Failure</th>
                                 <th>Created At</th>
                             </tr>
                         </thead>
                         <tbody id="dashLogsBody">
-                            <tr><td colspan="7" class="admin-loading">Loading...</td></tr>
+                            <tr><td colspan="7" class="admin-loading">Loading logs…</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -326,17 +345,48 @@
                     <div class="page-subtitle">Manage accounts, gateway access and credentials</div>
                 </div>
             </div>
-            <div class="banner banner-error" id="users-error"></div>
-            <div class="banner banner-success" id="users-success"></div>
+            <div class="filter-bar">
+                <div class="filter-bar-row">
+                    <label class="compact-field compact-field-grow">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+                        <input type="search" id="usersSearch" placeholder="Search name or email"
+                               oninput="renderUsers()" autocomplete="off" />
+                    </label>
+                    <span class="filter-count" id="usersCount"></span>
+                </div>
+            </div>
             <div class="admin-table-wrap">
                 <table class="admin-table">
                     <thead>
-                        <tr><th>ID</th><th>Name</th><th>Email</th><th>Gateways</th><th>Actions</th></tr>
+                        <tr><th>ID</th><th>User</th><th>Status</th><th>Gateways</th><th class="ta-r">Actions</th></tr>
                     </thead>
                     <tbody id="usersBody">
                         <tr><td colspan="5" class="admin-loading">Loading...</td></tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- LOGIN AS MODAL -->
+            <div class="admin-modal-overlay" id="loginAsModal">
+                <div class="admin-modal">
+                    <div class="card-header" style="margin-bottom:16px;">
+                        <div>
+                            <div class="card-title">Sign in as user</div>
+                            <div class="loginAs-note">Opens their payment page in a new tab. The session cookie is shared, so this tab becomes that user too until you sign back in as an admin.</div>
+                        </div>
+                        <button class="btn-link" onclick="closeLoginAsModal()" style="font-size:12px;">Cancel</button>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="loginAsEmail" readonly />
+                    </div>
+                    <div class="form-group">
+                        <label>Their password</label>
+                        <input type="password" id="loginAsPassword" placeholder="Required to confirm it is this account"
+                               onkeydown="if (event.key === 'Enter') submitLoginAs()" autocomplete="off" />
+                    </div>
+                    <button class="btn btn-primary" id="loginAsSubmit" onclick="submitLoginAs()">Sign in as this user</button>
+                </div>
             </div>
 
             <!-- ASSIGN MODAL -->
@@ -382,24 +432,30 @@
 
         <!-- ALL PAYMENT LOGS -->
         <div class="admin-section" id="section-all-logs">
-            <div class="filter-bar">
+            <div class="page-header">
                 <div>
-                    <div class="page-title" style="font-size:20px;margin-bottom:2px;">All Payment Logs <span class="filter-subtitle" id="allLogsUserFilter"></span></div>
-                    <div class="page-subtitle">Newest first · filter by status</div>
+                    <div class="page-title">All Payment Logs <span class="filter-subtitle" id="allLogsUserFilter"></span></div>
+                    <div class="page-subtitle">Every payment in the system, newest first</div>
                 </div>
-                <select id="allLogsStatusFilter" onchange="loadAllLogs(0)">
-                    <option value="">All Statuses</option>
-                    <option value="SUCCEEDED">Succeeded</option>
-                    <option value="FAILED">Failed</option>
-                    <option value="PROCESSING">Processing</option>
-                    <option value="INITIATED">Initiated</option>
-                </select>
             </div>
-            <div class="banner banner-error" id="allLogsError"></div>
+            <div class="filter-bar">
+                <div class="filter-bar-row">
+                    <label class="compact-field">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M7 12h10M10 18h4"/></svg>
+                        <select id="allLogsStatusFilter" onchange="loadAllLogs(0)">
+                            <option value="">All statuses</option>
+                            <option value="SUCCEEDED">Succeeded</option>
+                            <option value="FAILED">Failed</option>
+                            <option value="PROCESSING">Processing</option>
+                            <option value="INITIATED">Initiated</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
             <div class="admin-table-wrap" id="allLogsWrap">
                 <table class="admin-table">
                     <thead>
-                        <tr><th>ID</th><th>Customer</th><th>Method</th><th>Amount</th><th>Status</th><th>Message</th><th>Failure</th><th>Created At</th></tr>
+                        <tr><th>ID</th><th>Customer</th><th>Method</th><th class="num">Amount</th><th>Status</th><th>Message</th><th>Failure</th><th class="ta-r">Created At</th></tr>
                     </thead>
                     <tbody id="allLogsBody">
                         <tr><td colspan="8" class="admin-loading">Loading...</td></tr>
@@ -411,20 +467,19 @@
 
         <!-- REFUND LOGS -->
         <div class="admin-section" id="section-refund-logs">
-            <div class="filter-bar">
+            <div class="page-header">
                 <div>
-                    <div class="page-title" style="font-size:20px;margin-bottom:2px;">Refund Logs <span class="filter-subtitle" id="refundLogsUserFilter"></span></div>
-                    <div class="page-subtitle">Refund events · newest first</div>
+                    <div class="page-title">Refund Logs</div>
+                    <div class="page-subtitle">Refund events across all gateways, newest first <span class="filter-subtitle" id="refundLogsUserFilter"></span></div>
                 </div>
             </div>
-            <div class="banner banner-error" id="adminRefundLogsError"></div>
             <div class="admin-table-wrap">
                 <table class="admin-table">
                     <thead>
-                        <tr><th>Refund ID</th><th>Customer</th><th>Card Reference</th><th>Amount</th><th>Status</th><th>Message</th><th>Created At</th></tr>
+                        <tr><th>Refund ID</th><th>Customer</th><th>Card Reference</th><th class="num">Amount</th><th>Status</th><th>Message</th><th class="ta-r">Created At</th></tr>
                     </thead>
                     <tbody id="adminRefundLogsBody">
-                        <tr><td colspan="7" class="admin-loading">Loading...</td></tr>
+                        <tr><td colspan="7" class="admin-loading">Loading logs…</td></tr>
                     </tbody>
                 </table>
             </div>

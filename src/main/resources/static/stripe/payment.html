@@ -3,250 +3,306 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stripe Payment</title>
+    <title>Checkout &middot; Payment Gateway</title>
     <script src="https://js.stripe.com/v3/"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/pay.css">
 </head>
-<body class="theme-customer">
+<body class="theme-customer pay">
 
-<div class="header">
-    <div class="header-inner">
-        <h1>Payment Gateway</h1>
-        <span class="header-badge" id="headerGatewayBadge">Stripe</span>
+<!-- ===== TOP BAR ===== -->
+<header class="pay-top">
+    <div class="pay-top-inner">
+        <div class="pay-brand">
+            <span class="pay-brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="5" width="20" height="14" rx="3"></rect>
+                    <path d="M2 10h20"></path>
+                    <path d="M6 15h4"></path>
+                </svg>
+            </span>
+            <span class="pay-brand-text">Payment Gateway</span>
+            <span class="pay-chip" id="headerGatewayBadge">Stripe</span>
+        </div>
+
+        <div class="pay-top-right">
+            <div class="pay-user">
+                <span class="pay-user-avatar" id="userAvatar">-</span>
+                <span class="pay-user-meta">
+                    <span class="pay-user-name" id="userName">-</span>
+                    <span class="pay-user-mail" id="userEmailDisplay">-</span>
+                </span>
+            </div>
+            <button class="pay-icon-btn" onclick="signOut()" title="Sign out" aria-label="Sign out">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <path d="M16 17l5-5-5-5"></path>
+                    <path d="M21 12H9"></path>
+                </svg>
+            </button>
+        </div>
     </div>
-</div>
+</header>
 
-<div class="sandbox-banner">Sandbox testing mode &mdash; no real money is charged. Use test cards only.</div>
+<!-- ===== SANDBOX NOTICE ===== -->
+<div class="pay-notice">
+    <span class="pay-notice-dot" aria-hidden="true"></span>
+    Sandbox mode &mdash; no real money is charged.
+</div>
 
 <!-- ===== NO GATEWAY ===== -->
-<div class="container hidden" id="step-no-gateway">
-    <div class="card">
-        <div class="card-header">
-            <div class="card-title">No Payment Gateway</div>
-            <button class="btn-link" onclick="goToLogin()" style="font-size:12px;">Logout</button>
+<div class="container hidden pay-shell" id="step-no-gateway">
+    <div class="pay-panel pay-panel-empty">
+        <div class="pay-empty-art" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.3 3.9 1.9 18a2 2 0 0 0 1.7 3h16.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path>
+                <path d="M12 9v4"></path>
+                <path d="M12 17h.01"></path>
+            </svg>
         </div>
-        <div class="text-center" style="padding: 40px 0;">
-            <div style="font-size:48px;margin-bottom:16px;">&#9888;</div>
-            <div style="font-size:16px;font-weight:600;color:#1a1a2e;margin-bottom:8px;">No payment gateway enabled</div>
-            <div style="font-size:13px;color:#8b8fa3;">Contact admin to enable a payment gateway for your account.</div>
-        </div>
+        <h2 class="pay-empty-title">No payment gateway enabled</h2>
+        <p class="pay-empty-text">Your account has no active gateway yet. Ask an administrator to enable one, then come back and finish your payment.</p>
+        <button class="btn btn-primary" onclick="signOut()">Sign out</button>
     </div>
 </div>
 
-<!-- ===== STEP 2: CHECKOUT ===== -->
-<div class="container hidden" id="step-checkout">
-    <div class="split">
-        <div class="split-main">
-            <div class="card">
-                <div class="card-header">
+<!-- ===== STEP 1: CHECKOUT ===== -->
+<div class="container hidden pay-shell" id="step-checkout">
+    <!-- progress -->
+    <ol class="pay-steps" aria-label="Checkout progress">
+        <li class="pay-step is-active"><span class="pay-step-dot">1</span><span class="pay-step-label">Amount</span></li>
+        <li class="pay-step-line"></li>
+        <li class="pay-step"><span class="pay-step-dot">2</span><span class="pay-step-label">Address</span></li>
+        <li class="pay-step-line"></li>
+        <li class="pay-step"><span class="pay-step-dot">3</span><span class="pay-step-label">Pay</span></li>
+    </ol>
+
+    <div class="pay-split">
+        <!-- ---------- main ---------- -->
+        <div class="pay-main">
+            <div class="pay-panel">
+                <div class="pay-panel-head">
                     <div>
-                        <div class="card-title">New Payment — <span id="selectedGatewayTitle">-</span></div>
-                        <div class="card-desc">Enter the amount you wish to pay and select a billing address. You'll review the details before confirming.</div>
+                        <h2 class="pay-title">New payment <span class="pay-title-sub" id="selectedGatewayTitle">-</span></h2>
+                        <p class="pay-sub">Choose how much to pay and where the receipt should go. You will review everything before it is charged.</p>
                     </div>
-                    <div>
-                        <button class="btn-link" onclick="goToLogin()" style="font-size:12px;">Logout</button>
-                    </div>
+                    <span class="pay-tag">Secure</span>
                 </div>
+
                 <div class="banner banner-error" id="checkout-error"></div>
 
-                <div class="user-badge">
-                    <div class="user-avatar" id="userAvatar">-</div>
-                    <div class="user-info">
-                        <div class="user-name" id="userName">-</div>
-                        <div class="user-email" id="userEmailDisplay">-</div>
+                <!-- amount -->
+                <div class="pay-field">
+                    <label class="pay-label" for="amountInput">Amount to charge</label>
+                    <div class="pay-amount">
+                        <span class="pay-amount-cur">$</span>
+                        <input type="number" id="amountInput" step="0.01" min="0.50" max="999999.99" value="99.99" placeholder="0.00" inputmode="decimal" />
                     </div>
-                    <div class="user-label">Customer</div>
-                </div>
-
-                <div class="form-group">
-                    <label>Amount</label>
-                    <div class="amount-wrapper">
-                        <span class="currency">$</span>
-                        <input type="number" id="amountInput" step="0.01" min="0.50" max="999999.99" value="99.99" placeholder="0.00" />
+                    <div class="pay-quick" role="group" aria-label="Quick amounts">
+                        <button type="button" class="pay-quick-btn" onclick="var i=document.getElementById('amountInput');i.value=25;i.dispatchEvent(new Event('input'));i.dispatchEvent(new Event('change'));">$25</button>
+                        <button type="button" class="pay-quick-btn" onclick="var i=document.getElementById('amountInput');i.value=50;i.dispatchEvent(new Event('input'));i.dispatchEvent(new Event('change'));">$50</button>
+                        <button type="button" class="pay-quick-btn" onclick="var i=document.getElementById('amountInput');i.value=100;i.dispatchEvent(new Event('input'));i.dispatchEvent(new Event('change'));">$100</button>
+                        <button type="button" class="pay-quick-btn" onclick="var i=document.getElementById('amountInput');i.value=250;i.dispatchEvent(new Event('input'));i.dispatchEvent(new Event('change'));">$250</button>
                     </div>
-                    <div class="card-desc">Between $0.50 and $999,999.99 per payment.</div>
+                    <p class="pay-hint">Between $0.50 and $999,999.99 per payment.</p>
                 </div>
 
-                <div class="divider"></div>
-                <div class="section-label">
-                    <span class="section-label-text">Billing Address</span>
-                    <button class="btn-ghost-sm" onclick="showBillingForm()">+ Add New</button>
+                <!-- address -->
+                <div class="pay-field">
+                    <div class="pay-label-row">
+                        <span class="pay-label">Billing address</span>
+                        <button class="pay-add" onclick="showBillingForm()">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+                            Add new
+                        </button>
+                    </div>
+                    <div id="addressList" class="pay-addresses"></div>
+                    <div id="addressEmpty" class="pay-empty-inline">No saved billing address yet. <button class="pay-add-inline" onclick="showBillingForm()">Add one</button></div>
                 </div>
 
-                <div id="addressList"></div>
-                <div id="addressEmpty" class="empty-state">No billing address. <button class="btn-ghost-sm" onclick="showBillingForm()">Add one</button></div>
-
-                <div class="divider"></div>
-                <button class="btn btn-primary" id="checkoutBtn">Continue to Pay</button>
-                <div style="text-align:center;margin-top:12px;">
-                    <button class="btn-link" onclick="goToLogs()" style="font-size:12px;">Payment Logs</button>
+                <button class="btn btn-primary btn-block" id="checkoutBtn">Continue to pay</button>
+                <div class="pay-foot">
+                    <button class="btn-link" onclick="goToLogs()">View payment history</button>
                 </div>
             </div>
 
-            <div class="info-section">
-                <div class="info-title">How it works</div>
-                <div class="info-steps">
-                    <div class="info-step">
-                        <div class="info-step-num">1</div>
-                        <div class="info-step-text"><strong>Enter amount</strong> — set the amount you wish to pay.</div>
-                    </div>
-                    <div class="info-step">
-                        <div class="info-step-num">2</div>
-                        <div class="info-step-text"><strong>Choose address</strong> — pick a saved billing address or add a new one.</div>
-                    </div>
-                    <div class="info-step">
-                        <div class="info-step-num">3</div>
-                        <div class="info-step-text"><strong>Pay securely</strong> — review, confirm, and get an instant receipt.</div>
-                    </div>
-                </div>
+            <div class="pay-trust">
+                <div class="pay-trust-item"><span class="pay-trust-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg></span> 256-bit TLS</div>
+                <div class="pay-trust-item"><span class="pay-trust-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3Z"></path><path d="M9.5 12l1.8 1.8L15 10"></path></svg></span> PCI DSS</div>
+                <div class="pay-trust-item"><span class="pay-trust-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></span> 3D Secure</div>
             </div>
         </div>
 
-        <aside class="split-side">
-            <div class="summary-card">
-                <div class="summary-label">Order summary</div>
-                <div class="summary-amount" id="summaryAmount">$99.99</div>
-                <div class="summary-row">
-                    <span>Billing address</span>
-                    <span id="summaryAddress">Not selected</span>
+        <!-- ---------- summary ---------- -->
+        <aside class="pay-side">
+            <div class="pay-summary">
+                <div class="pay-summary-label">Order summary</div>
+                <div class="pay-summary-amount" id="summaryAmount">$99.99</div>
+                <div class="pay-summary-rows">
+                    <div class="pay-summary-row"><span>Billing address</span><span id="summaryAddress">Not selected</span></div>
+                    <div class="pay-summary-row"><span>Payment method</span><span>Card or wallet</span></div>
+                    <div class="pay-summary-row"><span>Gateway</span><span id="summaryGateway">-</span></div>
                 </div>
-                <div class="summary-row">
-                    <span>Payment method</span>
-                    <span>Card or wallet</span>
-                </div>
-                <div class="summary-row">
-                    <span>Gateway</span>
-                    <span id="summaryGateway">-</span>
-                </div>
-                <div class="summary-total">
-                    <span>Total due</span>
-                    <span id="summaryTotal">$99.99</span>
-                </div>
-                <div class="summary-note">Secured with encryption. You'll confirm the payment on the next step.</div>
+                <div class="pay-summary-total"><span>Total due</span><span id="summaryTotal">$99.99</span></div>
+                <p class="pay-summary-note">Nothing is charged until you confirm on the next step.</p>
             </div>
         </aside>
     </div>
 </div>
 
-<!-- ===== STEP 2B: NEW ADDRESS ===== -->
-<div class="container hidden" id="step-address">
-    <div class="card">
-        <div class="card-header">
-            <div class="card-title">New Billing Address</div>
-            <button class="btn-link" onclick="hideBillingForm()" style="font-size:12px;">Cancel</button>
-        </div>
-        <div class="banner banner-error" id="addr-error"></div>
+<!-- ===== STEP 2: BILLING ADDRESS ===== -->
+<div class="container hidden pay-shell" id="step-address">
+    <ol class="pay-steps" aria-label="Checkout progress">
+        <li class="pay-step is-done"><span class="pay-step-dot">&#10003;</span><span class="pay-step-label">Amount</span></li>
+        <li class="pay-step-line is-done"></li>
+        <li class="pay-step is-active"><span class="pay-step-dot">2</span><span class="pay-step-label">Address</span></li>
+        <li class="pay-step-line"></li>
+        <li class="pay-step"><span class="pay-step-dot">3</span><span class="pay-step-label">Pay</span></li>
+    </ol>
 
-        <div class="form-row">
-            <div class="form-group">
-                <label>Name</label>
-                <input type="text" id="addrName" placeholder="John Doe" />
-            </div>
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="addrEmail" placeholder="john@example.com" />
+    <div class="pay-split">
+        <div class="pay-main">
+            <div class="pay-panel">
+                <div class="pay-panel-head">
+                    <div>
+                        <h2 class="pay-title">Billing address</h2>
+                        <p class="pay-sub">Where should the receipt and any refund go? You can reuse this address later.</p>
+                    </div>
+                    <button class="btn-link" onclick="hideBillingForm()">Cancel</button>
+                </div>
+
+                <div class="banner banner-error" id="addr-error"></div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" id="addrName" placeholder="John Doe" />
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="addrEmail" placeholder="john@example.com" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Address Line 1</label>
+                    <input type="text" id="addrLine1" placeholder="123 Main St" />
+                </div>
+                <div class="form-group">
+                    <label>Address Line 2</label>
+                    <input type="text" id="addrLine2" placeholder="Apt, Suite (optional)" />
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>City</label>
+                        <input type="text" id="addrCity" placeholder="New York" />
+                    </div>
+                    <div class="form-group">
+                        <label>State</label>
+                        <input type="text" id="addrState" placeholder="NY" />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Zip Code</label>
+                        <input type="text" id="addrZip" placeholder="10001" />
+                    </div>
+                    <div class="form-group">
+                        <label>Country</label>
+                        <select id="addrCountry">
+                            <option value="">Select country</option>
+                            <option value="US">United States</option>
+                            <option value="GB">United Kingdom</option>
+                            <option value="CA">Canada</option>
+                            <option value="AU">Australia</option>
+                            <option value="DE">Germany</option>
+                            <option value="FR">France</option>
+                            <option value="IN">India</option>
+                            <option value="NP">Nepal</option>
+                            <option value="JP">Japan</option>
+                            <option value="BR">Brazil</option>
+                            <option value="SG">Singapore</option>
+                            <option value="AE">United Arab Emirates</option>
+                            <option value="SA">Saudi Arabia</option>
+                            <option value="PH">Philippines</option>
+                            <option value="MY">Malaysia</option>
+                            <option value="TH">Thailand</option>
+                            <option value="ID">Indonesia</option>
+                            <option value="VN">Vietnam</option>
+                            <option value="KR">South Korea</option>
+                            <option value="MX">Mexico</option>
+                            <option value="IT">Italy</option>
+                            <option value="ES">Spain</option>
+                            <option value="NL">Netherlands</option>
+                            <option value="SE">Sweden</option>
+                            <option value="CH">Switzerland</option>
+                            <option value="PK">Pakistan</option>
+                            <option value="BD">Bangladesh</option>
+                            <option value="LK">Sri Lanka</option>
+                            <option value="CN">China</option>
+                            <option value="NZ">New Zealand</option>
+                            <option value="IE">Ireland</option>
+                            <option value="PL">Poland</option>
+                            <option value="TR">Turkey</option>
+                            <option value="EG">Egypt</option>
+                            <option value="ZA">South Africa</option>
+                            <option value="NG">Nigeria</option>
+                            <option value="KE">Kenya</option>
+                            <option value="GH">Ghana</option>
+                            <option value="AR">Argentina</option>
+                            <option value="CL">Chile</option>
+                            <option value="CO">Colombia</option>
+                            <option value="PE">Peru</option>
+                            <option value="PT">Portugal</option>
+                            <option value="AT">Austria</option>
+                            <option value="BE">Belgium</option>
+                            <option value="DK">Denmark</option>
+                            <option value="FI">Finland</option>
+                            <option value="NO">Norway</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="pay-actions">
+                    <button class="btn btn-primary" onclick="saveBillingAddress()">Save address</button>
+                    <button class="btn btn-ghost" onclick="hideBillingForm()">Cancel</button>
+                </div>
             </div>
         </div>
-        <div class="form-group">
-            <label>Address Line 1</label>
-            <input type="text" id="addrLine1" placeholder="123 Main St" />
-        </div>
-        <div class="form-group">
-            <label>Address Line 2</label>
-            <input type="text" id="addrLine2" placeholder="Apt, Suite (optional)" />
-        </div>
-        <div class="form-row">
-            <div class="form-group">
-                <label>City</label>
-                <input type="text" id="addrCity" placeholder="New York" />
-            </div>
-            <div class="form-group">
-                <label>State</label>
-                <input type="text" id="addrState" placeholder="NY" />
-            </div>
-        </div>
-        <div class="form-row">
-            <div class="form-group">
-                <label>Zip Code</label>
-                <input type="text" id="addrZip" placeholder="10001" />
-            </div>
-            <div class="form-group">
-                <label>Country</label>
-                <select id="addrCountry">
-                    <option value="">Select country</option>
-                    <option value="US">United States</option>
-                    <option value="GB">United Kingdom</option>
-                    <option value="CA">Canada</option>
-                    <option value="AU">Australia</option>
-                    <option value="DE">Germany</option>
-                    <option value="FR">France</option>
-                    <option value="IN">India</option>
-                    <option value="NP">Nepal</option>
-                    <option value="JP">Japan</option>
-                    <option value="BR">Brazil</option>
-                    <option value="SG">Singapore</option>
-                    <option value="AE">United Arab Emirates</option>
-                    <option value="SA">Saudi Arabia</option>
-                    <option value="PH">Philippines</option>
-                    <option value="MY">Malaysia</option>
-                    <option value="TH">Thailand</option>
-                    <option value="ID">Indonesia</option>
-                    <option value="VN">Vietnam</option>
-                    <option value="KR">South Korea</option>
-                    <option value="MX">Mexico</option>
-                    <option value="IT">Italy</option>
-                    <option value="ES">Spain</option>
-                    <option value="NL">Netherlands</option>
-                    <option value="SE">Sweden</option>
-                    <option value="CH">Switzerland</option>
-                    <option value="PK">Pakistan</option>
-                    <option value="BD">Bangladesh</option>
-                    <option value="LK">Sri Lanka</option>
-                    <option value="CN">China</option>
-                    <option value="NZ">New Zealand</option>
-                    <option value="IE">Ireland</option>
-                    <option value="PL">Poland</option>
-                    <option value="TR">Turkey</option>
-                    <option value="EG">Egypt</option>
-                    <option value="ZA">South Africa</option>
-                    <option value="NG">Nigeria</option>
-                    <option value="KE">Kenya</option>
-                    <option value="GH">Ghana</option>
-                    <option value="AR">Argentina</option>
-                    <option value="CL">Chile</option>
-                    <option value="CO">Colombia</option>
-                    <option value="PE">Peru</option>
-                    <option value="PT">Portugal</option>
-                    <option value="AT">Austria</option>
-                    <option value="BE">Belgium</option>
-                    <option value="DK">Denmark</option>
-                    <option value="FI">Finland</option>
-                    <option value="NO">Norway</option>
-                </select>
-            </div>
-        </div>
-        <button class="btn btn-primary" onclick="saveBillingAddress()">Save Address</button>
     </div>
 </div>
 
-<!-- ===== STEP 3: CARD ===== -->
-<div class="container hidden" id="step-card">
-    <div class="split">
-        <div class="split-main">
-            <div class="card">
-                <div class="card-header">
+<!-- ===== STEP 3: PAY ===== -->
+<div class="container hidden pay-shell" id="step-card">
+    <ol class="pay-steps" aria-label="Checkout progress">
+        <li class="pay-step is-done"><span class="pay-step-dot">&#10003;</span><span class="pay-step-label">Amount</span></li>
+        <li class="pay-step-line is-done"></li>
+        <li class="pay-step is-done"><span class="pay-step-dot">&#10003;</span><span class="pay-step-label">Address</span></li>
+        <li class="pay-step-line is-done"></li>
+        <li class="pay-step is-active"><span class="pay-step-dot">3</span><span class="pay-step-label">Pay</span></li>
+    </ol>
+
+    <div class="pay-split">
+        <div class="pay-main">
+            <div class="pay-panel">
+                <div class="pay-panel-head">
                     <div>
-                        <div class="card-title">Pay with Card</div>
-                        <div class="card-desc">Card details are entered on Stripe's encrypted form and never reach our servers. 3D Secure applies automatically.</div>
+                        <h2 class="pay-title">Pay now</h2>
+                        <p class="pay-sub">Card details are entered on Stripe's encrypted field and never touch our servers. 3D Secure runs automatically.</p>
                     </div>
-                    <button class="btn-link" onclick="goToCheckout()" style="font-size:12px;">Back</button>
+                    <button class="btn-link" onclick="goToCheckout()">Back</button>
                 </div>
+
                 <div id="card-msg"></div>
 
-                <button type="button" id="walletToggle" class="wallet-toggle" onclick="toggleWalletPanel()" aria-expanded="false">
+                <button type="button" id="walletToggle" class="pay-wallet-toggle" onclick="toggleWalletPanel()" aria-expanded="false">
+                    <span class="pay-wallet-ic" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="5" y="2" width="14" height="20" rx="3"></rect><path d="M11 18h2"></path>
+                        </svg>
+                    </span>
                     <span>Prefer a wallet?</span>
-                    <span class="wallet-toggle-hint">Show options</span>
+                    <span class="pay-wallet-hint">Apple Pay, Google Pay, Link</span>
                 </button>
                 <div id="wallet-panel">
                     <div class="wallet-panel-inner">
@@ -257,105 +313,86 @@
 
                 <div class="separator" id="payOrSeparator"><span class="separator-line"></span><span class="separator-text">or pay with card</span><span class="separator-line"></span></div>
 
-                <div class="form-group">
-                    <label>Card Details</label>
-                </div>
+                <div class="pay-label">Card details</div>
                 <div class="card-skeleton" id="card-skeleton">
                     <div class="skel-card-field"></div>
                     <div class="skel-card-field"></div>
                     <div class="skel-card-field"></div>
                 </div>
-                <div id="card-fields">
-                    <div id="card-number"></div>
-                    <div id="card-expiry"></div>
-                    <div id="card-cvc"></div>
-                </div>
-                <div class="sandbox-note">Test card: <strong>4242 4242 4242 4242</strong>, any future expiry, any CVC.</div>
-
-                <button class="btn btn-primary" id="payBtn">Pay Now</button>
-            </div>
-
-            <div class="info-section">
-                <div class="info-title">What we accept</div>
-                <div class="info-steps">
-                    <div class="info-step">
-                        <div class="info-step-num">&#10003;</div>
-                        <div class="info-step-text"><strong>Cards</strong> — Visa, Mastercard, Amex, Discover, and JCB.</div>
-                    </div>
-                    <div class="info-step">
-                        <div class="info-step-num">&#10003;</div>
-                        <div class="info-step-text"><strong>Wallets</strong> — Apple Pay, Google Pay, and Link where available.</div>
-                    </div>
-                    <div class="info-step">
-                        <div class="info-step-num">&#10003;</div>
-                        <div class="info-step-text"><strong>Receipt</strong> — instant confirmation and an email receipt after payment.</div>
+                <div id="card-fields" class="pay-card-fields">
+                    <div id="card-number" class="pay-card-row"></div>
+                    <div class="pay-card-split">
+                        <div id="card-expiry"></div>
+                        <div id="card-cvc"></div>
                     </div>
                 </div>
+                <p class="pay-hint">Test card <strong>4242 4242 4242 4242</strong>, any future expiry, any CVC.</p>
+
+                <button class="btn btn-primary btn-block" id="payBtn">Pay now</button>
             </div>
 
-            <div class="text-center" style="margin-top:12px;">
+            <div class="pay-trust">
+                <div class="pay-trust-item"><span class="pay-trust-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg></span> Encrypted by Stripe</div>
+                <div class="pay-trust-item"><span class="pay-trust-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M4 12h16"></path><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18Z"></path></svg></span> No card data stored</div>
+                <div class="pay-trust-item"><span class="pay-trust-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9 6 9-6"></path><rect x="3" y="5" width="18" height="14" rx="2"></rect></svg></span> Instant receipt</div>
+            </div>
+
+            <div class="pay-foot">
                 <button class="btn-link" onclick="goToCheckout()">Make another payment</button>
             </div>
         </div>
 
-        <aside class="split-side">
-            <div class="summary-card">
-                <div class="summary-label">Amount to pay</div>
-                <div class="summary-amount" id="payAmount">$0.00</div>
-                <div class="summary-row">
-                    <span>Billing address</span>
-                    <span id="summaryAddress2">-</span>
+        <aside class="pay-side">
+            <div class="pay-summary">
+                <div class="pay-summary-label">Amount to pay</div>
+                <div class="pay-summary-amount" id="payAmount">$0.00</div>
+                <div class="pay-summary-rows">
+                    <div class="pay-summary-row"><span>Billing address</span><span id="summaryAddress2">-</span></div>
+                    <div class="pay-summary-row"><span>Payment method</span><span>Card or wallet</span></div>
+                    <div class="pay-summary-row"><span>Gateway</span><span id="summaryGateway2">-</span></div>
                 </div>
-                <div class="summary-row">
-                    <span>Payment method</span>
-                    <span>Card or wallet</span>
-                </div>
-                <div class="summary-row">
-                    <span>Gateway</span>
-                    <span id="summaryGateway2">-</span>
-                </div>
-                <div class="summary-total">
-                    <span>Total due</span>
-                    <span id="payTotal">$0.00</span>
-                </div>
-                <div class="summary-note">Secured with encryption. A receipt is emailed after payment.</div>
+                <div class="pay-summary-total"><span>Total due</span><span id="payTotal">$0.00</span></div>
+                <p class="pay-summary-note">A receipt is emailed the moment the payment settles.</p>
             </div>
         </aside>
     </div>
 </div>
 
-<!-- ===== STEP 4: PAYMENT LOGS ===== -->
-<div class="container container-wide hidden" id="step-logs">
-    <div class="card">
-        <div class="card-header">
-            <div class="card-title">Payment Logs</div>
-            <button class="btn-link" onclick="goToCheckout()" style="font-size:12px;">Back</button>
+<!-- ===== STEP 4: HISTORY ===== -->
+<div class="container container-wide hidden pay-shell" id="step-logs">
+    <div class="pay-panel">
+        <div class="pay-panel-head">
+            <div>
+                <h2 class="pay-title">Payment history</h2>
+                <p class="pay-sub">Every charge on this account, newest first. Refunds are available on settled payments.</p>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="goToCheckout()">New payment</button>
         </div>
+
         <div class="banner banner-error" id="logs-error"></div>
         <div id="logsTable"></div>
         <div id="logsPagination"></div>
-        <div id="logsEmpty" class="empty-state">No payment logs yet.</div>
+        <div id="logsEmpty" class="pay-empty-inline pay-empty-block">No payments yet. Your first charge will show up here.</div>
     </div>
 </div>
 
 <!-- ===== REFUND MODAL ===== -->
-<div id="refundModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
-    <div style="background:#fff;max-width:420px;width:90%;padding:28px;">
-        <div class="card-header" style="margin-bottom:16px;">
-            <div class="card-title">Refund Payment</div>
-            <button class="btn-link" onclick="closeRefundModal()" style="font-size:12px;">Cancel</button>
+<div id="refundModal" class="pay-modal">
+    <div class="pay-modal-box">
+        <div class="pay-modal-head">
+            <h3 class="pay-modal-title">Refund payment</h3>
+            <button class="pay-modal-x" onclick="closeRefundModal()" aria-label="Close">&times;</button>
         </div>
+
         <div class="banner banner-error" id="refund-error"></div>
         <div class="banner banner-success" id="refund-success"></div>
 
         <input type="hidden" id="refundTransactionId" />
 
-        <div class="detail-row">
-            <span class="detail-label">Original Amount</span>
-            <span class="detail-value" id="refundAmount">-</span>
+        <div class="pay-modal-amount">
+            <span>Original amount</span>
+            <strong id="refundAmount">-</strong>
         </div>
-
-        <div class="divider"></div>
 
         <div class="form-group">
             <label>Reason</label>
@@ -366,20 +403,24 @@
             </select>
         </div>
 
-        <button class="btn btn-primary" id="refundSubmitBtn" onclick="submitRefund()">Refund</button>
+        <div class="pay-actions">
+            <button class="btn btn-primary" id="refundSubmitBtn" onclick="submitRefund()">Refund</button>
+            <button class="btn btn-ghost" onclick="closeRefundModal()">Cancel</button>
+        </div>
     </div>
 </div>
 
 <!-- ===== REFUND LOGS MODAL ===== -->
-<div id="refundLogsModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
-    <div style="background:#fff;max-width:820px;width:92%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid #e2e4e9;flex-shrink:0;">
-            <div style="font-size:16px;font-weight:600;color:#1a1a2e;">Refund Logs</div>
-            <button class="btn-link" onclick="closeRefundLogsModal()" style="font-size:13px;">Close</button>
+<div id="refundLogsModal" class="pay-modal">
+    <div class="pay-modal-box pay-modal-box-wide">
+        <div class="pay-modal-head">
+            <h3 class="pay-modal-title">Refund history</h3>
+            <button class="pay-modal-x" onclick="closeRefundLogsModal()" aria-label="Close">&times;</button>
         </div>
-        <div id="refundLogsBody" style="overflow-y:auto;padding:0;"></div>
+        <div id="refundLogsBody" class="pay-modal-body"></div>
     </div>
 </div>
+
 <script src="https://pay.google.com/gp/p/js/pay.js"></script>
 <script src="/common/js/common.js"></script>
 <script src="/stripe/js/app.js"></script>
