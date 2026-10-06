@@ -233,10 +233,7 @@ public class WebhookController {
     log.info("Saved: id={}, pi={}, pm={}", logEntry.getId(), piId, paymentMethod);
 
     // Customer receipt on success or failure
-<<<<<<< HEAD
     // Turned off on purpose: no email is sent for any webhook event any more.
-=======
->>>>>>> 3040f70c227f46319dab0255a8b92a3d647cc54a
     // if (pStatus == PaymentStatus.SUCCEEDED || pStatus == PaymentStatus.FAILED) {
     //   try {
     //     boolean sent = receiptEmailService.sendPaymentReceipt(logEntry);
