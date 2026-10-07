@@ -375,7 +375,7 @@ function renderDashLogs(d) {
             <td>${esc(l.paymentMethod) || '-'}</td>
             <td class="num" style="font-weight:600;white-space:nowrap;">${l.currency ? String(l.currency).toUpperCase() : 'USD'} $${parseFloat(l.amount).toFixed(2)}</td>
             <td>${paymentBadge(l.status)}</td>
-            <td style="color:${l.failureCode ? '#be123c' : '#71717a'}">${esc(l.failureCode) || '-'}</td>
+            <td class="col-secondary" style="color:${l.failureCode ? '#be123c' : '#71717a'}">${esc(l.failureCode) || '-'}</td>
             <td class="ta-r" style="white-space:nowrap;color:#71717a;">${fmtDate(l.createdAt)}</td>
         </tr>
     `).join('');
@@ -905,7 +905,7 @@ async function loadAllLogs(page) {
                 <td>${esc(l.paymentMethod) || '-'}</td>
                 <td class="num" style="font-weight:600;white-space:nowrap;">${l.currency ? l.currency.toUpperCase() : 'USD'} $${parseFloat(l.amount).toFixed(2)}</td>
                 <td>${paymentBadge(l.status)}</td>
-                <td style="white-space:normal;word-wrap:break-word;max-width:180px;">${esc(l.message) || '-'}</td>
+                <td class="col-secondary-lg" style="white-space:normal;word-wrap:break-word;max-width:180px;">${esc(l.message) || '-'}</td>
                 <td style="color:${l.failureCode ? '#be123c' : '#71717a'}">${esc(l.failureCode) || '-'}</td>
                 <td class="ta-r" style="white-space:nowrap;color:#71717a;">${fmtDate(l.createdAt)}</td>
             </tr>
@@ -965,11 +965,11 @@ async function loadAdminRefundLogs(page = 0) {
         body.innerHTML = items.map(r => `
             <tr>
                 <td style="font-family:monospace;font-size:12px;white-space:nowrap;">${esc(r.refundId) || '-'}</td>
-                <td>${esc(r.email) || (r.customerId ? 'User #' + r.customerId : '-')}</td>
-                <td style="font-family:monospace;font-size:12px;white-space:nowrap;">${esc(r.cardReference) || '-'}</td>
+                <td>${esc(r.email) || (r.customerId ? 'Customer' : '-')}</td>
+                <td class="col-secondary-lg" style="font-family:monospace;font-size:12px;white-space:nowrap;">${esc(r.cardReference) || '-'}</td>
                 <td class="num" style="font-weight:600;white-space:nowrap;">${r.currency ? r.currency.toUpperCase() : 'USD'} $${parseFloat(r.amount).toFixed(2)}</td>
                 <td>${refundBadge(r.status)}</td>
-                <td style="white-space:normal;word-wrap:break-word;max-width:180px;">${esc(r.message) || '-'}</td>
+                <td class="col-secondary" style="white-space:normal;word-wrap:break-word;max-width:180px;">${esc(r.message) || '-'}</td>
                 <td class="ta-r" style="white-space:nowrap;color:#71717a;">${fmtDate(r.createdAt)}</td>
             </tr>
         `).join('');

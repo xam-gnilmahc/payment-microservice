@@ -19,7 +19,7 @@ async function loadGateways() {
         allUserGateways = ug.success && ug.data ? ug.data : [];
 
         const usersMap = {};
-        if (u.success && u.data) u.data.forEach(x => { usersMap[x.id] = x.email || x.name || 'User #' + x.id; });
+        if (u.success && u.data) u.data.forEach(x => { usersMap[x.id] = x.email || x.name || 'a customer'; });
 
         if (allGateways.length === 0) {
             body.innerHTML = '<tr><td colspan="5" class="admin-empty">No gateways configured.</td></tr>';
@@ -29,7 +29,7 @@ async function loadGateways() {
         body.innerHTML = allGateways.map((g, i) => {
             const assigned = allUserGateways
                 .filter(a => a.paymentGatewayId === g.id)
-                .map(a => usersMap[a.userId] || 'User #' + a.userId)
+                .map(a => usersMap[a.userId] || 'a customer')
                 .join(', ') || '-';
             return `
                 <tr>

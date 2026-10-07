@@ -131,6 +131,7 @@ public class AuthController {
       String email, String password, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
     Authentication authentication;
     try {
+      // Spring Security checks the email and password against the database. If the account is disabled (blocked), it throws DisabledException. If the email/password is wrong, it throws BadCredentialsException.
       authentication =
           authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
     } catch (DisabledException e) {

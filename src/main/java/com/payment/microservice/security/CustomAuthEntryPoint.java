@@ -5,7 +5,6 @@ import com.payment.microservice.traits.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
@@ -22,25 +21,24 @@ public class CustomAuthEntryPoint implements AuthenticationEntryPoint, AccessDen
 
   private final ObjectMapper objectMapper;
 
-  // Called when a request needs a signed-in user and there is none -> 401
+  // Called when the request has no session, e.g. a user opening /api/v1/admin while not signed in -> 401
   @Override
   public void commence(
       HttpServletRequest request,
       HttpServletResponse response,
       AuthenticationException authException)
       throws IOException {
-    write(response, HttpStatus.UNAUTHORIZED, "Not signed in");
+    write(response, HttpStatus.UNAUTHORIZED, "Please sign in back in to continue");
   }
 
-  // Called when the request has a session but not enough permission, e.g. a normal user opening
-  // /api/v1/admin -> 403
+  // Called when the request has a session but the user is not allowed to do what they are trying -> 403
   @Override
   public void handle(
       HttpServletRequest request,
       HttpServletResponse response,
       AccessDeniedException accessDeniedException)
       throws IOException {
-    write(response, HttpStatus.FORBIDDEN, "Forbidden");
+    write(response, HttpStatus.FORBIDDEN, "You do not have permission to access this resource");
   }
 
   private void write(HttpServletResponse response, HttpStatus status, String message)
