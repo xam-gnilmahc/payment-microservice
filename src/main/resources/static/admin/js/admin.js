@@ -124,7 +124,7 @@ async function ensureDashCustomers() {
         if (!sel) return;
         const current = sel.value;
         sel.innerHTML = '<option value="">All customers</option>' +
-            data.data.map(u => `<option value="${u.id}">${esc(u.name || u.email || ('User #' + u.id))}</option>`).join('');
+            data.data.map(u => `<option value="${u.id}">${esc(u.name || u.email || ('Customer'))}</option>`).join('');
         sel.value = current;
         dashCustomersLoaded = true;
     } catch (e) { console.error(e); }
@@ -368,10 +368,10 @@ function renderDashLogs(d) {
         body.innerHTML = '<tr><td colspan="7" class="admin-empty">No payment logs in this range.</td></tr>';
         return;
     }
-    body.innerHTML = logs.map(l => `
+    body.innerHTML = logs.map((l, i) => `
         <tr>
-            <td>${l.id}</td>
-            <td>${esc(l.email) || (l.customerId ? 'User #' + l.customerId : '-')}</td>
+            <td>${i + 1}</td>
+            <td>${esc(l.email) || (l.customerId ? 'Customer' : '-')}</td>
             <td>${esc(l.paymentMethod) || '-'}</td>
             <td class="num" style="font-weight:600;white-space:nowrap;">${l.currency ? String(l.currency).toUpperCase() : 'USD'} $${parseFloat(l.amount).toFixed(2)}</td>
             <td>${paymentBadge(l.status)}</td>
@@ -898,10 +898,10 @@ async function loadAllLogs(page) {
             document.getElementById('allLogsPagination').innerHTML = '';
             return;
         }
-        body.innerHTML = items.map(l => `
+        body.innerHTML = items.map((l, i) => `
             <tr>
-                <td>${l.id}</td>
-                <td>${esc(l.email) || (l.customerId ? 'User #' + l.customerId : '-')}</td>
+                <td>${i + 1}</td>
+                <td>${esc(l.email) || (l.customerId ? 'Customer' : '-')}</td>
                 <td>${esc(l.paymentMethod) || '-'}</td>
                 <td class="num" style="font-weight:600;white-space:nowrap;">${l.currency ? l.currency.toUpperCase() : 'USD'} $${parseFloat(l.amount).toFixed(2)}</td>
                 <td>${paymentBadge(l.status)}</td>

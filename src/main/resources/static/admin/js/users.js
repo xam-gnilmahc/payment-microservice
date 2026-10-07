@@ -97,9 +97,15 @@ function renderUsers() {
                         onclick="toggleUserBlock(${user.id}, ${isActive}, '${esc(user.email)}')">${isActive ? 'Block' : 'Unblock'}</button>`}
                 </div>`;
 
+            // A plain row number for reading. The database id is an internal key with gaps (an
+            // account that was deleted leaves a hole), so it is not shown. It is still what every
+            // action below passes to the API. Numbered by position in the full list, so searching
+            // does not renumber everybody.
+            const displayNo = allUsers.findIndex(u => u.id === user.id) + 1;
+
             return `
                 <tr class="${isActive ? '' : 'row-blocked'}">
-                    <td>${user.id}</td>
+                    <td>${displayNo}</td>
                     <td class="user-cell">
                         <span class="user-name">${esc(user.name) || '-'}</span>
                         <span class="user-email">${esc(user.email)}</span>
@@ -202,7 +208,7 @@ function openAssign(userId) {
     const sel = document.getElementById('assignGatewaySelect');
     sel.innerHTML = '<option value="">Select gateway</option>' + allGateways.map(g => {
         const already = allUserGateways.some(a => a.userId === userId && a.paymentGatewayId === g.id);
-        return `<option value="${g.id}" ${already ? 'disabled' : ''}>${esc(g.title) || 'Gateway ' + g.id}${already ? ' (already assigned)' : ''}</option>`;
+        return `<option value="${g.id}" ${already ? 'disabled' : ''}>${esc(g.title) || 'Gateway'}${already ? ' (already assigned)' : ''}</option>`;
     }).join('');
     document.getElementById('assignModal').classList.add('show');
 }

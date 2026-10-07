@@ -26,14 +26,14 @@ async function loadGateways() {
             return;
         }
 
-        body.innerHTML = allGateways.map(g => {
+        body.innerHTML = allGateways.map((g, i) => {
             const assigned = allUserGateways
                 .filter(a => a.paymentGatewayId === g.id)
                 .map(a => usersMap[a.userId] || 'User #' + a.userId)
                 .join(', ') || '-';
             return `
                 <tr>
-                    <td>${g.id}</td>
+                    <td>${i + 1}</td>
                     <td style="font-weight:600;">${esc(g.title) || '-'}</td>
                     <td><span class="status-badge ${g.status === 'ACTIVE' ? 'success' : 'error'}">${g.status === 'ACTIVE' ? 'Active' : 'Inactive'}</span></td>
                     <td>${esc(assigned)}</td>
