@@ -6,6 +6,7 @@ import com.payment.microservice.model.User;
 import com.payment.microservice.repository.UserRepository;
 import com.payment.microservice.traits.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +35,8 @@ public class AuthController {
   private final UserRepository userRepository; // database operations for User table
   private final PasswordEncoder passwordEncoder; // encrypt/decrypt passwords
   private final AuthenticationManager authenticationManager; // checks email + password
-  private final SecurityContextRepository securityContextRepository; // saves the login to the session
+  private final SecurityContextRepository securityContextRepository;
+
 
   /**
    * register endpoint: creates a new user, hashes the password, saves to database, and logs them in. Returns 201 Created with user info, or 400 Bad Request if the email already exists.
@@ -114,8 +116,9 @@ public class AuthController {
    */
   @PostMapping("/logout")
   public ResponseEntity<ApiResponse<String>> logout(HttpServletRequest httpRequest) {
-    if (httpRequest.getSession(false) != null) {
-      httpRequest.getSession(false).invalidate();
+    HttpSession session = httpRequest.getSession(false);
+    if (session != null) {
+      session.invalidate();
     }
     SecurityContextHolder.clearContext();
     return ResponseEntity.ok(ApiResponse.success("Logged out", 200, null));
@@ -143,6 +146,7 @@ public class AuthController {
       throw e;
     }
 
+    // Store the Authentication in the SecurityContext and save it to the session
     SecurityContextHolder.getContext().setAuthentication(authentication);
     securityContextRepository.saveContext(
         SecurityContextHolder.getContext(), httpRequest, httpResponse);

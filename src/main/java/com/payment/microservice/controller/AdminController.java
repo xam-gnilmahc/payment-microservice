@@ -17,6 +17,8 @@ import com.payment.microservice.traits.ApiResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.session.FindByIndexNameSessionRepository;
+import org.springframework.session.Session;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.SecurityContextRepository;
 import com.payment.microservice.traits.CurrentUser;
@@ -28,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -35,9 +38,11 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
+@Slf4j
 public class AdminController {
 
   private final UserRepository userRepository;
+  private final FindByIndexNameSessionRepository<? extends Session> sessionRepository;
   private final PaymentGatewayRepository paymentGatewayRepository;
   private final UserPaymentGatewayRepository userPaymentGatewayRepository;
   private final UserPaymentCredentialsRepository userPaymentCredentialsRepository;
@@ -93,8 +98,9 @@ public class AdminController {
                 "isSuperAdmin", target.getIsSuperAdmin() != null ? target.getIsSuperAdmin() : "0")));
   }
 
-  // Block / unblock an account. Blocking flips is_active, which is what login checks, so the
-  // account keeps its existing session until it expires but cannot sign in again.
+  // Block / unblock an account. Blocking flips is_active, which is what login checks, and also ends
+  // any session the user already has, so a blocked user is signed out immediately instead of
+  // staying signed in until the session times out.
   @PutMapping("/users/{id}/status")
   public ResponseEntity<ApiResponse<Object>> toggleUserStatus(@PathVariable Long id) {
     User user = userRepository.findById(id).orElse(null);
@@ -108,11 +114,36 @@ public class AdminController {
     boolean nowActive = Boolean.FALSE.equals(user.getIsActive());
     user.setIsActive(nowActive);
     userRepository.save(user);
+
+    if (!nowActive) {
+      int ended = endSessionsOf(user);
+      log.info("Blocked user id={} and ended {} active session(s)", id, ended);
+    }
+
     return ResponseEntity.ok(
         ApiResponse.success(
             nowActive ? "User unblocked" : "User blocked",
             200,
             Map.of("userId", user.getId(), "isActive", nowActive)));
+  }
+
+  /**
+   * Deletes this user's rows from SPRING_SESSION, which ends every session they are signed in on.
+   * Their next request finds no session and comes back as 401, so the browser lands on the login
+   * page straight away instead of staying signed in until the timeout expires.
+   *
+   * @return how many sessions were ended
+   */
+  private int endSessionsOf(User user) {
+    var sessions =
+        sessionRepository.findByIndexNameAndIndexValue(
+            FindByIndexNameSessionRepository.PRINCIPAL_NAME_INDEX_NAME, user.getEmail());
+    int ended = 0;
+    for (Session session : sessions.values()) {
+      sessionRepository.deleteById(session.getId());
+      ended++;
+    }
+    return ended;
   }
 
   @GetMapping("/gateways")

@@ -54,70 +54,64 @@ public class SecurityConfig {
   }
 
   /**
-   * SecurityContextRepository = how Spring Security stores the Authentication in the session. The default is HttpSessionSecurityContextRepository, which keeps the session alive across requests. This bean is needed for manual login/logout in the AuthController.
+   * SecurityContextRepository = how the Authentication is read from and written to the session.
+   * AuthController injects this to save the login itself, because this project does not use
+   * Spring Security's own login filter.
    */
   @Bean
   public SecurityContextRepository securityContextRepository() {
     return new HttpSessionSecurityContextRepository();
   }
-  
+
   /**
-   * SecurityFilterChain = the main configuration for Spring Security. It defines which endpoints are open, which require authentication, how sessions are managed, and how exceptions are handled. It also disables CSRF and form login, since this is a REST API.
+   * SecurityFilterChain = the main Spring Security configuration. 
+   * It defines which endpoints are open to everyone, which require authentication, and which require specific roles. 
+   * It also disables CSRF, sets session management, and configures exception handling to return JSON 401 responses instead of redirects.
+   * 
    */
   @Bean
   public SecurityFilterChain filterChain(
       HttpSecurity http, SecurityContextRepository securityContextRepository) throws Exception {
+
     http.csrf(csrf -> csrf.disable())
-        // session management: create a session if required, and allow only one session per user
         .sessionManagement(
-            session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                    .maximumSessions(1))
+            session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
         .securityContext(sc -> sc.securityContextRepository(securityContextRepository))
-        // exception handling: use the custom entry point to return 401 Unauthorized for unauthenticated requests
+        // answer with JSON 401 rather than Spring's default redirect to an HTML login page
         .exceptionHandling(exception -> exception.authenticationEntryPoint(customAuthEntryPoint))
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers("/api/v1/webhooks/**")
+                auth
+                    // Stripe calls this server to server. There is no browser session to check, and
+                    // the signature is verified in WebhookController.
+                    .requestMatchers("/api/v1/webhooks/**")
                     .permitAll()
-                    // Spring Boot forwards to /error when a request fails, e.g. a Stripe webhook
-                    // with no signature header. Without this the error page itself needs a login,
-                    // so the 401 would overwrite the real status and Stripe would retry forever.
+                    // Spring Boot forwards to /error when a request fails, e.g. a Stripe webhook with
+                    // no signature. Without this the error page itself needs a login, so the 401
+                    // would overwrite the real status and Stripe would retry forever.
                     .requestMatchers("/error")
                     .permitAll()
-                    // login, register, me and logout are open, the controller does the checking
+                    // login, register, me and logout. The controller does the actual checking.
                     .requestMatchers("/api/v1/auth/**")
                     .permitAll()
-                    .requestMatchers("/payment.html")
+                    // Open to everyone: the HTML pages and static assets. The pages hold no data,
+                    // they call the API instead, and a signed out visitor gets a 401 from that API
+                    // and is shown the login page.
+                    .requestMatchers(
+                        "/", "/index.html", "/payment.html", "/pay",
+                        "/stripe/**", "/authorize/**", "/admin/**",
+                        "/css/**", "/common/**", "/img/**", "/images/**", "/assets/**",
+                        "/favicon.ico")
                     .permitAll()
-                    .requestMatchers("/", "/index.html")
-                    .permitAll()
-                    .requestMatchers("/stripe/**")
-                    .permitAll()
-                    .requestMatchers("/authorize/**")
-                    .permitAll()
-                    .requestMatchers("/pay")
-                    .permitAll()
-                    .requestMatchers("/css/**")
-                    .permitAll()
-                    .requestMatchers("/common/**")
-                    .permitAll()
-                    // static assets. Without these the logo and favicon return 401, because they
-                    // fall through to anyRequest().authenticated() below.
-                    .requestMatchers("/img/**", "/images/**", "/assets/**", "/favicon.ico")
-                    .permitAll()
-                    .requestMatchers("/admin/**")
-                    .permitAll()
-                    // only admins can access /api/v1/admin/**
-                    // the controller does not check the role, Spring Security does it here
+                    // admin APIs: the role is checked here, the controller does not do it
                     .requestMatchers("/api/v1/admin/**")
                     .hasRole("ADMIN")
-                    // all other requests require authentication
+                    // everything else must be signed in
                     .anyRequest()
                     .authenticated())
-        // disable form login and basic auth, since this is a REST API
+        // Without these two, Spring Security adds its own login page generating filter and sends a
+        // 302 to /login, which the frontend cannot read. The frontend needs the 401 body instead.
         .formLogin(form -> form.disable())
-        // disable HTTP Basic auth, since this is a REST API
         .httpBasic(basic -> basic.disable());
 
     return http.build();
