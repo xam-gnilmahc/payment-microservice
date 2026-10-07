@@ -181,7 +181,8 @@ public class AdminController {
           .body(ApiResponse.error("Failed to assign gateway: " + e.getMessage(), 400));
     }
   }
-
+  
+  // Admin can view all payment logs, optionally filtered by status, with pagination.
   @GetMapping("/payment-logs")
   public ResponseEntity<ApiResponse<Map<String, Object>>> getPaymentLogs(
       @RequestParam(defaultValue = "0") int page,
@@ -209,7 +210,8 @@ public class AdminController {
     response.put("totalElements", logPage.getTotalElements());
     return ResponseEntity.ok(ApiResponse.success("Payment logs fetched", 200, response));
   }
-
+  
+  // Admin can view all refund logs with pagination.
   @GetMapping("/refund-logs")
   public ResponseEntity<ApiResponse<Map<String, Object>>> getRefundLogs(
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "50") int size) {
@@ -223,7 +225,8 @@ public class AdminController {
     response.put("totalElements", logPage.getTotalElements());
     return ResponseEntity.ok(ApiResponse.success("Refund logs fetched", 200, response));
   }
-
+  
+  // Admin can view payment logs for a specific user, optionally filtered by status, with pagination.
   @GetMapping("/user/{userId}/payment-logs")
   public ResponseEntity<ApiResponse<Map<String, Object>>> getUserPaymentLogs(
       @PathVariable Long userId,
@@ -252,7 +255,8 @@ public class AdminController {
     response.put("totalElements", logPage.getTotalElements());
     return ResponseEntity.ok(ApiResponse.success("User payment logs fetched", 200, response));
   }
-
+  
+  // Admin can view refund logs for a specific user with pagination.
   @GetMapping("/user/{userId}/refund-logs")
   public ResponseEntity<ApiResponse<Map<String, Object>>> getUserRefundLogs(
       @PathVariable Long userId,
@@ -268,7 +272,8 @@ public class AdminController {
     response.put("totalElements", logPage.getTotalElements());
     return ResponseEntity.ok(ApiResponse.success("User refund logs fetched", 200, response));
   }
-
+  
+  // Admin can view all user gateways with their credentials and enabled status.
   @GetMapping("/user-gateways")
   public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getUserGateways() {
     List<UserPaymentGateway> all = userPaymentGatewayRepository.findAll();
@@ -302,7 +307,8 @@ public class AdminController {
     }
     return ResponseEntity.ok(ApiResponse.success("User gateways fetched", 200, result));
   }
-
+  
+  // Admin can save credentials for a user gateway. The request body should contain publicKey, secretKey, and webhookSecret.
   @PostMapping("/user-gateways/{upgId}/credentials")
   public ResponseEntity<ApiResponse<String>> saveCredentials(
       @PathVariable Long upgId, @RequestBody Map<String, Object> body) {
@@ -327,7 +333,8 @@ public class AdminController {
           .body(ApiResponse.error("Failed to save credentials: " + e.getMessage(), 400));
     }
   }
-
+  
+  // Admin can toggle a user gateway's enabled status. If enabling, it disables all other gateways for the same user.
   @PutMapping("/user-gateways/{upgId}/toggle")
   public ResponseEntity<ApiResponse<String>> toggleGateway(@PathVariable Long upgId) {
     try {
@@ -354,7 +361,8 @@ public class AdminController {
           .body(ApiResponse.error("Failed to toggle: " + e.getMessage(), 400));
     }
   }
-
+  
+  // Admin can view a dashboard of payment and refund statistics over a specified date range, optionally filtered by customer ID. The range can be "today", "week", "month", "year", "all", or "custom" with startDate and endDate parameters. The grain parameter can be used to specify the granularity of the data (e.g., "auto", "day", "week", "month").
   @GetMapping("/dashboard")
   public ResponseEntity<ApiResponse<Map<String, Object>>> getDashboard(
       @RequestParam(defaultValue = "week") String range,
@@ -594,7 +602,8 @@ public class AdminController {
 
     return ResponseEntity.ok(ApiResponse.success("Dashboard fetched", 200, result));
   }
-
+  
+  // Determine the grain (day, week, month, year) based on the range and start/end dates. If grain is specified and valid, use it; otherwise, infer from the date range.
   private static String resolveGrain(
       String grain, String range, LocalDateTime startDate, LocalDateTime endDate) {
     if (grain != null && !grain.isBlank() && !"auto".equals(grain)) {

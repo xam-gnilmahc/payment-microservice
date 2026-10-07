@@ -31,8 +31,9 @@ public class PaymentGatewayController {
   private final UserPaymentGatewayRepository userPaymentGatewayRepository;
   private final UserPaymentCredentialsRepository userPaymentCredentialsRepository;
 
-  // ===== PAYMENT GATEWAY =====
-
+  /**
+   * Create a new payment gateway. The request body should contain title, description, image, and optional status. Returns 200 OK with the created gateway, or 400 Bad Request if validation fails.
+   */
   @PostMapping
   public ResponseEntity<ApiResponse<PaymentGateway>> create(
       @Valid @RequestBody PaymentGatewayRequest request) {
@@ -52,7 +53,10 @@ public class PaymentGatewayController {
         ApiResponse.success(
             "Payment gateway created", 200, paymentGatewayRepository.save(gateway)));
   }
-
+  
+  /**
+   * List all payment gateways, ordered by creation date descending. Returns 200 OK with the list of gateways.
+   */
   @GetMapping
   public ResponseEntity<ApiResponse<List<PaymentGateway>>> getAll() {
     return ResponseEntity.ok(
@@ -61,7 +65,10 @@ public class PaymentGatewayController {
             200,
             paymentGatewayRepository.findAllByOrderByCreatedAtDesc()));
   }
-
+  
+  /**
+   * Get a payment gateway by ID. Returns 200 OK with the gateway if found, or 400 Bad Request if not found.
+   */
   @GetMapping("/{id}")
   public ResponseEntity<ApiResponse<PaymentGateway>> getById(@PathVariable Long id) {
     return paymentGatewayRepository
@@ -71,8 +78,9 @@ public class PaymentGatewayController {
             ResponseEntity.badRequest().body(ApiResponse.error("Payment gateway not found", 400)));
   }
 
-  // ===== USER PAYMENT GATEWAY =====
-
+  /**
+   * Assign a payment gateway to a user. The request body should contain userId, paymentGatewayId, and optional enabled flag. Returns 200 OK with the created UserPaymentGateway, or 400 Bad Request if validation fails.
+   */
   @PostMapping("/user")
   public ResponseEntity<ApiResponse<UserPaymentGateway>> assignToUser(
       @Valid @RequestBody UserPaymentGatewayRequest request) {
@@ -86,7 +94,10 @@ public class PaymentGatewayController {
         ApiResponse.success(
             "Payment gateway assigned to user", 200, userPaymentGatewayRepository.save(upg)));
   }
-
+  
+  /**
+   * Get all payment gateways assigned to a user. Returns 200 OK with the list of UserPaymentGateway, or 400 Bad Request if the user has no gateways.
+   */
   @GetMapping("/user/{userId}")
   public ResponseEntity<ApiResponse<List<UserPaymentGateway>>> getUserGateways(
       @PathVariable Long userId) {
@@ -96,7 +107,10 @@ public class PaymentGatewayController {
             200,
             userPaymentGatewayRepository.findByUserIdAndEnabled(userId, true)));
   }
-
+  
+  /**
+   * Get the enabled payment gateway for a user. If the caller is not the user or an admin, returns 403 Forbidden. If the user has no enabled gateway, returns 400 Bad Request. Otherwise, returns 200 OK with the gateway details and public key if available.
+   */
   @GetMapping("/user/{userId}/enabled")
   public ResponseEntity<ApiResponse<Map<String, Object>>> getUserEnabledGateway(
       @PathVariable Long userId) {
@@ -136,8 +150,9 @@ public class PaymentGatewayController {
             ResponseEntity.badRequest().body(ApiResponse.error("No enabled gateway found", 400)));
   }
 
-  // ===== USER PAYMENT CREDENTIALS =====
-
+  /**
+   * Create credentials for a user's payment gateway. The request body should contain userPaymentGatewaysId, publicKey, secretKey, webhookSecret, metadata, and optional isActive flag. Returns 200 OK with the created UserPaymentCredentials, or 400 Bad Request if validation fails.
+   */
   @PostMapping("/credentials")
   public ResponseEntity<ApiResponse<UserPaymentCredentials>> createCredentials(
       @Valid @RequestBody UserPaymentCredentialsRequest request) {
@@ -154,7 +169,10 @@ public class PaymentGatewayController {
         ApiResponse.success(
             "Credentials created", 200, userPaymentCredentialsRepository.save(cred)));
   }
-
+  
+  /**
+   * Get all credentials for a user's payment gateway. Returns 200 OK with the list of UserPaymentCredentials, or 400 Bad Request if the user has no credentials.
+   */
   @GetMapping("/credentials/{userPaymentGatewayId}")
   public ResponseEntity<ApiResponse<List<UserPaymentCredentials>>> getCredentials(
       @PathVariable Long userPaymentGatewayId) {

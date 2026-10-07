@@ -74,8 +74,10 @@ public class SecurityConfig {
       HttpSecurity http, SecurityContextRepository securityContextRepository) throws Exception {
 
     http.csrf(csrf -> csrf.disable())
+        // session management: create a session if required, otherwise don't create one
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+        // use the custom SecurityContextRepository to read/write the Authentication from/to the session
         .securityContext(sc -> sc.securityContextRepository(securityContextRepository))
         // answer with JSON 401 rather than Spring's default redirect to an HTML login page
         .exceptionHandling(exception -> exception.authenticationEntryPoint(customAuthEntryPoint))
