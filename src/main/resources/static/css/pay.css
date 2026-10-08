@@ -6,6 +6,10 @@
 
 .pay, .pay *, .pay *::before, .pay *::after { box-sizing: border-box; }
 
+/* the page keeps scrolling, but no line down the right edge (this sheet only loads here) */
+html { scrollbar-width: none; -ms-overflow-style: none; }
+html::-webkit-scrollbar { width: 0; height: 0; }
+
 .pay {
     /* ink + paper */
     --ink: #101012;
@@ -41,13 +45,15 @@
 .pay ::selection { background: #101012; color: #fff; }
 
 /* ---------- top bar ---------- */
+/* fixed, not sticky: the bar and the sandbox banner stay put, and the page is padded down
+   so nothing starts underneath them */
 .pay-top {
-    position: sticky; top: 0; z-index: 60;
-    background: rgba(250, 250, 248, .88);
-    backdrop-filter: saturate(140%) blur(10px);
-    -webkit-backdrop-filter: saturate(140%) blur(10px);
-    border-bottom: 1px solid var(--rule);
+    position: fixed; top: 0; left: 0; right: 0; z-index: 60;
+    background: #101012;
+    border-bottom: 1px solid #101012;
+    color: #fff;
 }
+body.pay { padding-top: 102px; }
 
 .pay-top-inner {
     max-width: 1080px; margin: 0 auto;
@@ -55,24 +61,16 @@
     display: flex; align-items: center; justify-content: space-between; gap: 16px;
 }
 
-.pay-brand { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+.pay-brand { display: flex; align-items: baseline; gap: 14px; min-width: 0; }
 
-.pay-brand-mark {
-    width: 26px; height: 26px;
-    display: grid; place-items: center;
-    color: #fff; background: var(--ink);
-    border-radius: 6px;
-    align-self: center; flex-shrink: 0;
-}
-
-.pay-brand-text { font-size: 15px; font-weight: 600; letter-spacing: -.015em; }
+.pay-brand-text { font-size: 22px; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
 
 .pay-chip {
     font-size: 10.5px; font-weight: 600;
     letter-spacing: .1em; text-transform: uppercase;
-    color: var(--muted);
+    color: rgba(255, 255, 255, .65);
     padding-left: 12px;
-    border-left: 1px solid var(--rule);
+    border-left: 1px solid rgba(255, 255, 255, .25);
 }
 
 .pay-top-right { display: flex; align-items: center; gap: 14px; }
@@ -83,36 +81,47 @@
     width: 26px; height: 26px; border-radius: 50%;
     display: grid; place-items: center;
     font-size: 11px; font-weight: 600;
-    color: var(--ink); background: var(--rule-2);
-    border: 1px solid var(--rule);
+    color: #fff; background: rgba(255, 255, 255, .14);
+    border: 1px solid rgba(255, 255, 255, .25);
     overflow: hidden; flex-shrink: 0;
 }
 
 .pay-user-meta { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
-.pay-user-name { font-size: 12.5px; font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pay-user-mail { font-size: 11px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pay-user-name { font-size: 12.5px; font-weight: 550; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pay-user-mail { font-size: 11px; color: rgba(255, 255, 255, .6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .pay-icon-btn {
     width: 30px; height: 30px;
     display: grid; place-items: center;
-    border: 1px solid var(--rule);
+    border: 1px solid rgba(255, 255, 255, .25);
     border-radius: 6px;
-    background: var(--surface);
-    color: var(--muted);
+    background: transparent;
+    color: rgba(255, 255, 255, .8);
     cursor: pointer;
     transition: color .15s ease, border-color .15s ease, background .15s ease;
 }
-.pay-icon-btn:hover { color: var(--ink); border-color: var(--ink); background: #fff; }
+.pay-icon-btn:hover { color: #101012; border-color: #fff; background: #fff; }
 
-/* ---------- sandbox notice ---------- */
+/* ---------- sandbox notice: sticky yellow bar pinned under the top bar ---------- */
 .pay-notice {
-    max-width: 1080px; margin: 22px auto 0; padding: 0 28px;
-    display: flex; align-items: center; gap: 10px;
-    font-size: 12.5px; color: var(--warn);
+    position: fixed; top: 63px; left: 0; right: 0; z-index: 59;
+    width: auto; margin: 0;
+    padding: 9px 28px;
+    display: flex; align-items: center; justify-content: center; gap: 9px;
+    font-size: 12.5px; font-weight: 600;
+    color: var(--warn);
+    background: #ffeb99;
+    border-bottom: 1px solid #f2d566;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, .02);
 }
 .pay-notice-dot {
-    width: 5px; height: 5px; border-radius: 50%;
+    width: 6px; height: 6px; border-radius: 50%;
     background: #c98a1e; flex-shrink: 0;
+    animation: noticePulse 2.4s ease-in-out infinite;
+}
+@keyframes noticePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(201, 138, 30, .55); }
+    50% { box-shadow: 0 0 0 5px rgba(201, 138, 30, 0); }
 }
 
 /* ---------- layout ---------- */
@@ -128,12 +137,33 @@
     gap: 20px; align-items: start;
 }
 .pay-main { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
-.pay-side { position: sticky; top: 86px; }
+.pay-side { position: sticky; top: 111px; }
 
 /* ---------- motion ---------- */
+/* first paint: the bar drops in, the sandbox note follows, then the step that is on
+   screen rises in layers - stepper, main panel, summary - instead of popping in flat. */
 @keyframes payIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-.pay .container:not(.hidden) { animation: payIn .22s ease-out both; }
-@media (prefers-reduced-motion: reduce) { .pay .container:not(.hidden) { animation: none; } }
+@keyframes payDrop { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: none; } }
+@keyframes payRise { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+@keyframes payFade { from { opacity: 0; } to { opacity: 1; } }
+
+.pay .pay-top { animation: payDrop .5s cubic-bezier(.22,.61,.36,1) both; }
+.pay .pay-notice { animation: payDrop .5s .08s cubic-bezier(.22,.61,.36,1) both; }
+
+.pay .container:not(.hidden) { animation: payFade .35s .06s ease-out both; }
+.pay .container:not(.hidden) .pay-steps { animation: payRise .5s .14s cubic-bezier(.22,.61,.36,1) both; }
+.pay .container:not(.hidden) .pay-main { animation: payRise .5s .2s cubic-bezier(.22,.61,.36,1) both; }
+.pay .container:not(.hidden) .pay-side { animation: payRise .5s .3s cubic-bezier(.22,.61,.36,1) both; }
+.pay .container:not(.hidden) > .pay-panel { animation: payRise .5s .2s cubic-bezier(.22,.61,.36,1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+    .pay .pay-top, .pay .pay-notice, .pay .container:not(.hidden),
+    .pay .container:not(.hidden) .pay-steps, .pay .container:not(.hidden) .pay-main,
+    .pay .container:not(.hidden) .pay-side, .pay .container:not(.hidden) > .pay-panel,
+    .pay-notice-dot {
+        animation: none;
+    }
+}
 
 /* ---------- stepper ---------- */
 .pay-steps {
@@ -614,8 +644,7 @@ body.pay .logs-pagination-btn:disabled { opacity: .4; cursor: not-allowed; }
     .pay-top-inner { padding: 0 18px; height: 56px; }
     .pay-user-meta { display: none; }
     .pay .pay-shell { padding: 26px 18px 72px; }
-    .pay-notice { padding: 0 18px; margin-top: 18px; align-items: flex-start; }
-    .pay-notice-dot { margin-top: 7px; }
+    .pay-notice { top: 57px; padding: 8px 18px; font-size: 12px; }
     .pay-panel { padding: 22px 18px; }
     .pay-panel-head { flex-direction: column; gap: 14px; margin-bottom: 24px; }
     .pay-title { font-size: 22px; }

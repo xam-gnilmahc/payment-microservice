@@ -28,7 +28,10 @@ public class CustomAuthEntryPoint implements AuthenticationEntryPoint, AccessDen
       HttpServletResponse response,
       AuthenticationException authException)
       throws IOException {
-    write(response, HttpStatus.UNAUTHORIZED, "Please sign in back in to continue");
+    write(
+        response,
+        HttpStatus.UNAUTHORIZED,
+        "Your session has ended, or your account has been blocked. Please sign in again to continue.");
   }
 
   // Called when the request has a session but the user is not allowed to do what they are trying -> 403

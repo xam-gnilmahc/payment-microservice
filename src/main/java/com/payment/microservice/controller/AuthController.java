@@ -106,7 +106,10 @@ public class AuthController {
   public ResponseEntity<ApiResponse<Object>> me(Authentication authentication) {
     if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-          .body(ApiResponse.error("Not signed in", 401));
+          .body(
+              ApiResponse.error(
+                  "Your session has ended, or your account has been blocked. Please sign in again to continue.",
+                  401));
     }
     return ResponseEntity.ok(ApiResponse.success("Current session fetched", 200, new UserResponse(user)));
   }

@@ -108,4 +108,11 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
 
 // ===== INIT =====
 // Already signed in? The session cookie is still valid, so go straight where we belong.
-loadSessionUser().then(user => { if (user) routeToGateway(); });
+// Otherwise, if the previous page sent us here with a reason (blocked account, expired session),
+// show it once and then forget it, so it cannot reappear on a later visit.
+loadSessionUser().then(user => {
+    if (user) { routeToGateway(); return; }
+    let notice = null;
+    try { notice = sessionStorage.getItem('authNotice'); sessionStorage.removeItem('authNotice'); } catch (e) {}
+    if (notice) showMsg(document.getElementById('login-error'), notice);
+});

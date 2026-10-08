@@ -4,99 +4,113 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payment Gateway</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/login.css">
 </head>
-<body>
+<body class="auth">
 
-<div class="header">
-    <div class="header-inner">
-        <h1>Payment Gateway</h1>
-        <span class="header-badge">Select Gateway</span>
-    </div>
-</div>
+<div class="auth-shell">
 
-<div class="container" id="step-login">
-    <!-- LOGIN -->
-    <div class="card" id="loginForm">
-        <div class="card-header">
-            <div class="card-title">Welcome back</div>
-            <div class="card-subtitle">Sign in to continue</div>
-        </div>
-        <div class="banner banner-error" id="login-error"></div>
-        <div class="form-group">
-            <label>Email</label>
-            <input type="email" id="loginEmail" placeholder="you@example.com" />
-        </div>
-        <div class="form-group">
-            <label>Password</label>
-            <input type="password" id="loginPassword" placeholder="Enter password" />
-        </div>
-        <div class="btn-row">
-            <button class="btn btn-primary" id="loginBtn">Sign In</button>
-            <button class="btn btn-secondary" id="showRegister">Create Account</button>
-        </div>
-    </div>
+    <!-- LEFT: form -->
+    <main class="auth-main">
+        <div class="auth-stack">
 
-    <!-- REGISTER -->
-    <div class="card hidden" id="registerForm">
-        <div class="card-header">
-            <div class="card-title">Create account</div>
-            <div class="card-subtitle">Get started in seconds</div>
-        </div>
-        <div class="banner banner-error" id="reg-error"></div>
-        <div class="form-group">
-            <label>Full Name</label>
-            <input type="text" id="regName" placeholder="John Doe" />
-        </div>
-        <div class="form-group">
-            <label>Email</label>
-            <input type="email" id="regEmail" placeholder="you@example.com" />
-        </div>
-        <div class="form-group">
-            <label>Password</label>
-            <input type="password" id="regPassword" placeholder="Min 6 characters" />
-        </div>
-        <div class="btn-row">
-            <button class="btn btn-secondary" id="showLogin">Sign In</button>
-            <button class="btn btn-primary" id="registerBtn">Create Account</button>
-        </div>
-    </div>
+            <!-- LOGIN -->
+            <section class="auth-panel" id="loginForm">
+                <p class="auth-eyebrow">Welcome back</p>
+                <div class="auth-title">Sign in to your account</div>
+                <p class="auth-sub">Use your registered email and password to continue to checkout.</p>
+                <div class="banner banner-error" id="login-error"></div>
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" autocomplete="email" placeholder="you@example.com" />
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" autocomplete="current-password" placeholder="Enter password" />
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-primary" id="loginBtn">Sign In</button>
+                    <button class="btn btn-secondary" id="showRegister">Create Account</button>
+                </div>
+            </section>
 
-    <!-- NO GATEWAY -->
-    <div class="card hidden" id="noGatewayMsg">
-        <div class="card-header">
-            <div class="card-title">No Payment Gateway</div>
-            <button class="btn-link" onclick="logout()" style="font-size:12px;">Logout</button>
-        </div>
-        <div class="text-center" style="padding: 20px 0;">
-            <div style="font-size:48px;margin-bottom:16px;">&#9888;</div>
-            <div style="font-size:16px;font-weight:600;color:#1a1a2e;margin-bottom:8px;">No payment gateway enabled</div>
-            <div style="font-size:13px;color:#8b8fa3;">Contact admin to enable a payment gateway for your account.</div>
-        </div>
-    </div>
+            <!-- REGISTER -->
+            <section class="auth-panel hidden" id="registerForm">
+                <p class="auth-eyebrow">Get started</p>
+                <div class="auth-title">Create your account</div>
+                <p class="auth-sub">It takes a few seconds. You can start accepting payments right away.</p>
+                <div class="banner banner-error" id="reg-error"></div>
+                <div class="form-group">
+                    <label for="regName">Full Name</label>
+                    <input type="text" id="regName" autocomplete="name" placeholder="John Doe" />
+                </div>
+                <div class="form-group">
+                    <label for="regEmail">Email</label>
+                    <input type="email" id="regEmail" autocomplete="email" placeholder="you@example.com" />
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">Password</label>
+                    <input type="password" id="regPassword" autocomplete="new-password" placeholder="Min 6 characters" />
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-secondary" id="showLogin">Sign In</button>
+                    <button class="btn btn-primary" id="registerBtn">Create Account</button>
+                </div>
+            </section>
 
-    <div class="info-section">
-        <div class="info-title">How it works</div>
-        <div class="info-steps">
-            <div class="info-step">
-                <div class="info-step-num">1</div>
-                <div class="info-step-text"><strong>Sign in</strong> or create a new account to get started.</div>
-            </div>
-            <div class="info-step">
-                <div class="info-step-num">2</div>
-                <div class="info-step-text"><strong>Select payment gateway</strong> based on your account configuration.</div>
-            </div>
-            <div class="info-step">
-                <div class="info-step-num">3</div>
-                <div class="info-step-text"><strong>Complete payment</strong> securely through your configured gateway.</div>
-            </div>
-            <div class="info-step">
-                <div class="info-step-num">4</div>
-                <div class="info-step-text"><strong>Get confirmation</strong> with transaction ID and status.</div>
-            </div>
+            <!-- NO GATEWAY -->
+            <section class="auth-panel auth-panel-warn hidden" id="noGatewayMsg">
+                <div class="auth-warn-art" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                </div>
+                <div class="auth-panel-head">
+                    <div>
+                        <p class="auth-eyebrow">Account setup</p>
+                        <div class="auth-title">No payment gateway</div>
+                    </div>
+                    <button class="btn-link" onclick="logout()">Sign out</button>
+                </div>
+                <p class="auth-sub">No payment gateway is enabled for your account yet. Contact an administrator to enable one, then sign in again.</p>
+            </section>
+
+            <p class="auth-foot">Protected by session-based authentication. Signing out on any device ends that session only.</p>
         </div>
-    </div>
+    </main>
+
+    <!-- RIGHT: logo + headline + line art -->
+    <aside class="auth-art">
+        <img class="auth-logo" src="/img/logo.svg" alt="UOM" width="76" height="30" />
+
+        <h1 class="auth-display">Accept card payments<br>from checkout all the way<br><em>to confirmation.</em></h1>
+
+        <div class="auth-art-deco" aria-hidden="true">
+            <svg viewBox="0 0 340 224" fill="none">
+                <defs>
+                    <clipPath id="decoCard">
+                        <path d="M20 44 C18 24 34 14 52 15 L290 10 C314 9 329 24 328 42 L333 178 C335 200 320 211 302 210 L44 214 C24 215 14 200 15 182 C16 142 22 88 20 44 Z" />
+                    </clipPath>
+                </defs>
+                <path class="d d1" d="M20 44 C18 24 34 14 52 15 L290 10 C314 9 329 24 328 42 L333 178 C335 200 320 211 302 210 L44 214 C24 215 14 200 15 182 C16 142 22 88 20 44 Z" />
+                <path class="d d2" d="M46 76 C43 66 50 61 59 62 L86 59 C94 59 97 66 96 74 L98 99 C99 107 93 111 85 109 L57 112 C50 112 45 106 46 98 Z" />
+                <path class="d d3" d="M105 76 c6-5 13-5 19 0M105 89 c6-5 13-5 19 0M105 102 c7-6 15-6 22 0" />
+                <path class="d d4" d="M44 146 c10 -16 22 -14 33 -4 c11 10 20 19 33 8 c13 -11 22 -17 34 -6 c11 10 21 16 34 5 c11 -9 20 -12 31 -4" />
+                <path class="d d5" d="M45 172 c11 -14 23 -11 34 -1 c11 10 22 15 34 3 c11 -10 21 -13 34 -5" />
+                <path class="d d6" d="M245 138 q-2 -6 5 -7 L288 125 q8 -2 9 5 l5 31 q1 8 -7 9 L250 174 q-8 1 -9 -7 Z" />
+                <path class="d d7" d="M249 147 c5 -11 12 -8 17 1 c5 8 12 10 18 1 c5 -7 11 -9 17 -4" />
+                <path class="d d8" d="M252 162 c5 -11 12 -8 17 1 c5 8 12 10 17 2 c4 -7 10 -9 15 -5" />
+                <circle class="pulse" cx="303" cy="56" r="5" />
+                <circle class="pulse p2" cx="303" cy="56" r="11" />
+                <g clip-path="url(#decoCard)">
+                    <g class="sweep">
+                        <path d="M11 0 q-8 44 0 88 t0 88 t0 48" />
+                    </g>
+                </g>
+            </svg>
+        </div>
+    </aside>
+
 </div>
 
 <script src="/common/js/common.js"></script>
