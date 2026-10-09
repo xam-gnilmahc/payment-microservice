@@ -1,172 +1,501 @@
 <mxfile host="65bd71144e">
     <diagram id="payment-gateway-flow" name="Gateway Setup Flow">
-        <mxGraphModel dx="1365" dy="572" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
+        <mxGraphModel dx="859" dy="556" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
-                <mxCell id="title1" value="FLOW 1: User + Payment Gateway + Credentials Setup" style="text;html=1;fontSize=18;fontStyle=1;align=center;verticalAlign=middle;" parent="1" vertex="1">
-                    <mxGeometry x="200" y="20" width="700" height="40" as="geometry"/>
+                <mxCell id="title1" parent="1" style="text;html=1;fontSize=18;fontStyle=1;align=center;verticalAlign=middle;" value="FLOW 1: User + Payment Gateway + Credentials Setup" vertex="1">
+                    <mxGeometry height="40" width="700" x="200" y="20" as="geometry"/>
                 </mxCell>
-                <mxCell id="s1" value="1. User Registration" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" parent="1" vertex="1">
-                    <mxGeometry x="80" y="100" width="180" height="60" as="geometry"/>
+                <mxCell id="s1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" value="1. User Registration" vertex="1">
+                    <mxGeometry height="60" width="180" x="80" y="100" as="geometry"/>
                 </mxCell>
-                <mxCell id="s1d" value="POST /api/v1/auth/register&#xa;{name, email, password}" style="text;html=1;fontSize=10;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="80" y="165" width="180" height="40" as="geometry"/>
+                <mxCell id="s1d" parent="1" style="text;html=1;fontSize=10;align=center;" value="POST /api/v1/auth/register&#xa;{name, email, password}" vertex="1">
+                    <mxGeometry height="40" width="180" x="80" y="165" as="geometry"/>
                 </mxCell>
-                <mxCell id="a1" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="s1" target="s2" edge="1">
+                <mxCell id="a1" edge="1" parent="1" source="s1" style="edgeStyle=orthogonalEdgeStyle;" target="s2">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="s2" value="2. Admin Creates Payment Gateway" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;" parent="1" vertex="1">
-                    <mxGeometry x="340" y="100" width="220" height="60" as="geometry"/>
+                <mxCell id="s2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;" value="2. Admin Creates Payment Gateway" vertex="1">
+                    <mxGeometry height="60" width="220" x="340" y="100" as="geometry"/>
                 </mxCell>
-                <mxCell id="s2d" value="POST /api/v1/payment-gateways&#xa;{title, description, image, status}" style="text;html=1;fontSize=10;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="340" y="165" width="220" height="40" as="geometry"/>
+                <mxCell id="s2d" parent="1" style="text;html=1;fontSize=10;align=center;" value="POST /api/v1/payment-gateways&#xa;{title, description, image, status}" vertex="1">
+                    <mxGeometry height="40" width="220" x="340" y="165" as="geometry"/>
                 </mxCell>
-                <mxCell id="a2" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="s2" target="s3" edge="1">
+                <mxCell id="a2" edge="1" parent="1" source="s2" style="edgeStyle=orthogonalEdgeStyle;" target="s3">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="s3" value="3. Assign Gateway to User" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;" parent="1" vertex="1">
-                    <mxGeometry x="640" y="100" width="200" height="60" as="geometry"/>
+                <mxCell id="s3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;" value="3. Assign Gateway to User" vertex="1">
+                    <mxGeometry height="60" width="200" x="640" y="100" as="geometry"/>
                 </mxCell>
-                <mxCell id="s3d" value="POST /api/v1/payment-gateways/user&#xa;{userId, paymentGatewayId, enabled}" style="text;html=1;fontSize=10;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="640" y="165" width="200" height="40" as="geometry"/>
+                <mxCell id="s3d" parent="1" style="text;html=1;fontSize=10;align=center;" value="POST /api/v1/payment-gateways/user&#xa;{userId, paymentGatewayId, enabled}" vertex="1">
+                    <mxGeometry height="40" width="200" x="640" y="165" as="geometry"/>
                 </mxCell>
-                <mxCell id="a3" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="s3" target="s4" edge="1">
+                <mxCell id="a3" edge="1" parent="1" source="s3" style="edgeStyle=orthogonalEdgeStyle;" target="s4">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="s4" value="4. Add API Credentials" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1;" parent="1" vertex="1">
-                    <mxGeometry x="640" y="280" width="200" height="60" as="geometry"/>
+                <mxCell id="s4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1;" value="4. Add API Credentials" vertex="1">
+                    <mxGeometry height="60" width="200" x="640" y="280" as="geometry"/>
                 </mxCell>
-                <mxCell id="s4d" value="POST /api/v1/payment-gateways/credentials&#xa;{userPaymentGatewaysId, publicKey,&#xa;secretKey, webhookSecret, metadata}" style="text;html=1;fontSize=10;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="620" y="345" width="240" height="50" as="geometry"/>
+                <mxCell id="s4d" parent="1" style="text;html=1;fontSize=10;align=center;" value="POST /api/v1/payment-gateways/credentials&#xa;{userPaymentGatewaysId, publicKey,&#xa;secretKey, webhookSecret, metadata}" vertex="1">
+                    <mxGeometry height="50" width="240" x="620" y="345" as="geometry"/>
                 </mxCell>
-                <mxCell id="a4" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="s4" target="s5" edge="1">
+                <mxCell id="a4" edge="1" parent="1" source="s4" style="edgeStyle=orthogonalEdgeStyle;" target="s5">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="s5" value="5. User Logs In" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" parent="1" vertex="1">
-                    <mxGeometry x="640" y="440" width="200" height="60" as="geometry"/>
+                <mxCell id="s5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" value="5. User Logs In" vertex="1">
+                    <mxGeometry height="60" width="200" x="640" y="440" as="geometry"/>
                 </mxCell>
-                <mxCell id="s5d" value="POST /api/v1/auth/login&#xa;{email, password} → JWT Token" style="text;html=1;fontSize=10;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="640" y="505" width="200" height="40" as="geometry"/>
+                <mxCell id="s5d" parent="1" style="text;html=1;fontSize=10;align=center;whiteSpace=wrap;" value="POST /api/v1/auth/login&#xa;{email, password} → session cookie JSESSIONID (stored in the SPRING_SESSION table — no JWT)" vertex="1">
+                    <mxGeometry height="56" width="260" x="610" y="503" as="geometry"/>
                 </mxCell>
-                <mxCell id="a5" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="s5" target="s6" edge="1">
+                <mxCell id="a5" edge="1" parent="1" source="s5" style="edgeStyle=orthogonalEdgeStyle;" target="s6">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="s6" value="6. User Selects Gateway" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;" parent="1" vertex="1">
-                    <mxGeometry x="640" y="580" width="200" height="60" as="geometry"/>
+                <mxCell id="s6" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;" value="6. User Selects Gateway" vertex="1">
+                    <mxGeometry height="60" width="200" x="640" y="580" as="geometry"/>
                 </mxCell>
-                <mxCell id="s6d" value="GET /api/v1/payment-gateways/user/{userId}/details&#xa;→ Shows enabled gateways with credentials status" style="text;html=1;fontSize=10;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="590" y="645" width="300" height="40" as="geometry"/>
+                <mxCell id="s6d" parent="1" style="text;html=1;fontSize=10;align=center;" value="GET /api/v1/payment-gateways/user/{userId}/enabled&#xa;→ Shows enabled gateways with credentials status" vertex="1">
+                    <mxGeometry height="40" width="300" x="590" y="645" as="geometry"/>
                 </mxCell>
-                <mxCell id="db1" value="DATABASE TABLES" style="text;html=1;fontSize=14;fontStyle=1;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="80" y="420" width="200" height="30" as="geometry"/>
+                <mxCell id="db1" parent="1" style="text;html=1;fontSize=14;fontStyle=1;align=center;" value="DATABASE TABLES" vertex="1">
+                    <mxGeometry height="30" width="200" x="80" y="420" as="geometry"/>
                 </mxCell>
-                <mxCell id="t1" value="users&#xa;id, name, email, password,&#xa;is_active" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="80" y="460" width="140" height="80" as="geometry"/>
+                <mxCell id="t1" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="users&#xa;id, name, email, password,&#xa;is_active" vertex="1">
+                    <mxGeometry height="80" width="140" x="80" y="460" as="geometry"/>
                 </mxCell>
-                <mxCell id="t2" value="payment_gateways&#xa;id, title, description,&#xa;image, status, created_by" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="80" y="560" width="140" height="80" as="geometry"/>
+                <mxCell id="t2" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="payment_gateways&#xa;id, title, description,&#xa;image, status, created_by" vertex="1">
+                    <mxGeometry height="80" width="140" x="80" y="560" as="geometry"/>
                 </mxCell>
-                <mxCell id="t3" value="user_payment_gateways&#xa;id, user_id, payment_gateway_id,&#xa;enabled" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="80" y="660" width="140" height="80" as="geometry"/>
+                <mxCell id="t3" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="user_payment_gateways&#xa;id, user_id, payment_gateway_id,&#xa;enabled" vertex="1">
+                    <mxGeometry height="80" width="140" x="80" y="660" as="geometry"/>
                 </mxCell>
-                <mxCell id="t4" value="user_payment_credentials&#xa;id, user_payment_gateways_id,&#xa;public_key, secret_key,&#xa;webhook_secret, metadata" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="260" y="660" width="160" height="80" as="geometry"/>
+                <mxCell id="t4" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" value="user_payment_credentials&#xa;id, user_payment_gateways_id,&#xa;public_key, secret_key,&#xa;webhook_secret, metadata" vertex="1">
+                    <mxGeometry height="80" width="160" x="260" y="660" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>
     </diagram>
     <diagram id="payment-flow" name="Payment Flow">
-        <mxGraphModel dx="1365" dy="572" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
+        <mxGraphModel dx="975" dy="631" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="960" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
-                <mxCell id="title2" value="FLOW 2: Payment Processing (Stripe)" style="text;html=1;fontSize=18;fontStyle=1;align=center;verticalAlign=middle;" parent="1" vertex="1">
-                    <mxGeometry x="250" y="20" width="600" height="40" as="geometry"/>
+                <mxCell id="title2" parent="1" style="text;html=1;fontSize=18;fontStyle=1;align=center;verticalAlign=middle;" value="FLOW 2: Payment Processing (Stripe)" vertex="1">
+                    <mxGeometry height="40" width="600" x="250" y="20" as="geometry"/>
                 </mxCell>
-                <mxCell id="p1" value="1. Create Payment Intent" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" parent="1" vertex="1">
-                    <mxGeometry x="80" y="100" width="200" height="60" as="geometry"/>
+                <mxCell id="p1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" value="1. Create Payment Intent" vertex="1">
+                    <mxGeometry height="60" width="200" x="80" y="100" as="geometry"/>
                 </mxCell>
-                <mxCell id="p1d" value="Frontend → POST /api/v1/payments&#xa;{customerId, gatewayId, amount,&#xa;name, email, address...}" style="text;html=1;fontSize=10;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="60" y="165" width="240" height="50" as="geometry"/>
+                <mxCell id="p1d" parent="1" style="text;html=1;fontSize=10;align=center;" value="Frontend → POST /api/v1/payments&#xa;{customerId, gatewayId, amount,&#xa;name, email, address...}" vertex="1">
+                    <mxGeometry height="50" width="240" x="60" y="165" as="geometry"/>
                 </mxCell>
-                <mxCell id="pa1" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="p1" target="p2" edge="1">
+                <mxCell id="pa1" edge="1" parent="1" source="p1" style="edgeStyle=orthogonalEdgeStyle;" target="p2">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="p2" value="2. Backend: Check Gateway Type" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontStyle=1;" parent="1" vertex="1">
-                    <mxGeometry x="380" y="90" width="220" height="80" as="geometry"/>
+                <mxCell id="p2" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontStyle=1;" value="2. Backend: Check Gateway Type" vertex="1">
+                    <mxGeometry height="80" width="220" x="380" y="90" as="geometry"/>
                 </mxCell>
-                <mxCell id="pa2a" value="Gateway = Stripe" style="edgeStyle=orthogonalEdgeStyle;fontStyle=0;fontSize=10;" parent="1" source="p2" target="p3" edge="1">
+                <mxCell id="pa2a" edge="1" parent="1" source="p2" style="edgeStyle=orthogonalEdgeStyle;fontStyle=0;fontSize=10;" target="p3" value="Gateway = Stripe">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="pa2b" value="Gateway ≠ Stripe" style="edgeStyle=orthogonalEdgeStyle;fontStyle=0;fontSize=10;" parent="1" source="p2" target="pNotStripe" edge="1">
+                <mxCell id="pa2b" edge="1" parent="1" source="p2" style="edgeStyle=orthogonalEdgeStyle;fontStyle=0;fontSize=10;" target="pNotStripe" value="Gateway ≠ Stripe">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="pNotStripe" value="Return: {status: &#39;pending&#39;,&#xa;message: &#39;Gateway not configured&#39;}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="680" y="95" width="200" height="50" as="geometry"/>
+                <mxCell id="pNotStripe" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" value="Return: {status: &#39;pending&#39;,&#xa;message: &#39;Gateway not configured&#39;}" vertex="1">
+                    <mxGeometry height="50" width="200" x="680" y="95" as="geometry"/>
                 </mxCell>
-                <mxCell id="p3" value="3. Get Secret Key from&#xa;user_payment_credentials" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;fontStyle=1;" parent="1" vertex="1">
-                    <mxGeometry x="380" y="220" width="220" height="60" as="geometry"/>
+                <mxCell id="p3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;fontStyle=1;" value="3. Get Secret Key from&#xa;user_payment_credentials" vertex="1">
+                    <mxGeometry height="60" width="220" x="380" y="220" as="geometry"/>
                 </mxCell>
-                <mxCell id="pa3" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="p3" target="p4" edge="1">
+                <mxCell id="pa3" edge="1" parent="1" source="p3" style="edgeStyle=orthogonalEdgeStyle;" target="p4">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="p4" value="4. Stripe: Create PaymentIntent" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" parent="1" vertex="1">
-                    <mxGeometry x="380" y="320" width="220" height="60" as="geometry"/>
+                <mxCell id="p4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" value="4. Stripe: Create PaymentIntent" vertex="1">
+                    <mxGeometry height="60" width="220" x="380" y="320" as="geometry"/>
                 </mxCell>
-                <mxCell id="p4d" value="StripeService.createPaymentIntent()&#xa;→ {amount, currency}" style="text;html=1;fontSize=10;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="380" y="385" width="220" height="30" as="geometry"/>
+                <mxCell id="p4d" parent="1" style="text;html=1;fontSize=10;align=center;" value="StripeService.createPaymentIntent()&#xa;→ {amount, currency}" vertex="1">
+                    <mxGeometry height="30" width="220" x="380" y="385" as="geometry"/>
                 </mxCell>
-                <mxCell id="pa4" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="p4" target="p5" edge="1">
+                <mxCell id="pa4" edge="1" parent="1" source="p4" style="edgeStyle=orthogonalEdgeStyle;" target="p5">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="p5" value="5. Return to Frontend" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" parent="1" vertex="1">
-                    <mxGeometry x="380" y="440" width="220" height="50" as="geometry"/>
+                <mxCell id="p5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" value="5. Return to Frontend" vertex="1">
+                    <mxGeometry height="50" width="220" x="380" y="440" as="geometry"/>
                 </mxCell>
-                <mxCell id="p5d" value="{paymentIntentId, clientSecret, status}" style="text;html=1;fontSize=10;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="380" y="495" width="220" height="25" as="geometry"/>
+                <mxCell id="p5d" parent="1" style="text;html=1;fontSize=10;align=center;" value="{paymentIntentId, clientSecret, status}" vertex="1">
+                    <mxGeometry height="25" width="220" x="380" y="495" as="geometry"/>
                 </mxCell>
-                <mxCell id="pa5" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="p5" target="p6" edge="1">
+                <mxCell id="pa5" edge="1" parent="1" source="p5" style="edgeStyle=orthogonalEdgeStyle;" target="p6">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="p6" value="6. Frontend: Confirm Payment&#xa;(Stripe.js handles card/3DS)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" parent="1" vertex="1">
-                    <mxGeometry x="380" y="550" width="220" height="60" as="geometry"/>
+                <mxCell id="p6" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" value="6. Frontend: Confirm Payment&#xa;(Stripe.js handles card/3DS)" vertex="1">
+                    <mxGeometry height="60" width="220" x="380" y="550" as="geometry"/>
                 </mxCell>
-                <mxCell id="p6d" value="stripe.confirmCardPayment(clientSecret,&#xa;{payment_method: {card: cardElement,&#xa;billing_details: {...}}})" style="text;html=1;fontSize=10;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="350" y="615" width="280" height="50" as="geometry"/>
+                <mxCell id="p6d" parent="1" style="text;html=1;fontSize=10;align=center;" value="stripe.confirmCardPayment(clientSecret,&#xa;{payment_method: {card: cardElement,&#xa;billing_details: {...}}})" vertex="1">
+                    <mxGeometry height="50" width="280" x="350" y="615" as="geometry"/>
                 </mxCell>
-                <mxCell id="pa6" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="p6" target="p7" edge="1">
+                <mxCell id="pa6" edge="1" parent="1" source="p6" style="edgeStyle=orthogonalEdgeStyle;" target="p7">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="p7" value="7. Backend: Confirm &amp; Log" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" parent="1" vertex="1">
-                    <mxGeometry x="380" y="690" width="220" height="50" as="geometry"/>
+                <mxCell id="p7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" value="7. Backend: Confirm &amp; Log" vertex="1">
+                    <mxGeometry height="50" width="220" x="380" y="690" as="geometry"/>
                 </mxCell>
-                <mxCell id="p7d" value="POST /api/v1/payments/confirm&#xa;{paymentIntentId, customerId,&#xa;gatewayId, paymentMethod}" style="text;html=1;fontSize=10;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="370" y="745" width="240" height="45" as="geometry"/>
+                <mxCell id="p7d" parent="1" style="text;html=1;fontSize=10;align=center;" value="POST /api/v1/payments/confirm&#xa;{paymentIntentId, customerId,&#xa;gatewayId, paymentMethod}" vertex="1">
+                    <mxGeometry height="45" width="240" x="370" y="745" as="geometry"/>
                 </mxCell>
-                <mxCell id="pa7" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="p7" target="p8" edge="1">
+                <mxCell id="pa7" edge="1" parent="1" source="p7" style="edgeStyle=orthogonalEdgeStyle;" target="p8">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="p8" value="8. Stripe: Get PaymentIntent Status" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" parent="1" vertex="1">
-                    <mxGeometry x="380" y="810" width="220" height="50" as="geometry"/>
+                <mxCell id="p8" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" value="8. Stripe: Get PaymentIntent Status" vertex="1">
+                    <mxGeometry height="50" width="220" x="380" y="810" as="geometry"/>
                 </mxCell>
-                <mxCell id="pa8a" value="succeeded" style="edgeStyle=orthogonalEdgeStyle;fontStyle=0;fontSize=10;" parent="1" source="p8" target="pSuccess" edge="1">
+                <mxCell id="pa8a" edge="1" parent="1" source="p8" style="edgeStyle=orthogonalEdgeStyle;fontStyle=0;fontSize=10;" target="pSuccess" value="succeeded">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="pSuccess" value="Log: chargeId, cardLast4,&#xa;cardBrand, amount, paymentMethod" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="680" y="800" width="200" height="50" as="geometry"/>
+                <mxCell id="pSuccess" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="Log: chargeId, cardLast4,&#xa;cardBrand, amount, paymentMethod" vertex="1">
+                    <mxGeometry height="50" width="200" x="680" y="800" as="geometry"/>
                 </mxCell>
-                <mxCell id="pa8b" value="failed" style="edgeStyle=orthogonalEdgeStyle;fontStyle=0;fontSize=10;" parent="1" source="p8" target="pFailed" edge="1">
+                <mxCell id="pa8b" edge="1" parent="1" source="p8" style="edgeStyle=orthogonalEdgeStyle;fontStyle=0;fontSize=10;" target="pFailed" value="failed">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="pFailed" value="Log: status=FAILED,&#xa;message=error" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="680" y="870" width="200" height="50" as="geometry"/>
+                <mxCell id="pFailed" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" value="Log: status=FAILED,&#xa;message=error" vertex="1">
+                    <mxGeometry height="50" width="200" x="680" y="870" as="geometry"/>
                 </mxCell>
-                <mxCell id="db2" value="payment_logs TABLE" style="text;html=1;fontSize=14;fontStyle=1;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="80" y="560" width="200" height="30" as="geometry"/>
+                <mxCell id="db2" parent="1" style="text;html=1;fontSize=14;fontStyle=1;align=center;" value="payment_logs TABLE" vertex="1">
+                    <mxGeometry height="30" width="200" x="80" y="560" as="geometry"/>
                 </mxCell>
-                <mxCell id="tLog" value="payment_logs&#xa;id, customer_id, event,&#xa;status, gateway, amount,&#xa;currency, transaction_id,&#xa;charge_id, card_brand,&#xa;card_last4, payment_method,&#xa;message, created_at" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="80" y="600" width="160" height="120" as="geometry"/>
+                <mxCell id="tLog" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="payment_logs&#xa;id, customer_id, event,&#xa;status, gateway, amount,&#xa;currency, transaction_id,&#xa;charge_id, card_brand,&#xa;card_last4, payment_method,&#xa;message, created_at" vertex="1">
+                    <mxGeometry height="120" width="160" x="80" y="600" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="start-here" name="Start here">
+        <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="1100" pageHeight="390" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="st_t" parent="1" style="text;html=1;fontSize=18;fontStyle=1;align=center;verticalAlign=middle;" value="START HERE — pick a page" vertex="1">
+                    <mxGeometry height="44" width="600" x="250" y="16" as="geometry"/>
+                </mxCell>
+                <mxCell id="st_1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;Gateway setup&lt;/b&gt;&lt;br&gt;&lt;br&gt;admin creates a gateway,&lt;br&gt;gives it to a user,&lt;br&gt;saves the API keys" vertex="1">
+                    <mxGeometry height="150" width="195" x="45" y="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="st_2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;Payment (Stripe)&lt;/b&gt;&lt;br&gt;&lt;br&gt;what happens when a&lt;br&gt;customer pays with a card" vertex="1">
+                    <mxGeometry height="150" width="195" x="252" y="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="st_e1" edge="1" parent="1" source="st_1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="st_2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="st_3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;Big picture&lt;/b&gt;&lt;br&gt;&lt;br&gt;the five parts of the&lt;br&gt;system and the arrows&lt;br&gt;between them" vertex="1">
+                    <mxGeometry height="150" width="195" x="459" y="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="st_e2" edge="1" parent="1" source="st_2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="st_3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="st_4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;Login &amp; session&lt;/b&gt;&lt;br&gt;&lt;br&gt;step by step: how&lt;br&gt;signing in works" vertex="1">
+                    <mxGeometry height="150" width="195" x="666" y="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="st_e3" edge="1" parent="1" source="st_3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="st_4">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="st_5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;Session ends&lt;/b&gt;&lt;br&gt;&lt;br&gt;sign out · blocked ·&lt;br&gt;timeout · 401" vertex="1">
+                    <mxGeometry height="150" width="195" x="873" y="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="st_e4" edge="1" parent="1" source="st_4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="st_5">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="st_key" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;How to read every page&lt;/b&gt; &amp;nbsp; · &amp;nbsp; BLUE = the browser (web pages) &amp;nbsp; · &amp;nbsp; GREEN = the Spring Boot server (Java) &amp;nbsp; · &amp;nbsp; ORANGE = MySQL / an outside service &amp;nbsp; · &amp;nbsp; YELLOW = a note about the backend" vertex="1">
+                    <mxGeometry height="60" width="990" x="45" y="290" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="big-picture" name="Big picture">
+        <mxGraphModel dx="1310" dy="847" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="840" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="bp_t" parent="1" style="text;html=1;fontSize=18;fontStyle=1;align=center;verticalAlign=middle;" value="THE BIG PICTURE — the five parts and the arrows between them" vertex="1">
+                    <mxGeometry height="44" width="700" x="200" y="16" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_h1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;fontStyle=1;" value="BROWSER" vertex="1">
+                    <mxGeometry height="54" width="250" x="50" y="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_h2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;fontStyle=1;" value="SPRING BOOT  (Java, port 8080)" vertex="1">
+                    <mxGeometry height="54" width="270" x="420" y="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_h3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=14;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;fontStyle=1;" value="MySQL" vertex="1">
+                    <mxGeometry height="54" width="240" x="810" y="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_l1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;login / register&lt;/b&gt;&lt;br&gt;/index.html" vertex="1">
+                    <mxGeometry height="66" width="250" x="50" y="170" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_m1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;auth API&lt;/b&gt;&lt;br&gt;register · login · me · logout" vertex="1">
+                    <mxGeometry height="66" width="270" x="420" y="170" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_r1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;users&lt;/b&gt;&lt;br&gt;email, hashed password, is_active" vertex="1">
+                    <mxGeometry height="66" width="240" x="810" y="170" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_dl0" edge="1" parent="1" source="bp_l1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="bp_l2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_dm0" edge="1" parent="1" source="bp_m1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="bp_m2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_dr0" edge="1" parent="1" source="bp_r1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="bp_r2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_l2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;checkout&lt;/b&gt;&lt;br&gt;/stripe/payment.html" vertex="1">
+                    <mxGeometry height="66" width="250" x="50" y="256" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_m2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;gateways API&lt;/b&gt;&lt;br&gt;gateways · assignments · API keys" vertex="1">
+                    <mxGeometry height="66" width="270" x="420" y="256" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_r2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;gateways + credentials&lt;/b&gt;&lt;br&gt;which gateway, which keys" vertex="1">
+                    <mxGeometry height="66" width="240" x="810" y="256" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_dl1" edge="1" parent="1" source="bp_l2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="bp_l3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_dm1" edge="1" parent="1" source="bp_m2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="bp_m3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_dr1" edge="1" parent="1" source="bp_r2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="bp_r3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_l3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;Authorize.net page&lt;/b&gt;&lt;br&gt;/authorize/index.html" vertex="1">
+                    <mxGeometry height="66" width="250" x="50" y="342" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_m3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;admin API&lt;/b&gt;&lt;br&gt;users · block · assign" vertex="1">
+                    <mxGeometry height="66" width="270" x="420" y="342" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_r3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;payment_logs / refund_logs&lt;/b&gt;&lt;br&gt;every transaction" vertex="1">
+                    <mxGeometry height="66" width="240" x="810" y="342" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_dl2" edge="1" parent="1" source="bp_l3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="bp_l4">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_dm2" edge="1" parent="1" source="bp_m3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="bp_m4">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_dr2" edge="1" parent="1" source="bp_r3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="bp_r4">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_l4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;admin panel&lt;/b&gt;&lt;br&gt;/admin/index.html" vertex="1">
+                    <mxGeometry height="66" width="250" x="50" y="428" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_m4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;payments API&lt;/b&gt;&lt;br&gt;create · confirm · refund · logs" vertex="1">
+                    <mxGeometry height="66" width="270" x="420" y="428" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_r4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;SPRING_SESSION&lt;/b&gt;&lt;br&gt;WHO IS SIGNED IN RIGHT NOW" vertex="1">
+                    <mxGeometry height="66" width="240" x="810" y="428" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_e1" edge="1" parent="1" source="bp_h1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="bp_h2" value="HTTP request + session cookie">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_e2" edge="1" parent="1" source="bp_h2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="bp_h3" value="read / write">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_e3" edge="1" parent="1" source="bp_m4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="bp_stripe" value="create payment / refund">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="750" y="461"/>
+                            <mxPoint x="750" y="560"/>
+                            <mxPoint x="555" y="560"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="bp_e4" edge="1" parent="1" source="bp_m4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;dashed=1;" target="bp_mail" value="send receipt (currently off)">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="775" y="461"/>
+                            <mxPoint x="775" y="560"/>
+                            <mxPoint x="930" y="560"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="bp_stripe" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=12;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;STRIPE&lt;/b&gt;&lt;br&gt;card payments" vertex="1">
+                    <mxGeometry height="64" width="270" x="420" y="600" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_mail" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=12;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;EMAIL&lt;/b&gt;&lt;br&gt;Gmail SMTP" vertex="1">
+                    <mxGeometry height="64" width="240" x="810" y="600" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_n1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;ONE ADDRESS ONLY&lt;/b&gt;&lt;br&gt;http://localhost:8080 serves the pages AND the API, so the cookie never leaves this host." vertex="1">
+                    <mxGeometry height="90" width="480" x="50" y="710" as="geometry"/>
+                </mxCell>
+                <mxCell id="bp_n2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;BACKEND NOTE&lt;/b&gt;&lt;br&gt;Pages come from src/main/resources/static · API comes from @RestController classes · Security filter chain = SecurityConfig.java (runs before every controller)." vertex="1">
+                    <mxGeometry height="90" width="480" x="570" y="710" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="login-session" name="Login &amp; session">
+        <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="1100" pageHeight="1240" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="lg_t" parent="1" style="text;html=1;fontSize=18;fontStyle=1;align=center;verticalAlign=middle;" value="LOGIN &amp; SESSION — what happens when you sign in" vertex="1">
+                    <mxGeometry height="44" width="700" x="200" y="16" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_h1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;fontStyle=1;" value="BROWSER" vertex="1">
+                    <mxGeometry height="50" width="270" x="50" y="76" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_h2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;fontStyle=1;" value="SPRING BOOT (Java)" vertex="1">
+                    <mxGeometry height="50" width="310" x="415" y="76" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_h3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=14;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;fontStyle=1;" value="MySQL" vertex="1">
+                    <mxGeometry height="50" width="250" x="810" y="76" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_s1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;1 · You open the site&lt;/b&gt;&lt;br&gt;GET /api/v1/auth/me" vertex="1">
+                    <mxGeometry height="76" width="270" x="50" y="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_s2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;2 · Nobody is signed in&lt;/b&gt;&lt;br&gt;answer 401 + message" vertex="1">
+                    <mxGeometry height="76" width="310" x="415" y="264" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_s3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;3 · You type email + password&lt;/b&gt;&lt;br&gt;POST /api/v1/auth/login" vertex="1">
+                    <mxGeometry height="76" width="270" x="50" y="368" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_s4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;4 · Password is checked&lt;/b&gt;&lt;br&gt;BCrypt hash · is_active&lt;br&gt;wrong → 400 · blocked → 403" vertex="1">
+                    <mxGeometry height="76" width="310" x="415" y="472" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_s5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;5 · Session is written&lt;/b&gt;&lt;br&gt;row in SPRING_SESSION&lt;br&gt;= this browser is user X" vertex="1">
+                    <mxGeometry height="76" width="250" x="810" y="576" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_s6" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;6 · The reply sets the cookie&lt;/b&gt;&lt;br&gt;Set-Cookie: JSESSIONID&lt;br&gt;HttpOnly · 30 min" vertex="1">
+                    <mxGeometry height="76" width="310" x="415" y="680" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_s7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;7 · Browser stores the cookie&lt;/b&gt;&lt;br&gt;JS only keeps {userId, email,&lt;br&gt;name, isSuperAdmin}" vertex="1">
+                    <mxGeometry height="76" width="270" x="50" y="784" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_s8" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;8 · You are taken to your page&lt;/b&gt;&lt;br&gt;superadmin → /admin · authorize → /authorize&lt;br&gt;else → /stripe/payment.html" vertex="1">
+                    <mxGeometry height="76" width="270" x="50" y="888" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_s9" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;9 · Every later call carries the cookie&lt;/b&gt;&lt;br&gt;server reads SPRING_SESSION&lt;br&gt;→ CurrentUser.id() / isAdmin()" vertex="1">
+                    <mxGeometry height="76" width="310" x="415" y="992" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_e0" edge="1" parent="1" source="lg_s1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="lg_s2" value="no session">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_e1" edge="1" parent="1" source="lg_s2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="lg_s3" value="POST /login">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_e2" edge="1" parent="1" source="lg_s3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="lg_s4" value="compare hash">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_e3" edge="1" parent="1" source="lg_s4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="lg_s5" value="write session">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_e4" edge="1" parent="1" source="lg_s5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="lg_s6" value="JSESSIONID cookie">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_e5" edge="1" parent="1" source="lg_s6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="lg_s7" value="safe JSON only">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_e6" edge="1" parent="1" source="lg_s7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="lg_s8" value="redirect">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_e7" edge="1" parent="1" source="lg_s8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="lg_s9" value="who am I?">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_n1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;BACKEND · AuthController.java&lt;/b&gt;&lt;br&gt;/auth/register (creates + signs in)&lt;br&gt;/auth/login · /auth/me · /auth/logout" vertex="1">
+                    <mxGeometry height="90" width="320" x="50" y="1100" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_n2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;BACKEND · SecurityConfig.java&lt;/b&gt;&lt;br&gt;HttpSessionSecurityContextRepository&lt;br&gt;saves/reads the session · JSON 401" vertex="1">
+                    <mxGeometry height="90" width="320" x="395" y="1100" as="geometry"/>
+                </mxCell>
+                <mxCell id="lg_n3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;FRONTEND · common/js&lt;/b&gt;&lt;br&gt;common.js → loadSessionUser()&lt;br&gt;auth.js → login button + routeToGateway()" vertex="1">
+                    <mxGeometry height="90" width="320" x="740" y="1100" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="session-ends" name="Session ends">
+        <mxGraphModel dx="1038" dy="671" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="1040" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="se_t" parent="1" style="text;html=1;fontSize=18;fontStyle=1;align=center;verticalAlign=middle;" value="WHEN THE SESSION ENDS — four ways, one landing page" vertex="1">
+                    <mxGeometry height="44" width="700" x="200" y="16" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_a1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;1 · You press Sign out&lt;/b&gt;" vertex="1">
+                    <mxGeometry height="96" width="300" x="50" y="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_a2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;server&lt;/b&gt;&lt;br&gt;POST /auth/logout&lt;br&gt;deletes the session row" vertex="1">
+                    <mxGeometry height="96" width="320" x="400" y="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_a3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;401&lt;/b&gt;" vertex="1">
+                    <mxGeometry height="96" width="250" x="760" y="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_a1_e1" edge="1" parent="1" source="se_a1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="se_a2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_a2_e2" edge="1" parent="1" source="se_a2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="se_a3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_b1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;2 · Admin blocks you&lt;/b&gt;" vertex="1">
+                    <mxGeometry height="96" width="300" x="50" y="230" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_b2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;server&lt;/b&gt;&lt;br&gt;is_active = 0 AND delete&lt;br&gt;all SPRING_SESSION rows" vertex="1">
+                    <mxGeometry height="96" width="320" x="400" y="230" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_b3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;401&lt;/b&gt;&lt;br&gt;on every device" vertex="1">
+                    <mxGeometry height="96" width="250" x="760" y="230" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_b1_e1" edge="1" parent="1" source="se_b1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="se_b2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_b2_e2" edge="1" parent="1" source="se_b2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="se_b3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_c1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;3 · 30 minutes idle&lt;/b&gt;" vertex="1">
+                    <mxGeometry height="96" width="300" x="50" y="370" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_c2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;server&lt;/b&gt;&lt;br&gt;session expired&lt;br&gt;cleanup cron deletes the row" vertex="1">
+                    <mxGeometry height="96" width="320" x="400" y="370" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_c3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;401&lt;/b&gt;" vertex="1">
+                    <mxGeometry height="96" width="250" x="760" y="370" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_c1_e1" edge="1" parent="1" source="se_c1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="se_c2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_c2_e2" edge="1" parent="1" source="se_c2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="se_c3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_d1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;4 · Any API says 401&lt;/b&gt;" vertex="1">
+                    <mxGeometry height="96" width="300" x="50" y="510" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_d2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;browser&lt;/b&gt;&lt;br&gt;common.js saves the message&lt;br&gt;in sessionStorage" vertex="1">
+                    <mxGeometry height="96" width="320" x="400" y="510" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_d3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;redirect&lt;/b&gt;&lt;br&gt;→ /index.html" vertex="1">
+                    <mxGeometry height="96" width="250" x="760" y="510" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_d1_e1" edge="1" parent="1" source="se_d1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="se_d2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_d2_e2" edge="1" parent="1" source="se_d2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="se_d3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_land" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;align=center;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;ALL FOUR END THE SAME WAY → the login page /index.html shows this message once&lt;/b&gt;&lt;br&gt;&quot;Your session has ended, or your account has been blocked. Please sign in again to continue.&quot;" vertex="1">
+                    <mxGeometry height="70" width="960" x="50" y="650" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_d3_land" edge="1" parent="1" source="se_d3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;" target="se_land">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_n1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;BACKEND · AdminController.java&lt;/b&gt;&lt;br&gt;toggleUserStatus() → endSessionsOf()&lt;br&gt;deletes SPRING_SESSION rows for that email.&lt;br&gt;You cannot block your own account." vertex="1">
+                    <mxGeometry height="110" width="300" x="50" y="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_n2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;BACKEND · application.properties&lt;/b&gt;&lt;br&gt;session timeout = 30m&lt;br&gt;cleanup cron = every minute&lt;br&gt;cookie: JSESSIONID, httpOnly, sameSite=lax" vertex="1">
+                    <mxGeometry height="110" width="300" x="380" y="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_n3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;BACKEND · CustomAuthEntryPoint.java&lt;/b&gt;&lt;br&gt;no session → JSON 401&lt;br&gt;signed in but not allowed → JSON 403&lt;br&gt;&quot;You do not have permission...&quot;" vertex="1">
+                    <mxGeometry height="110" width="300" x="710" y="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="se_rules" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=left;verticalAlign=middle;spacing=8;spacingLeft=8;spacingRight=6;" value="&lt;b&gt;WHO MAY CALL WHAT (SecurityConfig.java)&lt;/b&gt;&lt;br&gt;OPEN: /api/v1/auth/** · the HTML pages and static files · /api/v1/webhooks/** (Stripe, signature checked) · /error&lt;br&gt;SIGNED IN: payments · confirm · refund · billing addresses · logs · gateways&lt;br&gt;ADMIN ONLY: /api/v1/admin/** — needs is_superadmin = 1 (ROLE_ADMIN), otherwise 403" vertex="1">
+                    <mxGeometry height="110" width="960" x="50" y="900" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>
