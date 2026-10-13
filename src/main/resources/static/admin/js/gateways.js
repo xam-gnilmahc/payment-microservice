@@ -27,17 +27,23 @@ async function loadGateways() {
         }
 
         body.innerHTML = allGateways.map((g, i) => {
-            const assigned = allUserGateways
+            const list = allUserGateways
                 .filter(a => a.paymentGatewayId === g.id)
-                .map(a => usersMap[a.userId] || 'a customer')
-                .join(', ') || '-';
+                .map(a => usersMap[a.userId] || 'Customer');
+            const shown = list.slice(0, 3).map(esc).join(', ');
+            const extra = list.length - 3;
+            const assigned = list.length === 0
+                ? '<span class="cell-dim">None</span>'
+                : shown + (extra > 0
+                    ? ` <span class="assignee-more" title="${esc(list.join(', '))}">+${extra} more</span>`
+                    : '');
             return `
                 <tr>
                     <td>${i + 1}</td>
                     <td style="font-weight:600;">${esc(g.title) || '-'}</td>
                     <td><span class="status-badge ${g.status === 'ACTIVE' ? 'success' : 'error'}">${g.status === 'ACTIVE' ? 'Active' : 'Inactive'}</span></td>
-                    <td>${esc(assigned)}</td>
-                    <td style="color:#71717a;">${g.createdAt ? new Date(g.createdAt).toLocaleDateString() : '-'}</td>
+                    <td class="cell-assignees" title="${esc(list.join(', '))}">${assigned}</td>
+                    <td class="ta-r cell-date">${g.createdAt ? new Date(g.createdAt).toLocaleDateString() : '-'}</td>
                 </tr>`;
         }).join('');
     } catch (e) {

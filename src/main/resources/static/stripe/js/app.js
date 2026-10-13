@@ -16,6 +16,7 @@ let cardCvcEl = null;
 function setCardMsg(type, text) {
     const el = document.getElementById('card-msg');
     if (!el) return;
+    if (text) hideOtherMsgs(el);
     el.textContent = text || '';
     el.className = type || '';
     if (text) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

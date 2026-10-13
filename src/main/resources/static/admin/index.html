@@ -12,16 +12,14 @@
 <body>
 
 <div class="admin-layout" id="adminLayout">
-    <!-- TOP NAVIGATION -->
-    <header class="admin-topbar">
-        <div class="topbar-brand">
-            <span class="topbar-brand-text">
-                <span class="topbar-brand-name">UOM</span>
-                <span class="topbar-brand-tag">Analytics</span>
-            </span>
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar" id="adminSidebar">
+        <div class="admin-brand">
+            <span class="admin-brand-name">UOM</span>
+            <span class="admin-brand-tag">Analytics</span>
         </div>
 
-        <nav class="admin-nav topbar-nav" aria-label="Sections">
+        <nav class="admin-nav" aria-label="Sections">
             <button class="admin-nav-item active" data-section="dashboard" onclick="showSection('dashboard', this)" title="Dashboard">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
                 <span class="nav-text">Dashboard</span>
@@ -34,25 +32,28 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 <span class="nav-text">Users</span>
             </button>
-            <button class="admin-nav-item" data-section="all-logs" onclick="showSection('all-logs', this)" title="All Payment Logs">
+            <button class="admin-nav-item" data-section="all-logs" onclick="showSection('all-logs', this)" title="Payment Logs">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
-                <span class="nav-text">Logs</span>
-            </button>
-            <button class="admin-nav-item" data-section="refund-logs" onclick="showSection('refund-logs', this)" title="Refund Logs">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                <span class="nav-text">Refunds</span>
+                <span class="nav-text">Payment Logs</span>
             </button>
         </nav>
 
-        <div class="topbar-right">
-            <span class="topbar-range" id="topbarRange">—</span>
-            <span class="topbar-user" id="adminEmail">-</span>
+        <div class="admin-sidebar-footer">
+            <div class="admin-user-mini">
+                <span class="user-name-mini" id="adminName">&mdash;</span>
+                <span class="user-role-mini">Administrator</span>
+            </div>
             <button class="logout-btn" onclick="logout()" title="Sign out">Sign out</button>
         </div>
-    </header>
+    </aside>
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
 
     <!-- MAIN -->
     <main class="admin-main">
+        <button class="sidebar-toggle mobile-nav-btn" id="mobileNavBtn" onclick="toggleSidebar()"
+                title="Menu" aria-label="Open menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        </button>
         <!-- DASHBOARD -->
         <div class="admin-section active" id="section-dashboard">
             <div class="page-header">
@@ -257,64 +258,6 @@
                 </section>
             </div>
 
-            <div class="analytics-panel">
-                <div class="analytics-header">
-                    <div>
-                        <div class="chart-title">Period Breakdown</div>
-                        <div class="chart-sub" id="breakdownSub">Period performance</div>
-                    </div>
-                    <div class="compare-chip" id="compareChip">vs previous period</div>
-                </div>
-                <div class="admin-table-wrap">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>Period</th>
-                                <th class="num">Payments</th>
-                                <th class="num">Succeeded</th>
-                                <th class="num">Failed</th>
-                                <th class="num">Success %</th>
-                                <th class="num">Revenue</th>
-                            </tr>
-                        </thead>
-                        <tbody id="breakdownBody">
-                            <tr><td colspan="6" class="admin-loading">Loading...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="analytics-panel">
-                <div class="analytics-header">
-                    <div>
-                        <div class="chart-title">Payment Logs</div>
-                        <div class="chart-sub" id="dashLogsSub">Filtered by current customer + date range</div>
-                    </div>
-                    <div class="dash-logs-actions">
-                        <button class="btn-link" id="dashLogsViewAll" hidden
-                                onclick="showSection('all-logs', document.querySelector('[data-section=&quot;all-logs&quot;]'))">View all</button>
-                        <span class="compare-chip" id="dashLogsCount">0 logs</span>
-                    </div>
-                </div>
-                <div class="admin-table-wrap">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Customer</th>
-                                <th>Method</th>
-                                <th class="num">Amount</th>
-                                <th>Status</th>
-                                <th>Failure</th>
-                                <th>Created At</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dashLogsBody">
-                            <tr><td colspan="7" class="admin-loading">Loading logs…</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </div>
 
         <!-- GATEWAYS -->
@@ -328,7 +271,7 @@
             <div class="admin-table-wrap">
                 <table class="admin-table" id="gatewaysTable">
                     <thead>
-                        <tr><th>#</th><th>Title</th><th>Status</th><th>Assigned Users</th><th>Created At</th></tr>
+                        <tr><th>#</th><th>Title</th><th>Status</th><th>Assigned Users</th><th class="ta-r">Created At</th></tr>
                     </thead>
                     <tbody id="gatewaysBody">
                         <tr><td colspan="5" class="admin-loading">Loading...</td></tr>
@@ -358,14 +301,64 @@
             <div class="admin-table-wrap">
                 <table class="admin-table">
                     <thead>
-                        <tr><th>#</th><th>User</th><th>Status</th><th>Gateways</th><th class="ta-r">Actions</th></tr>
+                        <tr><th>#</th><th>User</th><th>Role</th><th>Status</th><th>Gateways</th><th class="ta-r">Actions</th></tr>
                     </thead>
                     <tbody id="usersBody">
-                        <tr><td colspan="5" class="admin-loading">Loading...</td></tr>
+                        <tr><td colspan="6" class="admin-loading">Loading...</td></tr>
                     </tbody>
                 </table>
             </div>
 
+        </div>
+
+        <!-- USER DETAIL -->
+        <div class="admin-section" id="section-user-detail">
+            <div class="page-header">
+                <div>
+                    <div class="page-title" id="detailName">User</div>
+                    <div class="page-subtitle" id="detailEmail"></div>
+                </div>
+                <button class="btn-link" onclick="backToUsers()">&larr; Back to users</button>
+            </div>
+
+            <div class="user-detail-card" id="detailCard"></div>
+
+            <div class="page-header" style="margin-top:18px;">
+                <div>
+                    <div class="page-title">Payment logs</div>
+                    <div class="page-subtitle">This customer&rsquo;s payments, newest first</div>
+                </div>
+            </div>
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr><th>#</th><th>Method</th><th class="num">Amount</th><th>Status</th><th class="col-secondary-lg">Message</th><th class="col-secondary">Failure</th><th class="ta-r">Created At</th></tr>
+                    </thead>
+                    <tbody id="detailLogsBody">
+                        <tr><td colspan="7" class="admin-loading">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="page-header" style="margin-top:18px;">
+                <div>
+                    <div class="page-title">Refund logs</div>
+                    <div class="page-subtitle">This customer&rsquo;s refunds, newest first</div>
+                </div>
+            </div>
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr><th>Refund</th><th class="num">Amount</th><th>Status</th><th class="col-secondary">Message</th><th class="ta-r">Created At</th></tr>
+                    </thead>
+                    <tbody id="detailRefundBody">
+                        <tr><td colspan="5" class="admin-loading">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ADMIN DIALOGS (outside every section, so they open from the list and from a user detail page alike) -->
             <!-- LOGIN AS MODAL -->
             <div class="admin-modal-overlay" id="loginAsModal">
                 <div class="admin-modal">
@@ -428,7 +421,57 @@
                     <button class="btn btn-primary" onclick="saveCredentials()">Save</button>
                 </div>
             </div>
-        </div>
+
+            <!-- SET PASSWORD MODAL -->
+            <div class="admin-modal-overlay" id="setPasswordModal">
+                <div class="admin-modal">
+                    <div class="card-header" style="margin-bottom:16px;">
+                        <div>
+                            <div class="card-title">Set new password</div>
+                            <div class="loginAs-note">They will be signed out of every device and will need the new password next time they sign in.</div>
+                        </div>
+                        <button class="btn-link" onclick="closeSetPasswordModal()" style="font-size:12px;">Cancel</button>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="setPwEmail" readonly />
+                    </div>
+                    <div class="form-group">
+                        <label for="setPwNew">New password</label>
+                        <div class="cp-field">
+                            <input type="password" id="setPwNew" placeholder="Min 6 characters" autocomplete="new-password"
+                                   onkeydown="if (event.key === 'Enter') submitSetPassword()" />
+                            <button type="button" class="cp-eye" data-target="setPwNew" title="Show password" aria-label="Show password"
+                                    onclick="togglePasswordEye(this)"></button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="setPwConfirm">Confirm new password</label>
+                        <div class="cp-field">
+                            <input type="password" id="setPwConfirm" placeholder="Repeat new password" autocomplete="new-password"
+                                   onkeydown="if (event.key === 'Enter') submitSetPassword()" />
+                            <button type="button" class="cp-eye" data-target="setPwConfirm" title="Show password" aria-label="Show password"
+                                    onclick="togglePasswordEye(this)"></button>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="setPwSubmit" onclick="submitSetPassword()">Update password</button>
+                </div>
+            </div>
+
+            <!-- CONFIRMATION (block / unblock user, enable / disable gateway) -->
+            <div class="admin-modal-overlay" id="confirmModal">
+                <div class="admin-modal">
+                    <div class="card-header" style="margin-bottom:16px;">
+                        <div class="card-title" id="confirmModalTitle">Are you sure?</div>
+                        <button class="btn-link" onclick="closeConfirmDialog()" style="font-size:12px;">Cancel</button>
+                    </div>
+                    <p class="loginAs-note" id="confirmModalNote" style="margin:0 0 18px;"></p>
+                    <div class="admin-modal-actions">
+                        <button class="btn" onclick="closeConfirmDialog()">Cancel</button>
+                        <button class="btn btn-primary" id="confirmModalSubmit" onclick="submitConfirmDialog()">Confirm</button>
+                    </div>
+                </div>
+            </div>
 
         <!-- ALL PAYMENT LOGS -->
         <div class="admin-section" id="section-all-logs">

@@ -19,7 +19,21 @@ function authHeaders() { return { 'Content-Type': 'application/json' }; }
 
 // ===== HELPERS =====
 function hideAll() { document.body.classList.remove('wide-header'); ['step-no-gateway', 'step-checkout', 'step-card', 'step-address', 'step-logs'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); }); }
-function showMsg(el, msg) { el.textContent = msg; el.classList.add('show'); el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+
+// Only one message is ever on screen: showing a new one takes the old one away, wherever that
+// old one was - another banner on the page, or the card field message on the pay page.
+function hideOtherMsgs(keep) {
+    document.querySelectorAll('.banner.show').forEach(b => { if (b !== keep) b.classList.remove('show'); });
+    const card = document.getElementById('card-msg');
+    if (card && card !== keep && card.textContent) { card.textContent = ''; card.className = ''; }
+}
+
+function showMsg(el, msg) {
+    hideOtherMsgs(el);
+    el.textContent = msg;
+    el.classList.add('show');
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
 
 // ===== LOST SESSION =====
 // A blocked account, an expired session and a sign-out on another tab all come back as 401 on the

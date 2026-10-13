@@ -10,7 +10,7 @@ function usersFlash(type, msg) {
 
 async function loadUsers() {
     const body = document.getElementById('usersBody');
-    body.innerHTML = '<tr><td colspan="5" class="admin-loading">Loading...</td></tr>';
+    body.innerHTML = '<tr><td colspan="6" class="admin-loading">Loading...</td></tr>';
     try {
         const [uRes, gRes, aRes] = await Promise.all([
             fetch('/api/v1/admin/users', { headers: authHeaders() }),
@@ -26,17 +26,35 @@ async function loadUsers() {
         allUserGateways = a.success && a.data ? a.data : [];
 
         if (allUsers.length === 0) {
-            body.innerHTML = '<tr><td colspan="5" class="admin-empty">No users found.</td></tr>';
+            body.innerHTML = '<tr><td colspan="6" class="admin-empty">No users found.</td></tr>';
             return;
         }
 
         renderUsers();
     } catch (e) {
-        body.innerHTML = '<tr><td colspan="5" class="admin-empty">Failed to load: ' + esc(e.message) + '</td></tr>';
+        body.innerHTML = '<tr><td colspan="6" class="admin-empty">Failed to load: ' + esc(e.message) + '</td></tr>';
     }
 }
 
 // Client-side search over the already-loaded list, so typing never hits the API.
+// Gateways: a badge per assigned gateway with its enable switch. Clicking a badge opens that
+// gateway's credentials, which is why there is no separate Credentials button anywhere.
+function gatewayCellHtml(user) {
+    const assigned = allUserGateways.filter(x => x.userId === user.id);
+    return assigned.length === 0
+        ? '<span class="gw-none">None</span>'
+        : '<div class="gw-badges">' + assigned.map(a2 => `
+            <span class="gw-chip ${a2.enabled === '1' ? 'is-on' : 'is-off'}"
+                  title="${a2.enabled === '1' ? 'Enabled' : 'Disabled'} — click to edit credentials"
+                  onclick="openCredentials(${a2.id})">${esc(a2.gatewayTitle)}</span>
+            <label class="toggle-switch" title="${a2.enabled === '1' ? 'Disable gateway' : 'Enable gateway'}">
+                <input type="checkbox" ${a2.enabled === '1' ? 'checked' : ''}
+                       onchange="gatewayToggleChanged(this, ${a2.id}, '${esc(user.email)}', '${esc(a2.gatewayTitle)}')" />
+                <span class="toggle-slider"></span>
+            </label>
+        `).join('') + '</div>';
+}
+
 function renderUsers() {
     const body = document.getElementById('usersBody');
     if (!body) return;
@@ -53,7 +71,7 @@ function renderUsers() {
             : allUsers.length + (allUsers.length === 1 ? ' user' : ' users');
     }
     if (rows.length === 0) {
-        body.innerHTML = '<tr><td colspan="5" class="admin-empty">'
+        body.innerHTML = '<tr><td colspan="6" class="admin-empty">'
             + (allUsers.length === 0 ? 'No users yet.' : 'No users match &ldquo;' + esc(q) + '&rdquo;.')
             + '</td></tr>';
         return;
@@ -61,40 +79,33 @@ function renderUsers() {
     body.innerHTML = rows.map(user => {
             const isSuper = String(user.isSuperAdmin) === '1';
             const isActive = user.isActive === true || user.isActive === 1 || user.isActive === '1';
-            const assigned = allUserGateways.filter(x => x.userId === user.id);
-            const me = getUser();
+            const gwCell = gatewayCellHtml(user);
 
-            // Gateways: just badges now. Clicking one opens its credentials, which removes the
-            // separate "Credentials" button that used to sit next to every badge.
-            const gwCell = assigned.length === 0
-                ? '<span class="gw-none">None</span>'
-                : '<div class="gw-badges">' + assigned.map(a2 => `
-                    <span class="gw-chip ${a2.enabled === '1' ? 'is-on' : 'is-off'}"
-                          title="${a2.enabled === '1' ? 'Enabled' : 'Disabled'} — click to edit credentials"
-                          onclick="openCredentials(${a2.id})">${esc(a2.gatewayTitle)}</span>
-                    <label class="toggle-switch" title="${a2.enabled === '1' ? 'Disable gateway' : 'Enable gateway'}">
-                        <input type="checkbox" ${a2.enabled === '1' ? 'checked' : ''} onchange="toggleGateway(${a2.id})" />
-                        <span class="toggle-slider"></span>
-                    </label>
-                `).join('') + '</div>';
+            // Role is a column of its own, so Status can be what it always meant: is this account
+            // able to sign in. Everyone who can be blocked gets a capsule switch there; it asks
+            // for confirmation before it flips, because blocking cuts somebody off from paying.
+            const roleCell = isSuper
+                ? '<span class="status-badge initiated">Superadmin</span>'
+                : '<span class="status-badge pending">Member</span>';
 
             const statusCell = isSuper
-                ? '<span class="status-badge initiated">Admin</span>'
-                : (isActive
-                    ? '<span class="status-badge success">Active</span>'
-                    : '<span class="status-badge error">Blocked</span>');
+                ? '<span class="status-text is-on" title="Admin accounts cannot be blocked">Active</span>'
+                : `<div class="status-cell">
+                        <label class="toggle-switch" title="${isActive ? 'Block this user' : 'Unblock this user'}">
+                            <input type="checkbox" ${isActive ? 'checked' : ''}
+                                   onchange="statusToggleChanged(this, ${user.id}, '${esc(user.email)}')" />
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="status-text ${isActive ? 'is-on' : 'is-off'}">${isActive ? 'Active' : 'Inactive'}</span>
+                    </div>`;
 
-            // One compact button group instead of loose links. Block/Unblock is disabled on your
-            // own row and on admin accounts, because neither can sensibly be blocked.
-            const canBlock = !isSuper && String(me && me.userId) !== String(user.id);
+            // The three everyday account actions sit as plain buttons. Logs, refunds and the
+            // rest live on the detail page, which the User cell opens.
             const actions = `
                 <div class="action-group">
-                    ${!isSuper ? `<button class="act" onclick="openAssign(${user.id})">Assign</button>` : ''}
-                    <button class="act" onclick="viewUserPaymentLogs(${user.id}, '${esc(user.email)}')">Logs</button>
-                    <button class="act" onclick="viewUserRefundLogs(${user.id}, '${esc(user.email)}')">Refunds</button>
                     ${isSuper ? '' : `<button class="act" onclick="openLoginAs(${user.id}, '${esc(user.email)}')">Sign in</button>`}
-                    ${isSuper ? '' : `<button class="act ${isActive ? 'act-danger' : 'act-ok'}" ${canBlock ? '' : 'disabled'}
-                        onclick="toggleUserBlock(${user.id}, ${isActive}, '${esc(user.email)}')">${isActive ? 'Block' : 'Unblock'}</button>`}
+                    ${isSuper ? '' : `<button class="act" onclick="openAssign(${user.id})">Assign</button>`}
+                    <button class="act" onclick="openSetPassword(${user.id}, '${esc(user.email)}')">Set password</button>
                 </div>`;
 
             // A plain row number for reading. The database id is an internal key with gaps (an
@@ -106,15 +117,186 @@ function renderUsers() {
             return `
                 <tr class="${isActive ? '' : 'row-blocked'}">
                     <td>${displayNo}</td>
-                    <td class="user-cell">
+                    <td class="user-cell user-cell-link" onclick="openUserDetail(${user.id})"
+                        title="Open details for ${esc(user.email)}">
                         <span class="user-name">${esc(user.name) || '-'}</span>
                         <span class="user-email">${esc(user.email)}</span>
                     </td>
+                    <td>${roleCell}</td>
                     <td>${statusCell}</td>
                     <td>${gwCell}</td>
                     <td class="admin-actions">${actions}</td>
                 </tr>`;
         }).join('');
+}
+
+// ===== USER DETAIL =====
+// Clicking the name/email in the users table opens this page: the account itself, its
+// gateways, and the two log streams that belong to it. The list stays a list — everything
+// about one customer lives here.
+let detailUserId = null;
+
+function openUserDetail(userId) {
+    const user = allUsers.find(u => u.id === userId);
+    if (!user) return;
+    detailUserId = userId;
+    const isSuper = String(user.isSuperAdmin) === '1';
+    const isActive = user.isActive === true || user.isActive === 1 || user.isActive === '1';
+
+    document.getElementById('detailName').textContent = user.name || user.email;
+    document.getElementById('detailEmail').textContent = user.email;
+    document.getElementById('detailCard').innerHTML = `
+        <div class="detail-facts">
+            <div class="detail-fact">
+                <span class="detail-label">User ID</span>
+                <span>${user.id}</span>
+            </div>
+            <div class="detail-fact">
+                <span class="detail-label">Role</span>
+                ${isSuper ? '<span class="status-badge initiated">Superadmin</span>' : '<span class="status-badge pending">Member</span>'}
+            </div>
+            <div class="detail-fact">
+                <span class="detail-label">Status</span>
+                <span class="status-text ${isActive ? 'is-on' : 'is-off'}">${isActive ? 'Active' : 'Inactive'}</span>
+            </div>
+            ${user.createdAt ? `<div class="detail-fact">
+                <span class="detail-label">Joined</span>
+                <span>${fmtDate(user.createdAt)}</span>
+            </div>` : ''}
+            <div class="detail-fact detail-fact-wide">
+                <span class="detail-label">Gateways</span>
+                ${gatewayCellHtml(user)}
+            </div>
+        </div>`;
+
+    showSection('user-detail');
+    loadUserDetailLogs();
+}
+
+function backToUsers() {
+    showSection('users', document.querySelector('[data-section="users"]'));
+}
+
+// The two log streams for this one account, newest first. Same endpoints the filtered logs
+// sections use, so a detail page never shows anything the logs pages would not.
+async function loadUserDetailLogs() {
+    const userId = detailUserId;
+    const pBody = document.getElementById('detailLogsBody');
+    const rBody = document.getElementById('detailRefundBody');
+    if (!pBody || !rBody) return;
+    pBody.innerHTML = '<tr><td colspan="7" class="admin-loading">Loading...</td></tr>';
+    rBody.innerHTML = '<tr><td colspan="5" class="admin-loading">Loading...</td></tr>';
+    try {
+        const [pRes, rRes] = await Promise.all([
+            fetch(`/api/v1/admin/user/${userId}/payment-logs?page=0&size=50`, { headers: authHeaders() }),
+            fetch(`/api/v1/admin/user/${userId}/refund-logs?page=0&size=50`, { headers: authHeaders() }),
+        ]);
+        const pData = await pRes.json();
+        const rData = await rRes.json();
+
+        const d = pData.success && pData.data ? pData.data : {};
+        const pRaw = d.logs || d.content || (Array.isArray(d) ? d : []);
+        const pItems = Array.isArray(pRaw) ? pRaw : [];
+        pBody.innerHTML = pItems.length === 0
+            ? '<tr><td colspan="7" class="admin-empty">No payment logs yet.</td></tr>'
+            : pItems.map((l, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td>${esc(l.paymentMethod) || '-'}</td>
+                    <td class="num cell-amount">${fmtAmountCell(l.currency, l.amount)}</td>
+                    <td>${paymentBadge(l.status)}</td>
+                    <td class="col-secondary-lg cell-msg"><span class="clamp2" title="${esc(l.message) || ''}">${esc(l.message) || '-'}</span></td>
+                    <td class="cell-fail${l.failureCode ? ' is-error' : ''}">${esc(l.failureCode) || '-'}</td>
+                    <td class="ta-r cell-date">${fmtDate(l.createdAt)}</td>
+                </tr>`).join('');
+
+        const rRaw = Array.isArray(rData.data) ? rData.data : (rData.data?.logs || rData.data?.content || []);
+        const rItems = Array.isArray(rRaw) ? rRaw : [];
+        rBody.innerHTML = rItems.length === 0
+            ? '<tr><td colspan="5" class="admin-empty">No refund logs yet.</td></tr>'
+            : rItems.map(r => `
+                <tr>
+                    <td class="cell-mono" title="${esc(r.refundId) || ''}">${esc(r.refundId) || '-'}</td>
+                    <td class="num cell-amount">${fmtAmountCell(r.currency, r.amount)}</td>
+                    <td>${refundBadge(r.status)}</td>
+                    <td class="col-secondary cell-msg"><span class="clamp2" title="${esc(r.message) || ''}">${esc(r.message) || '-'}</span></td>
+                    <td class="ta-r cell-date">${fmtDate(r.createdAt)}</td>
+                </tr>`).join('');
+    } catch (e) {
+        notifyError('Failed to load logs: ' + e.message);
+        pBody.innerHTML = '';
+        rBody.innerHTML = '';
+    }
+}
+
+// ===== SET PASSWORD =====
+// The admin resets any account's password from the Users section. No current password is needed:
+// this is the path for somebody who has forgotten theirs.
+let setPwUserId = null;
+const PW_EYE = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+const PW_EYE_OFF = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12A3 3 0 1 1 9.88 9.88"/><path d="M1 1l22 22"/></svg>';
+
+function togglePasswordEye(btn) {
+    const input = document.getElementById(btn.dataset.target);
+    const hidden = input.type === 'password';
+    input.type = hidden ? 'text' : 'password';
+    btn.innerHTML = hidden ? PW_EYE_OFF : PW_EYE;
+    const label = hidden ? 'Hide password' : 'Show password';
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
+}
+
+function openSetPassword(userId, email) {
+    setPwUserId = userId;
+    document.getElementById('setPwEmail').value = email;
+    ['setPwNew', 'setPwConfirm'].forEach(id => { document.getElementById(id).value = ''; document.getElementById(id).type = 'password'; });
+    document.querySelectorAll('#setPasswordModal .cp-eye').forEach(btn => {
+        btn.innerHTML = PW_EYE;
+        btn.title = 'Show password';
+        btn.setAttribute('aria-label', 'Show password');
+    });
+    document.getElementById('setPasswordModal').classList.add('show');
+    document.getElementById('setPwNew').focus();
+}
+
+function closeSetPasswordModal() {
+    document.getElementById('setPasswordModal').classList.remove('show');
+    setPwUserId = null;
+}
+
+async function submitSetPassword() {
+    if (setPwUserId == null) return;
+    const next = document.getElementById('setPwNew').value;
+    const confirm = document.getElementById('setPwConfirm').value;
+
+    if (!next || !confirm) { notifyError('Please fill in both fields'); return; }
+    if (next !== confirm) {
+        notifyError('New password and confirm password do not match');
+        document.getElementById('setPwConfirm').focus();
+        return;
+    }
+    if (next.length < 6) { notifyError('Password must be at least 6 characters'); document.getElementById('setPwNew').focus(); return; }
+
+    const btn = document.getElementById('setPwSubmit');
+    const label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+    try {
+        const res = await fetch('/api/v1/admin/users/' + setPwUserId + '/password', {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ newPassword: next })
+        });
+        const data = await res.json();
+        if (!data.success) { notifyError(data.message || 'Could not update the password'); return; }
+        closeSetPasswordModal();
+        notifySuccess(data.message || 'Password updated.');
+    } catch (e) {
+        notifyError('Server error: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = label;
+    }
 }
 
 // ===== LOGIN AS USER =====
@@ -185,21 +367,76 @@ async function submitLoginAs() {
     }
 }
 
-// ===== BLOCK / UNBLOCK =====
-async function toggleUserBlock(userId, isActive, email) {
-    const verb = isActive ? 'Block' : 'Unblock';
-    if (!confirm(`${verb} ${email}?` + (isActive ? '\n\nThey will not be able to sign in again.' : ''))) return;
+// ===== CONFIRMATION DIALOG =====
+// One dialog for every action that should not happen by accident: blocking or unblocking an
+// account, and enabling or disabling a gateway for one. Each caller supplies the wording and
+// the work to run when Confirm is pressed.
+let confirmAction = null;
+
+function openConfirmDialog(title, note, confirmLabel, action) {
+    confirmAction = action;
+    const titleEl = document.getElementById('confirmModalTitle');
+    const noteEl = document.getElementById('confirmModalNote');
+    const btn = document.getElementById('confirmModalSubmit');
+    if (titleEl) titleEl.textContent = title;
+    if (noteEl) noteEl.textContent = note;
+    if (btn) { btn.textContent = confirmLabel; btn.disabled = false; }
+    const modal = document.getElementById('confirmModal');
+    if (modal) modal.classList.add('show');
+    if (btn) btn.focus();
+}
+
+function closeConfirmDialog() {
+    const modal = document.getElementById('confirmModal');
+    if (modal) modal.classList.remove('show');
+    confirmAction = null;
+}
+
+async function submitConfirmDialog() {
+    if (!confirmAction) return;
+    const action = confirmAction;
+    const btn = document.getElementById('confirmModalSubmit');
+    const label = btn ? btn.textContent : 'Confirm';
+    if (btn) { btn.disabled = true; btn.textContent = label + '\u2026'; }
     try {
-        const res = await fetch('/api/v1/admin/users/' + userId + '/status', {
-            method: 'PUT', headers: authHeaders()
-        });
-        const data = await res.json();
-        if (!data.success) { usersFlash('error', data.message || 'Failed to update user.'); return; }
-        usersFlash('success', data.message);
-        loadUsers();
+        await action();
     } catch (e) {
-        usersFlash('error', 'Failed to update user: ' + e.message);
+        usersFlash('error', 'Failed: ' + e.message);
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = label; }
+        closeConfirmDialog();
     }
+}
+
+// ===== USER STATUS (block / unblock) =====
+// The switch in the Status column, and the Block/Unblock items in the Actions menu, both come
+// through here. The browser flips the switch before onchange fires, so it is put straight back
+// and is only allowed to move again once the server has agreed.
+function statusToggleChanged(input, userId, email) {
+    const nextActive = input.checked;
+    input.checked = !nextActive;
+    confirmToggleUserBlock(userId, nextActive, email);
+}
+
+function confirmToggleUserBlock(userId, nextActive, email) {
+    openConfirmDialog(
+        nextActive ? 'Unblock user' : 'Block user',
+        nextActive
+            ? email + ' will be able to sign in and pay again.'
+            : email + ' will be signed out of every device and cannot sign in or pay again until you unblock them.',
+        nextActive ? 'Unblock' : 'Block',
+        () => setUserStatus(userId, nextActive)
+    );
+}
+
+async function setUserStatus(userId, nextActive) {
+    const res = await fetch('/api/v1/admin/users/' + userId + '/status', {
+        method: 'PUT', headers: authHeaders()
+    });
+    const data = await res.json();
+    if (!data.success) { usersFlash('error', data.message || 'Failed to update user.'); return; }
+    usersFlash('success', data.message);
+    loadUsers();
 }
 
 // ===== ASSIGN =====
@@ -284,15 +521,29 @@ async function saveCredentials() {
     } catch (e) { usersFlash('error', 'Server error: ' + e.message); }
 }
 
-// ===== TOGGLE =====
-async function toggleGateway(upgId) {
-    try {
-        const res = await fetch(`/api/v1/admin/user-gateways/${upgId}/toggle`, {
-            method: 'PUT',
-            headers: authHeaders(),
-        });
-        const data = await res.json();
-        if (!data.success) { usersFlash('error', data.message || 'Failed'); return; }
-        await loadUsers();
-    } catch (e) { usersFlash('error', 'Server error: ' + e.message); }
+// ===== GATEWAY ENABLE / DISABLE =====
+// Same treatment as the Status switch: the gateway switch asks first, and snaps straight back
+// until the server has actually changed it. Losing a gateway stops that one payment route for
+// the customer, so it should not happen from a stray click.
+function gatewayToggleChanged(input, upgId, email, gatewayTitle) {
+    const nextEnabled = input.checked;
+    input.checked = !nextEnabled;
+    openConfirmDialog(
+        nextEnabled ? 'Enable gateway' : 'Disable gateway',
+        nextEnabled
+            ? email + ' will be able to pay through ' + gatewayTitle + ' again.'
+            : 'Payments through ' + gatewayTitle + ' will stop for ' + email + ' until you enable it again.',
+        nextEnabled ? 'Enable' : 'Disable',
+        () => setGatewayEnabled(upgId, nextEnabled)
+    );
+}
+
+async function setGatewayEnabled(upgId, nextEnabled) {
+    const res = await fetch(`/api/v1/admin/user-gateways/${upgId}/toggle`, {
+        method: 'PUT',
+        headers: authHeaders(),
+    });
+    const data = await res.json();
+    if (!data.success) { usersFlash('error', data.message || 'Failed'); return; }
+    await loadUsers();
 }

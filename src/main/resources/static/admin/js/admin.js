@@ -12,7 +12,8 @@ async function initAdmin() {
         window.location.href = '/index.html';
         return;
     }
-    document.getElementById('adminEmail').textContent = adminUser.email || adminUser.name;
+    // the sidebar footer greets by name; the email is one row of the users table away
+    document.getElementById('adminName').textContent = adminUser.name || adminUser.email || 'Admin';
     loadDashboard();
     // the segmented thumb can only be measured once the section is laid out
     requestAnimationFrame(() => requestAnimationFrame(syncFilterUI));
@@ -25,29 +26,43 @@ function logout() {
         .finally(() => { window.location.href = '/index.html'; });
 }
 
-// ===== SIDEBAR TOGGLE =====
-function isMobileNav() { return window.matchMedia('(max-width: 860px)').matches; }
+// ===== SIDEBAR =====
+// A fixed left rail on wide screens, a drawer that slides in on narrow ones. The backdrop
+// only exists on the narrow layout, so clicking it closes the drawer.
+function isMobileNav() { return window.matchMedia('(max-width: 900px)').matches; }
 
+function openSidebar() {
+    document.getElementById('adminLayout')?.classList.add('sidebar-open');
+}
 
+function closeSidebar() {
+    document.getElementById('adminLayout')?.classList.remove('sidebar-open');
+}
 
+function toggleSidebar() {
+    const layout = document.getElementById('adminLayout');
+    if (!layout) return;
+    layout.classList.contains('sidebar-open') ? closeSidebar() : openSidebar();
+}
 
 (function initSidebar() {
-    try {
-        if (localStorage.getItem('admSidebar') === '1' && !isMobileNav()) {
-            document.getElementById('adminLayout')?.classList.add('sidebar-collapsed');
-        }
-    } catch (e) {}
-    // close mobile drawer after nav click
+    // a nav click on a phone should land on the section, not leave the drawer over it
     document.querySelectorAll('.admin-nav-item').forEach(btn => {
         btn.addEventListener('click', () => { if (isMobileNav()) closeSidebar(); });
     });
-    window.addEventListener('resize', () => {
-        if (!isMobileNav()) closeSidebar();
-    });
+    window.addEventListener('resize', () => { if (!isMobileNav()) closeSidebar(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSidebar(); });
 })();
 
 function showSection(section, el) {
+    // remember where we came from: arriving at the users list from anywhere else starts it
+    // unfiltered, so the email you looked up last time is not still sitting in the search box
+    const previous = currentSection;
     currentSection = section;
+    if (section === 'users' && previous !== 'users') {
+        const search = document.getElementById('usersSearch');
+        if (search) search.value = '';
+    }
     if (el) {
         document.querySelectorAll('.admin-nav-item').forEach(b => b.classList.remove('active'));
         el.classList.add('active');
@@ -132,6 +147,14 @@ async function ensureDashCustomers() {
 
 function fmtMoney(n) {
     return '$' + (Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// Table amount cell: "$99.00" for USD, "EUR €…" style only when the currency is not the default,
+// so the column reads as money and not as "USD $99.00".
+function fmtAmountCell(currency, amount) {
+    const code = (currency || 'USD').toUpperCase();
+    const v = '$' + (parseFloat(amount) || 0).toFixed(2);
+    return code === 'USD' ? v : code + ' ' + v;
 }
 
 // Chart axis labels: thousands separators, and never more than 2 decimals. Sums coming back from
@@ -289,98 +312,6 @@ function onDashDateChange() {
 
 addEventListener('resize', () => syncFilterUI());
 
-function renderBreakdown(series, grain) {
-    const body = document.getElementById('breakdownBody');
-    const sub = document.getElementById('breakdownSub');
-    if (sub) sub.textContent = grainLabel(grain) + ' performance · click range/grain to re-slice';
-    if (!series || !series.length) {
-        body.innerHTML = '<tr><td colspan="6" class="admin-empty">No data in this range.</td></tr>';
-        return;
-    }
-    let tPay = 0, tSuc = 0, tFail = 0, tRev = 0;
-    series.forEach(p => {
-        tPay += p.payments || 0;
-        tSuc += p.succeeded || 0;
-        tFail += p.failed || 0;
-        tRev += p.revenue || 0;
-    });
-    const rows = series.map(p => {
-        const rate = Number(p.successRate) || 0;
-        const rateCls = rate >= 80 ? 'high' : rate >= 50 ? 'mid' : 'low';
-        return `<tr>
-            <td class="period-cell">${esc(formatPeriod(p.period, grain))}</td>
-            <td class="num">${p.payments ?? 0}</td>
-            <td class="num" style="color:#047857;font-weight:600;">${p.succeeded ?? 0}</td>
-            <td class="num" style="color:#be123c;font-weight:600;">${p.failed ?? 0}</td>
-            <td class="num"><span class="rate-bar ${rateCls}">${rate.toFixed(1)}%</span></td>
-            <td class="num" style="font-weight:600;">${fmtMoney(p.revenue)}</td>
-        </tr>`;
-    }).join('');
-    const tRate = tPay > 0 ? (tSuc * 100 / tPay) : 0;
-    // The same rate-bar pill the rows use, so the percentage occupies the same box and lines up
-    // under the column instead of sitting loose as plain text.
-    const tRateCls = tRate >= 80 ? 'high' : tRate >= 50 ? 'mid' : 'low';
-    body.innerHTML = rows;
-
-    // The Total row is appended as a real <tfoot> on the table. Writing "</tbody><tfoot>" into the
-    // tbody's innerHTML does not survive the HTML parser, which silently drops it.
-    const table = body.closest('table');
-    if (table) {
-        const oldFoot = table.querySelector('tfoot');
-        if (oldFoot) oldFoot.remove();
-        const foot = document.createElement('tfoot');
-        foot.innerHTML = `<tr class="row-total">
-            <td>Total</td>
-            <td class="num">${tPay}</td>
-            <td class="num">${tSuc}</td>
-            <td class="num">${tFail}</td>
-            <td class="num"><span class="rate-bar ${tRateCls}">${tRate.toFixed(1)}%</span></td>
-            <td class="num">${fmtMoney(tRev)}</td>
-        </tr>`;
-        table.appendChild(foot);
-    }
-}
-
-function renderDashLogs(d) {
-    const body = document.getElementById('dashLogsBody');
-    const countEl = document.getElementById('dashLogsCount');
-    const subEl = document.getElementById('dashLogsSub');
-    if (!body) return;
-    const logs = Array.isArray(d.paymentLogs) ? d.paymentLogs : [];
-    const total = Number(d.paymentLogsTotal);
-    // The panel only ships the newest 100 rows, so say that instead of implying this is everything.
-    if (countEl) {
-        countEl.textContent =
-            (Number.isFinite(total) && total > logs.length)
-                ? 'Latest ' + logs.length + ' of ' + total.toLocaleString()
-                : logs.length + (logs.length === 1 ? ' log' : ' logs');
-        const viewAll = document.getElementById('dashLogsViewAll');
-        if (viewAll) viewAll.hidden = !(Number.isFinite(total) && total > logs.length);
-    }
-    if (subEl) {
-        const custSel = document.getElementById('dashCustomer');
-        const custName = custSel && custSel.value
-            ? (custSel.options[custSel.selectedIndex]?.text || 'selected customer')
-            : 'all customers';
-        subEl.textContent = (d.rangeStart || '?') + ' → ' + (d.rangeEnd || '?') + ' · ' + custName;
-    }
-    if (!logs.length) {
-        body.innerHTML = '<tr><td colspan="7" class="admin-empty">No payment logs in this range.</td></tr>';
-        return;
-    }
-    body.innerHTML = logs.map((l, i) => `
-        <tr>
-            <td>${i + 1}</td>
-            <td>${esc(l.email) || (l.customerId ? 'Customer' : '-')}</td>
-            <td>${esc(l.paymentMethod) || '-'}</td>
-            <td class="num" style="font-weight:600;white-space:nowrap;">${l.currency ? String(l.currency).toUpperCase() : 'USD'} $${parseFloat(l.amount).toFixed(2)}</td>
-            <td>${paymentBadge(l.status)}</td>
-            <td class="col-secondary" style="color:${l.failureCode ? '#be123c' : '#71717a'}">${esc(l.failureCode) || '-'}</td>
-            <td class="ta-r" style="white-space:nowrap;color:#71717a;">${fmtDate(l.createdAt)}</td>
-        </tr>
-    `).join('');
-}
-
 async function loadDashboard() {
     if (dashboardLoading) return;
     dashboardLoading = true;
@@ -456,9 +387,6 @@ async function loadDashboard() {
             }
         }
 
-        const chip = document.getElementById('compareChip');
-        if (chip && prev.start) chip.textContent = 'vs ' + prev.start + ' → ' + prev.end;
-
         const g = d.grain || 'auto';
         const txnSub = document.getElementById('txnChartSub');
         const revSub = document.getElementById('revChartSub');
@@ -466,8 +394,6 @@ async function loadDashboard() {
         if (revSub) revSub.textContent = grainLabel(g) + ' succeeded revenue';
 
         renderDashboardCharts(d);
-        renderBreakdown(d.series || [], g);
-        renderDashLogs(d);
     } catch (e) { console.error(e); }
     finally { dashboardLoading = false; }
 }
@@ -528,7 +454,6 @@ function renderMethodList(entries, colors, d) {
 // One floating message at the top centre of the window, whatever page you are on. Replaces the
 // inline banners, which sat inside the page and pushed the layout around as they appeared.
 const TOAST_MS = 1000;          // how long a toast stays up
-const TOAST_MAX = 4;            // never let a burst of messages fill the screen
 
 function toast(type, message) {
     if (!message) return;
@@ -539,7 +464,7 @@ function toast(type, message) {
         host.className = 'toast-host';
         document.body.appendChild(host);
     }
-    while (host.children.length >= TOAST_MAX) host.removeChild(host.firstChild);
+    host.innerHTML = '';
 
     const el = document.createElement('div');
     el.className = 'toast toast-' + (type === 'error' ? 'error' : 'success');
@@ -903,11 +828,11 @@ async function loadAllLogs(page) {
                 <td>${i + 1}</td>
                 <td>${esc(l.email) || (l.customerId ? 'Customer' : '-')}</td>
                 <td>${esc(l.paymentMethod) || '-'}</td>
-                <td class="num" style="font-weight:600;white-space:nowrap;">${l.currency ? l.currency.toUpperCase() : 'USD'} $${parseFloat(l.amount).toFixed(2)}</td>
+                <td class="num cell-amount">${fmtAmountCell(l.currency, l.amount)}</td>
                 <td>${paymentBadge(l.status)}</td>
-                <td class="col-secondary-lg" style="white-space:normal;word-wrap:break-word;max-width:180px;">${esc(l.message) || '-'}</td>
-                <td style="color:${l.failureCode ? '#be123c' : '#71717a'}">${esc(l.failureCode) || '-'}</td>
-                <td class="ta-r" style="white-space:nowrap;color:#71717a;">${fmtDate(l.createdAt)}</td>
+                <td class="col-secondary-lg cell-msg"><span class="clamp2" title="${esc(l.message) || ''}">${esc(l.message) || '-'}</span></td>
+                <td class="cell-fail${l.failureCode ? ' is-error' : ''}">${esc(l.failureCode) || '-'}</td>
+                <td class="ta-r cell-date">${fmtDate(l.createdAt)}</td>
             </tr>
         `).join('');
 
@@ -964,13 +889,13 @@ async function loadAdminRefundLogs(page = 0) {
         }
         body.innerHTML = items.map(r => `
             <tr>
-                <td style="font-family:monospace;font-size:12px;white-space:nowrap;">${esc(r.refundId) || '-'}</td>
+                <td class="cell-mono" title="${esc(r.refundId) || ''}">${esc(r.refundId) || '-'}</td>
                 <td>${esc(r.email) || (r.customerId ? 'Customer' : '-')}</td>
-                <td class="col-secondary-lg" style="font-family:monospace;font-size:12px;white-space:nowrap;">${esc(r.cardReference) || '-'}</td>
-                <td class="num" style="font-weight:600;white-space:nowrap;">${r.currency ? r.currency.toUpperCase() : 'USD'} $${parseFloat(r.amount).toFixed(2)}</td>
+                <td class="col-secondary-lg cell-mono" title="${esc(r.cardReference) || ''}">${esc(r.cardReference) || '-'}</td>
+                <td class="num cell-amount">${fmtAmountCell(r.currency, r.amount)}</td>
                 <td>${refundBadge(r.status)}</td>
-                <td class="col-secondary" style="white-space:normal;word-wrap:break-word;max-width:180px;">${esc(r.message) || '-'}</td>
-                <td class="ta-r" style="white-space:nowrap;color:#71717a;">${fmtDate(r.createdAt)}</td>
+                <td class="col-secondary cell-msg"><span class="clamp2" title="${esc(r.message) || ''}">${esc(r.message) || '-'}</span></td>
+                <td class="ta-r cell-date">${fmtDate(r.createdAt)}</td>
             </tr>
         `).join('');
 

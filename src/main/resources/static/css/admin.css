@@ -632,7 +632,7 @@ html, body { background: var(--adm-bg) !important; }
 .analytics-panel .admin-table-wrap { max-height: none; }
 .admin-table { width: 100%; min-width: 860px; border-collapse: collapse; font-size: 13.5px; }
 #gatewaysTable { min-width: 700px; }
-#section-users .admin-table { min-width: 720px; }
+#section-users .admin-table { min-width: 980px; }
 .admin-table thead { background: #ffffff; }
 .admin-table th {
   text-align: left;
@@ -1757,8 +1757,8 @@ html, body { background: var(--adm-canvas) !important; }
 /* the page header no longer needs to share a row with a sidebar toggle */
 .admin-main > .page-header { margin-top: 0; }
 
-/* the old rail rules are inert now, but neutralise the ones that still match */
-.admin-sidebar, .sidebar-edge-toggle, .sidebar-backdrop { display: none !important; }
+/* the old rail's edge handle is unused; the sidebar itself is back, so it stays visible */
+.sidebar-edge-toggle { display: none !important; }
 
 @media (max-width: 900px) {
   .admin-topbar { height: auto; flex-wrap: wrap; padding: 12px 16px; gap: 10px; row-gap: 10px; }
@@ -2183,3 +2183,342 @@ html, body { background: var(--adm-canvas) !important; }
   .admin-table th, .admin-table td { padding: 11px 12px; }
   .admin-table .col-secondary-lg { display: none; }
 }
+
+/* ============================================================================
+   USERS SECTION — one Actions menu, flat surfaces
+   ----------------------------------------------------------------------------
+   This table used to carry six buttons per row, pill chips, rounded modals and drop
+   shadows, which made it the busiest panel in the admin. The everyday actions now sit as
+   plain buttons, everything else lives on the user detail page, and every surface in the
+   section sits square with hairline borders, the same clean format as the payment logs table.
+   ============================================================================ */
+#section-users .page-header,
+#section-users .filter-bar,
+#section-users .admin-table-wrap,
+#section-users .compact-field,
+#section-users .gw-chip,
+#section-users .status-badge,
+#section-users .status-badge::before,
+#section-users .btn,
+#section-users .btn-link,
+#section-users .action-group,
+.admin-modal,
+.admin-modal .btn,
+.admin-modal .btn-link,
+.admin-table .act {
+  border-radius: 0;
+  box-shadow: none;
+}
+/* focus rings are box-shadows too, so they come back when a flat rule above would eat them */
+#section-users .btn:focus-visible,
+#section-users .btn-link:focus-visible,
+.admin-modal .btn:focus-visible,
+.admin-modal .btn-link:focus-visible,
+.admin-table .act:focus-visible {
+  box-shadow: var(--adm-ring);
+}
+/* three buttons per row now, so the group does not need the width it used to reserve */
+#section-users .action-group { min-width: 0; }
+
+/* the toast is the last shadow in the panel: flat like everything above */
+.toast { border-radius: 0; box-shadow: none; }
+
+/* ===== STATUS SWITCH (users table) =====
+   The capsule switch is the one round thing left in this section, on purpose: it matches the
+   gateway switch in the Gateways column, and the Active/Inactive word beside it says what the
+   switch currently means. */
+.status-cell { display: flex; align-items: center; gap: 10px; }
+.status-text { font-size: 12.5px; font-weight: 600; color: var(--adm-ink-2); }
+.status-text.is-on { color: #047857; }
+.status-text.is-off { color: #be123c; }
+
+/* confirmation dialog: message, then Cancel / the action itself */
+.admin-modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+/* ===== BUTTONS — black blocks =====
+   Every action button in this section reads as a solid black block with white type, flat like
+   the rest of the panel. Cancel stays a light outline button so it cannot be mistaken for the
+   action itself. */
+#section-users .act,
+#section-users .btn-primary,
+#section-user-detail .act,
+.admin-modal .btn-primary {
+  background: var(--adm-ink);
+  border-color: var(--adm-ink);
+  color: #ffffff;
+}
+#section-users .act:hover:not(:disabled),
+#section-users .btn-primary:hover:not(:disabled),
+#section-user-detail .act:hover:not(:disabled),
+.admin-modal .btn-primary:hover:not(:disabled) {
+  background: #27272a;
+  border-color: #27272a;
+  color: #ffffff;
+}
+#section-users .act:disabled,
+#section-users .btn-primary:disabled,
+#section-user-detail .act:disabled,
+.admin-modal .btn-primary:disabled {
+  background: #d4d4d8;
+  border-color: #d4d4d8;
+  color: #71717a;
+}
+/* focus rings sit on top of the black fill */
+#section-users .act:focus-visible,
+#section-users .btn-primary:focus-visible,
+#section-user-detail .act:focus-visible,
+.admin-modal .btn-primary:focus-visible {
+  box-shadow: var(--adm-ring);
+}
+
+/* ===== USER DETAIL PAGE =====
+   Clicking a name in the users table lands here: the account, its gateways, and that
+   customer's payment and refund logs. Same flat format as the table it came from. */
+.user-cell-link { cursor: pointer; }
+.user-cell-link:hover .user-name { color: var(--adm-teal); }
+#section-user-detail .page-header,
+#section-user-detail .admin-table-wrap {
+  border-radius: 0;
+  box-shadow: none;
+}
+.user-detail-card {
+  background: var(--adm-card);
+  border: 1px solid var(--adm-line);
+  padding: 18px 20px;
+}
+.detail-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 36px;
+  margin-bottom: 16px;
+}
+.detail-fact { display: flex; flex-direction: column; gap: 6px; }
+.detail-fact-wide { flex: 1 1 260px; min-width: 220px; }
+.detail-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--adm-ink-3);
+}
+.user-detail-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ===== USER DETAIL: the two log listings scroll inside their own box =====
+   A long payment history should not push the refund list off the screen; each table takes a
+   fixed height and scrolls on its own, header included. */
+#section-user-detail .admin-table-wrap { max-height: 420px; overflow-y: auto; }
+
+/* ===== SIDEBAR LAYOUT =====
+   A fixed dark rail on the left holds the brand, the four sections and, at the bottom, who is
+   signed in (by name) with the exit button. On a phone the rail becomes a drawer. */
+.admin-layout { display: block; }
+.admin-sidebar {
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  width: 236px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--adm-rail);
+  border-right: 1px solid var(--adm-rail-line);
+  color: var(--adm-rail-text);
+  z-index: 80;
+  overflow: hidden;
+}
+.admin-brand { display: flex; flex-direction: column; gap: 2px; padding: 20px 18px 14px; }
+.admin-brand-name { color: #f4f5f7; font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
+.admin-brand-tag {
+  color: var(--adm-rail-dim);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.admin-sidebar .admin-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.admin-sidebar .admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: var(--adm-rail-text);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.16s ease, color 0.16s ease;
+}
+.admin-sidebar .admin-nav-item svg { width: 17px; height: 17px; flex-shrink: 0; }
+.admin-sidebar .admin-nav-item:hover { background: rgba(255, 255, 255, 0.06); color: #e8eaee; }
+.admin-sidebar .admin-nav-item.active {
+  background: rgba(20, 184, 166, 0.14);
+  color: #5eead4;
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--adm-teal-2);
+}
+.admin-sidebar .admin-nav-item.active svg { color: var(--adm-teal-2); }
+.admin-sidebar-footer {
+  padding: 14px 16px;
+  background: var(--adm-rail-2);
+  border-top: 1px solid var(--adm-rail-line);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+.admin-user-mini { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.user-name-mini {
+  color: #e8eaee;
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.user-role-mini { color: var(--adm-rail-dim); font-size: 11.5px; }
+.admin-sidebar-footer .logout-btn {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--adm-rail-line);
+  color: var(--adm-rail-text);
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 12px;
+}
+.admin-sidebar-footer .logout-btn:hover {
+  background: rgba(244, 63, 94, 0.16);
+  border-color: rgba(244, 63, 94, 0.4);
+  color: #fda4af;
+}
+.logout-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--adm-rail-line);
+  color: var(--adm-rail-text);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.logout-btn:hover {
+  background: rgba(244, 63, 94, 0.16);
+  border-color: rgba(244, 63, 94, 0.4);
+  color: #fda4af;
+}
+/* width has to be auto: an earlier rule sets width:100%, which with the 236px offset
+   pushed the page sideways and gave the window a second scroll bar of its own. */
+.admin-main {
+  width: auto;
+  margin: 0 auto 0 236px;
+  max-width: 1480px;
+  padding: 26px 28px 48px;
+}
+
+@media (max-width: 900px) {
+  .admin-sidebar { transform: translateX(-100%); transition: transform 0.2s ease; }
+  .admin-layout.sidebar-open .admin-sidebar { transform: none; }
+  .admin-layout.sidebar-open .sidebar-backdrop { display: block; }
+  .admin-main { margin-left: 0; padding: 18px 16px 40px; }
+  .admin-main .mobile-nav-btn { display: inline-flex; }
+}
+
+/* ===== CORE TABLES — one flat format everywhere =====
+   Every admin table (Gateways, Users, Payment Logs, Refund Logs, user detail) now shares
+   the same header style, cell classes and row rhythm. No radius, no shadow, hairline borders. */
+.admin-section .page-header,
+.admin-section .filter-bar,
+.admin-section .admin-table-wrap {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.admin-table thead th {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--adm-muted);
+  background: #ffffff;
+  border-bottom: 1px solid var(--adm-border);
+  box-shadow: none;
+  padding: 11px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+.admin-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f2;
+}
+
+/* cell helpers — every log row uses these instead of inline styles */
+.cell-amount {
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.cell-date {
+  white-space: nowrap;
+  color: #71717a;
+}
+.cell-fail {
+  color: #71717a;
+}
+.cell-fail.is-error {
+  color: #be123c;
+}
+.cell-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+.cell-msg {
+  max-width: 360px;
+}
+.clamp2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+.cell-dim { color: var(--adm-muted); }
+
+/* gateways: assigned users list */
+.cell-assignees {
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.assignee-more {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--adm-muted);
+  white-space: nowrap;
+}
+
+/* refund table: give the message column room but cap it so rows stay uniform */
+#section-refund-logs .admin-table .cell-msg { max-width: 320px; }
+#section-refund-logs .admin-table .cell-mono { max-width: 200px; }

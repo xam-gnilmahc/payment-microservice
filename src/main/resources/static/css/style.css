@@ -455,3 +455,15 @@ body.theme-customer .logs-table .mono { font-size: 11.5px; }
   .split-side { position: static; order: -1; }
   .summary-amount { font-size: 30px; }
 }
+
+/* ===== PASSWORD FIELD + SHOW/HIDE EYE (admin set-password modal) ===== */
+.cp-field { position: relative; }
+.cp-field input { padding-right: 42px; }
+.cp-eye {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; padding: 6px; cursor: pointer; color: #8b8fa3;
+}
+.cp-eye:hover { color: #1a1a2e; }
+.cp-eye:focus-visible { outline: 2px solid #1a1a2e; outline-offset: -2px; }
+.cp-eye svg { display: block; }

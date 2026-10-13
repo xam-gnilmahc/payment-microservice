@@ -1,6 +1,7 @@
 package com.payment.microservice.controller;
 
 import com.payment.microservice.model.PaymentGateway;
+import com.payment.microservice.dto.ChangePasswordRequest;
 import com.payment.microservice.model.PaymentLog;
 import com.payment.microservice.model.PaymentStatus;
 import com.payment.microservice.model.RefundLog;
@@ -22,6 +23,7 @@ import org.springframework.session.Session;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.SecurityContextRepository;
 import com.payment.microservice.traits.CurrentUser;
+import jakarta.validation.Valid;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -144,6 +146,32 @@ public class AdminController {
       ended++;
     }
     return ended;
+  }
+
+  // Set a new password for any account, from the Users section. No current password is asked for:
+  // this is the reset path for somebody who has forgotten theirs. Anyone already signed in on that
+  // account is signed out straight away, except when the admin is resetting their own password.
+  @PostMapping("/users/{id}/password")
+  public ResponseEntity<ApiResponse<Object>> setUserPassword(
+      @PathVariable Long id, @Valid @RequestBody ChangePasswordRequest request) {
+    User user = userRepository.findById(id).orElse(null);
+    if (user == null) {
+      return ResponseEntity.badRequest().body(ApiResponse.error("User not found", 404));
+    }
+    user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+    userRepository.save(user);
+
+    int ended = 0;
+    if (!user.getId().equals(CurrentUser.id())) {
+      ended = endSessionsOf(user);
+    }
+    log.info("Set password for user id={} ({} session(s) ended)", id, ended);
+
+    return ResponseEntity.ok(
+        ApiResponse.success(
+            "Password updated for " + user.getEmail(),
+            200,
+            Map.of("userId", user.getId(), "endedSessions", ended)));
   }
 
   @GetMapping("/gateways")
