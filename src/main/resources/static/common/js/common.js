@@ -20,20 +20,102 @@ function authHeaders() { return { 'Content-Type': 'application/json' }; }
 // ===== HELPERS =====
 function hideAll() { document.body.classList.remove('wide-header'); ['step-no-gateway', 'step-checkout', 'step-card', 'step-address', 'step-logs'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); }); }
 
-// Only one message is ever on screen: showing a new one takes the old one away, wherever that
-// old one was - another banner on the page, or the card field message on the pay page.
-function hideOtherMsgs(keep) {
-    document.querySelectorAll('.banner.show').forEach(b => { if (b !== keep) b.classList.remove('show'); });
+// Messages only ever appear in the central notification below - never in the inline banners,
+// which are left in the markup but stay empty. The banner/card elements are still handed to
+// showMsg so the caller says where the message came from and success vs error is picked from it.
+function hideOtherMsgs() {
+    document.querySelectorAll('.banner.show').forEach(b => b.classList.remove('show'));
     const card = document.getElementById('card-msg');
-    if (card && card !== keep && card.textContent) { card.textContent = ''; card.className = ''; }
+    if (card) { card.textContent = ''; card.className = ''; }
 }
 
 function showMsg(el, msg) {
-    hideOtherMsgs(el);
-    el.textContent = msg;
-    el.classList.add('show');
-    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    hideOtherMsgs();
+    notify(el && el.classList.contains('banner-success') ? 'success' : 'error', msg);
 }
+
+// ===== CENTRAL NOTIFICATIONS =====
+// One floating popup at the top centre of the window, whatever page you are on - the only place
+// a message is shown. Every response the app gives comes through here: sign in, sign up, payment
+// success/failure, refunds, addresses, validation.
+const NOTIFY_MS = 4500;          // how long a notification stays up
+const NOTIFY_MAX = 3;            // at most this many on screen at once
+
+function notify(type, message) {
+    if (!message) return;
+    let host = document.getElementById('notifyHost');
+    if (!host) {
+        host = document.createElement('div');
+        host.id = 'notifyHost';
+        host.className = 'notify-host';
+        host.setAttribute('aria-live', 'polite');
+        document.body.appendChild(host);
+    }
+
+    const isOk = type === 'success';
+    const el = document.createElement('div');
+    el.className = 'notify ' + (isOk ? 'notify-success' : 'notify-error');
+    el.setAttribute('role', isOk ? 'status' : 'alert');
+
+    const icon = document.createElement('span');
+    icon.className = 'notify-icon';
+    icon.textContent = isOk ? '\u2713' : '!';
+
+    const text = document.createElement('span');
+    text.className = 'notify-text';
+    text.textContent = message;
+
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'notify-close';
+    close.setAttribute('aria-label', 'Dismiss');
+    close.textContent = '\u00d7';
+    close.addEventListener('click', () => dismissNotify(el));
+
+    const bar = document.createElement('span');
+    bar.className = 'notify-bar';
+    bar.style.animationDuration = NOTIFY_MS + 'ms';
+
+    el.appendChild(icon);
+    el.appendChild(text);
+    el.appendChild(close);
+    el.appendChild(bar);
+    host.appendChild(el);
+
+    // never crowd the screen - the oldest one still on its way out goes first. Leaving elements
+    // stay in the DOM until their fade finishes, so the count only looks at live ones.
+    const live = Array.prototype.slice.call(host.children).filter(c => !c.dataset.leaving);
+    for (let i = 0; i < live.length - NOTIFY_MAX; i++) dismissNotify(live[i]);
+
+    // let the entry transition run before starting the dismiss timer
+    requestAnimationFrame(() => el.classList.add('in'));
+    let remaining = NOTIFY_MS;
+    let startedAt = Date.now();
+    let timer = setTimeout(() => dismissNotify(el), remaining);
+    // hovering holds the message (and its countdown line) until the pointer leaves again
+    el.addEventListener('mouseenter', () => {
+        clearTimeout(timer);
+        remaining -= Date.now() - startedAt;
+        bar.style.animationPlayState = 'paused';
+    });
+    el.addEventListener('mouseleave', () => {
+        if (el.dataset.leaving) return;
+        startedAt = Date.now();
+        bar.style.animationPlayState = 'running';
+        timer = setTimeout(() => dismissNotify(el), Math.max(remaining, 600));
+    });
+}
+
+function dismissNotify(el) {
+    if (!el || el.dataset.leaving) return;
+    el.dataset.leaving = '1';
+    el.classList.remove('in');
+    el.classList.add('out');
+    setTimeout(() => el.remove(), 320);
+}
+
+function notifySuccess(message) { notify('success', message); }
+function notifyError(message) { notify('error', message); }
 
 // ===== LOST SESSION =====
 // A blocked account, an expired session and a sign-out on another tab all come back as 401 on the

@@ -112,5 +112,6 @@ async function saveBillingAddress() {
         showAllAddresses = false;
         await loadBillingAddresses();
         hideBillingForm();
+        notifySuccess('Billing address saved.');
     } catch (e) { showMsg(err, 'Server error: ' + e.message); }
 }

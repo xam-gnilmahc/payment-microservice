@@ -66,6 +66,7 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
         if (!data.success) { showMsg(err, data.message || 'Login failed.'); return; }
         // the browser already holds the session cookie, so we are in
         sessionUser = data.data;
+        notifySuccess('Signed in successfully.');
         await routeToGateway();
     } catch (e) { showMsg(err, 'Server error: ' + e.message); }
     finally { clearAuthLoading(row); }
@@ -101,6 +102,7 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
         const data = await res.json();
         if (!data.success) { showMsg(err, data.message || 'Registration failed.'); return; }
         sessionUser = data.data;
+        notifySuccess('Account created successfully.');
         await routeToGateway();
     } catch (e) { showMsg(err, 'Server error: ' + e.message); }
     finally { clearAuthLoading(row); }

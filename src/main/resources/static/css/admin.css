@@ -2065,6 +2065,16 @@ html, body { background: var(--adm-canvas) !important; }
 .compact-field input:focus-visible { outline: none; }
 .admin-main select:focus,
 .admin-main input:focus { outline: none; }
+/* A <select> and a text input both match :focus-visible on a plain mouse click, so the generic
+   focus ring above lit every dropdown and search field up teal the moment it was clicked. Form
+   fields in the admin main area stay visually still instead. */
+.admin-main select:focus,
+.admin-main select:focus-visible,
+.admin-main input:focus,
+.admin-main input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
 
 /* ============================================================================
    TOASTS — admin only. One floating message, top centre of the window, with a

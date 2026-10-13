@@ -96,6 +96,104 @@ body { font-family: 'Inter', -apple-system, Arial, sans-serif; background: #ffff
 .banner-error { background: #ffffff; border: 1px solid #fecaca; color: #b91c1c; }
 .banner-success { background: #ffffff; border: 1px solid #bbf7d0; color: #15803d; }
 
+/* central notification popup — one floating message at the top centre of the window, used for
+   every response the app gives (sign in, sign up, payment, refund, address). Fixed rather than
+   inline, so nothing on the page shifts when a message appears or disappears. */
+.notify-host {
+  position: fixed;
+  top: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: min(540px, calc(100vw - 32px));
+  pointer-events: none; /* clicks pass through the gaps between notifications */
+}
+.notify {
+  pointer-events: auto;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 12px 12px 13px 14px;
+  background: #ffffff;
+  border: 1px solid #e2e4e9;
+  border-radius: 12px;
+  box-shadow: 0 14px 40px rgba(16, 18, 21, 0.16), 0 2px 6px rgba(16, 18, 21, 0.06);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1a1a2e;
+  opacity: 0;
+  transform: translateY(-14px) scale(0.97);
+  transition: opacity 0.22s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.notify.in { opacity: 1; transform: none; }
+.notify.out { opacity: 0; transform: translateY(-10px) scale(0.98); }
+
+.notify-icon {
+  flex-shrink: 0;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #ffffff;
+}
+.notify-success { border-color: #bbf7d0; }
+.notify-success .notify-icon { background: #15803d; }
+.notify-success .notify-text { color: #15803d; }
+.notify-error { border-color: #fecaca; }
+.notify-error .notify-icon { background: #b91c1c; }
+.notify-error .notify-text { color: #b91c1c; }
+
+.notify-text { flex: 1; min-width: 0; line-height: 1.4; overflow-wrap: anywhere; }
+.notify-close {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #8b8fa3;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.notify-close:hover { background: #f4f4f5; color: #1a1a2e; }
+/* thin countdown line along the bottom: drains while it is up, pauses while hovered */
+.notify-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  transform-origin: left center;
+  background: currentColor;
+  opacity: 0.35;
+  animation-name: notifyDrain;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+.notify-success .notify-bar { color: #15803d; }
+.notify-error .notify-bar { color: #b91c1c; }
+@keyframes notifyDrain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+@media (max-width: 640px) {
+  .notify-host { top: 12px; width: calc(100vw - 20px); }
+}
+
 .user-badge { display: flex; align-items: center; padding: 14px 16px; background: #ffffff; border: 1px solid #e4e4e7; margin-bottom: 16px; }
 .user-avatar { width: 40px; height: 40px; background: #1a1a2e; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; margin-right: 12px; flex-shrink: 0; }
 .user-info { flex: 1; min-width: 0; }

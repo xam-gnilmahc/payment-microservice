@@ -12,14 +12,13 @@ let cardExpiryEl = null;
 let cardCvcEl = null;
 
 // ===== HELPERS =====
-// single message area on the pay page (below the card fields)
-function setCardMsg(type, text) {
-    const el = document.getElementById('card-msg');
-    if (!el) return;
-    if (text) hideOtherMsgs(el);
-    el.textContent = text || '';
-    el.className = type || '';
-    if (text) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+// Payment results are raised as the central notification only - the #card-msg area on this page
+// is cleared and never filled in, so nothing on the card form shifts when a result arrives.
+// `silent` is for Stripe's own field validation, which fires on every keystroke: it belongs to
+// the field, not to the popup.
+function setCardMsg(type, text, silent) {
+    hideOtherMsgs();
+    if (text && !silent) notify(type === 'success' ? 'success' : 'error', text);
 }
 function resetPaymentState() { sessionUser = null; paymentIntentData = null; selectedGatewayId = null; selectedGatewayTitle = null; stripe = null; elements = null; cardNumberEl = null; cardExpiryEl = null; cardCvcEl = null; }
 // used when the session is gone or unusable: just bounce to the login page
@@ -38,7 +37,7 @@ function goToNoGateway() { hideAll(); document.getElementById('step-no-gateway')
 function initStripe(publicKey) {
     stripe = Stripe(publicKey);
     elements = stripe.elements();
-    const onCardChange = (e) => { setCardMsg(e.error ? 'error' : '', e.error ? e.error.message : ''); };
+    const onCardChange = (e) => { setCardMsg(e.error ? 'error' : '', e.error ? e.error.message : '', true); };
     cardNumberEl = elements.create('cardNumber');
     cardExpiryEl = elements.create('cardExpiry');
     cardCvcEl = elements.create('cardCvc');
