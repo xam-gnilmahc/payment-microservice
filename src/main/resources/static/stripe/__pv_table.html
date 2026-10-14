@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>table preview</title>
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/pay.css">
+</head>
+<body class="theme-customer pay">
+
+<header class="pay-top">
+    <div class="pay-top-inner">
+        <div class="pay-brand"><span class="pay-brand-text">UOM</span><span class="pay-chip">Stripe</span></div>
+        <div class="pay-top-right"><div class="pay-user"><span class="pay-user-avatar">J</span></div></div>
+    </div>
+</header>
+<div class="pay-notice"><span class="pay-notice-dot"></span>Sandbox mode &mdash; no real money is charged.</div>
+
+<div class="container container-wide pay-shell" id="step-logs">
+    <div class="pay-panel">
+        <div class="pay-panel-head">
+            <div>
+                <h2 class="pay-title">Payment history</h2>
+                <p class="pay-sub">Every charge on this account, newest first.</p>
+            </div>
+        </div>
+        <div id="logsTable"></div>
+        <div id="logsPagination"></div>
+    </div>
+</div>
+
+<script src="/common/js/common.js"></script>
+<script src="/common/js/logs.js"></script>
+<script>
+const rows = [
+    { id: 1, paymentMethod: 'card', amount: 99.99, currency: 'usd', status: 'SUCCEEDED',
+      chargeId: 'ch_3PfQ2K2eZvKYlo2C0a1b2c3d4e5f', message: 'Succeeded', failureCode: '',
+      createdAt: '2026-10-13T14:02:11', transactionId: 'pi_1', customerId: 7 },
+    { id: 2, paymentMethod: 'card', amount: 250.0, currency: 'usd', status: 'SUCCEEDED',
+      chargeId: 'ch_3PfQ1A8xQwertyuiopasdfghjkl', message: 'Succeeded', failureCode: '',
+      refundId: 're_3PfQ1A', createdAt: '2026-10-11T09:44:02', transactionId: 'pi_2', customerId: 7 },
+    { id: 3, paymentMethod: 'card', amount: 15.5, currency: 'usd', status: 'FAILED',
+      chargeId: 'ch_3PfPz9CvBnMkLjHgFdB123456789', message: 'Your card was declined. Your card was declined. The issuer do not permit the transaction.',
+      failureCode: 'card_declined', createdAt: '2026-10-09T17:20:45', transactionId: 'pi_3', customerId: 7 }
+];
+renderLogs(rows);
+
+// show the wrapper actually scrolls (second screenshot is taken after this runs)
+const wrap = document.querySelector('.logs-table-wrap');
+if (wrap) document.title = 'scrollable=' + (wrap.scrollWidth > wrap.clientWidth) + ' | ' + wrap.clientWidth + ' -> ' + wrap.scrollWidth;
+if (wrap && location.search.indexOf('scrolled') > -1) wrap.scrollLeft = wrap.scrollWidth;
+</script>
+</body>
+</html>

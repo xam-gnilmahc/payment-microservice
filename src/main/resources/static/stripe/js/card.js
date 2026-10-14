@@ -121,6 +121,7 @@ function goToCard(amount) {
     if (sep) sep.style.display = 'flex';
 
     showCardSkeleton();
+    startPaySession();
 
     if (cardNumberEl) { cardNumberEl.unmount(); cardNumberEl.mount('#card-number'); }
     if (cardExpiryEl) { cardExpiryEl.unmount(); cardExpiryEl.mount('#card-expiry'); }
@@ -165,6 +166,7 @@ async function confirmOnBackend(paymentIntentId, paymentMethod) {
 
 // ===== UI STATES =====
 function showPaymentSuccess(paymentIntent) {
+    stopPaySession();
     setCardMsg('success', 'Payment successful!');
     document.getElementById('payBtn').disabled = true;
     document.getElementById('payBtn').textContent = 'Paid';

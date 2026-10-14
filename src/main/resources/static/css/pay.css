@@ -235,6 +235,33 @@ body.pay { padding-top: 102px; }
 .pay-label-row .pay-label { margin-bottom: 0; }
 .pay-hint { margin: 12px 0 0; font-size: 12px; color: var(--faint); }
 
+/* live window on the pay step: how long this card form stays valid before we walk back to
+   "Continue to pay". Turns red for the last 30 seconds. */
+.pay-countdown {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin: 18px 0 14px;
+    padding: 10px 14px;
+    border: 1px dashed var(--rule);
+    border-radius: var(--r);
+    background: var(--paper);
+    font-size: 12.5px; font-weight: 500;
+    color: var(--muted);
+}
+.pay-countdown[hidden] { display: none; }
+.pay-countdown svg { flex-shrink: 0; opacity: .8; }
+.pay-countdown strong {
+    font-weight: 650; letter-spacing: .03em;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+}
+.pay-countdown.is-urgent {
+    border-style: solid; border-color: #f0c8c4;
+    background: var(--bad-bg); color: var(--bad);
+}
+.pay-countdown.is-urgent strong { color: var(--bad); }
+.pay-countdown.is-urgent svg { animation: payTick 1s steps(2, end) infinite; }
+@keyframes payTick { 50% { opacity: .25; } }
+
 .pay-field { margin-bottom: 32px; }
 .pay-field:last-of-type { margin-bottom: 0; }
 
@@ -490,13 +517,22 @@ body.pay .text-link { color: var(--ink); text-decoration: underline; text-underl
 .pay-empty-text { margin: 0 0 26px; font-size: 13.5px; line-height: 1.65; color: var(--muted); }
 
 /* ---------- history table (markup built by logs.js) ---------- */
+/* The table keeps its natural width (Method / Amount / Status / Charge ID / Message / Failure /
+   Created / Action adds up to more than the panel), so the wrapper scrolls sideways instead of
+   clipping the Action column off the right edge. */
 body.pay .logs-table-wrap {
     border: 1px solid var(--rule);
     border-radius: var(--r);
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
     background: var(--surface);
+    scrollbar-width: thin;
 }
-body.pay .logs-table { width: 100%; border-collapse: collapse; }
+body.pay .logs-table-wrap::-webkit-scrollbar { height: 8px; }
+body.pay .logs-table-wrap::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 99px; }
+body.pay .logs-table-wrap::-webkit-scrollbar-track { background: transparent; }
+body.pay .logs-table { width: max-content; min-width: 100%; border-collapse: collapse; }
 body.pay .logs-table th {
     text-align: left;
     font-size: 10px; font-weight: 600;
@@ -639,7 +675,6 @@ body.pay .notify-host { top: 112px; }
 
 /* ---------- responsive ---------- */
 @media (max-width: 940px) {
-    body.pay .logs-table-wrap { overflow-x: auto; }
     .pay-split { grid-template-columns: minmax(0, 1fr); gap: 28px; }
     .pay-side { position: static; order: -1; }
     .pay-summary-amount { font-size: 32px; }

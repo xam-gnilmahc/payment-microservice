@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>countdown preview</title>
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/pay.css">
+</head>
+<body class="theme-customer pay">
+
+<header class="pay-top">
+    <div class="pay-top-inner">
+        <div class="pay-brand"><span class="pay-brand-text">UOM</span><span class="pay-chip">Stripe</span></div>
+        <div class="pay-top-right"><div class="pay-user"><span class="pay-user-avatar">J</span></div></div>
+    </div>
+</header>
+<div class="pay-notice"><span class="pay-notice-dot"></span>Sandbox mode &mdash; no real money is charged.</div>
+
+<div class="container pay-shell" id="step-card">
+    <ol class="pay-steps">
+        <li class="pay-step is-done"><span class="pay-step-dot">&#10003;</span><span class="pay-step-label">Amount</span></li>
+        <li class="pay-step-line is-done"></li>
+        <li class="pay-step is-done"><span class="pay-step-dot">&#10003;</span><span class="pay-step-label">Address</span></li>
+        <li class="pay-step-line is-done"></li>
+        <li class="pay-step is-active"><span class="pay-step-dot">3</span><span class="pay-step-label">Pay</span></li>
+    </ol>
+
+    <div class="pay-panel">
+        <div class="pay-panel-head">
+            <div>
+                <h2 class="pay-title">Pay now</h2>
+                <p class="pay-sub">Card details are entered on Stripe's encrypted field.</p>
+            </div>
+            <button class="btn-link">Back</button>
+        </div>
+
+        <div id="card-msg"></div>
+
+        <div class="pay-label">Card details</div>
+        <div id="card-fields" class="pay-card-fields">
+            <div id="card-number" class="pay-card-row" style="padding:14px;border:1.5px solid #d4d4d8;border-radius:7px;color:#aaa;font-size:13px;">1234 1234 1234 1234</div>
+            <div class="pay-card-split" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+                <div style="padding:14px;border:1.5px solid #d4d4d8;border-radius:7px;color:#aaa;font-size:13px;">MM / YY</div>
+                <div style="padding:14px;border:1.5px solid #d4d4d8;border-radius:7px;color:#aaa;font-size:13px;">CVC</div>
+            </div>
+        </div>
+        <p class="pay-hint">Test card <strong>4242 4242 4242 4242</strong>, any future expiry, any CVC.</p>
+
+        <div class="pay-countdown" id="payCountdown" hidden>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9"></circle>
+                <path d="M12 7v5l3 2"></path>
+            </svg>
+            <span>This payment step expires in <strong id="payCountdownValue">03:00</strong></span>
+        </div>
+
+        <button class="btn btn-primary btn-block" id="payBtn">Pay now</button>
+    </div>
+</div>
+
+<div id="back-here" hidden style="display:none;margin:120px auto 0;max-width:520px;padding:26px;border:1px solid #e2e4e9;border-radius:12px;background:#fff;text-align:center;font:600 15px Inter,sans-serif;color:#1a1a2e;">
+    &#8592; back on <strong>Continue to pay</strong> (checkout step)
+</div>
+
+<script src="/common/js/common.js"></script>
+<!-- the page is opened with ?payment_intent=... so app.js skips its own page init -->
+<script src="/stripe/js/app.js"></script>
+<script>
+// stands in for checkout.js, which the real page loads
+function goToCheckout() {
+    document.getElementById('step-card').classList.add('hidden');
+    const b = document.getElementById('back-here');
+    b.hidden = false; b.style.display = 'block';
+}
+startPaySession();
+</script>
+</body>
+</html>

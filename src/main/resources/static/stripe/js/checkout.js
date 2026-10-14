@@ -13,6 +13,7 @@ function updateCheckoutSummary() {
 async function goToCheckout() {
     const user = getUser();
     if (!user) { goToLogin(); return; }
+    stopPaySession();
     hideAll();
     document.getElementById('step-checkout').classList.remove('hidden');
     document.getElementById('selectedGatewayTitle').textContent = selectedGatewayTitle || 'Unknown';
